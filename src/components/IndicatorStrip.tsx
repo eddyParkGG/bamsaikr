@@ -80,7 +80,21 @@ export const NavIndicators = memo(function NavIndicators() {
   useEffect(() => subscribeUsdc(), [])
   const status = useStatus().data
   const q = useQuery<{ items: Indicator[] }>('/api/v1/indicators', 10_000)
-  if (!q.data || !status) return <div className="nav-ind" aria-hidden />
+  // Same footprint as the cards (mini chart + name + value) so the nav does not jump when data arrives
+  if (!q.data || !status)
+    return (
+      <div className="nav-ind" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="ind">
+            <span className="skeleton" style={{ width: 48, height: 28, borderRadius: 6 }} />
+            <div className="ind__text">
+              <span className="skeleton" style={{ display: 'block', width: 56, height: 11, borderRadius: 4 }} />
+              <span className="skeleton" style={{ display: 'block', width: 138, height: 15, borderRadius: 4, marginTop: 4 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
   const ids = status.session === 'regular' ? KR : US
   return (
     <div className="nav-ind">
