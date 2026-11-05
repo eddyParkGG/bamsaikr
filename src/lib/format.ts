@@ -44,6 +44,14 @@ export function kstDay(ms: number) {
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${DOW[d.getUTCDay()]})`
 }
 
+/** KST 'YYYYMMDD' key → 'M/D', day name and whether it is Saturday/Sunday */
+export function dateKeyParts(key: string) {
+  const m = +key.slice(4, 6)
+  const d = +key.slice(6, 8)
+  const dow = new Date(Date.UTC(+key.slice(0, 4), m - 1, d)).getUTCDay()
+  return { md: `${m}/${d}`, dow: DOW[dow], weekend: dow === 0 || dow === 6 }
+}
+
 /** Time until open: '3시간 20분 뒤', '2일 뒤' */
 export function untilText(ms: number) {
   const diff = ms - Date.now()

@@ -4,7 +4,7 @@ import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Pr
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
 import { SESSION_LABEL, venueAt } from '../lib/market'
-import { fmtKoreanUnit, fmtPct, fmtPrice } from '../lib/format'
+import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice } from '../lib/format'
 import { useLive } from '../lib/live'
 import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
@@ -100,7 +100,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
         t.hidden = false
         // One line per issue: date + headline (several when bubbles are grouped)
         t.innerHTML = items
-          .map((n) => `<div class="tip-row"><span class="tip-date">${+n.date.slice(4, 6)}/${+n.date.slice(6, 8)}</span><span>${n.title.replace(/</g, '&lt;')}</span></div>`)
+          .map((n) => `<div class="tip-row"><span class="tip-date">${tipDate(n.date)}</span><span>${n.title.replace(/</g, '&lt;')}</span></div>`)
           .join('') + (items.length > 1 ? '<div class="tip-hint">눌러서 확대</div>' : '')
         // Centre over the bubble, just above it, kept inside the chart
         const w = t.offsetWidth
@@ -228,6 +228,12 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       {!data.krx.length && settings.showKrx && <div className="chart__empty">이 구간에는 국내 시세가 없어요.</div>}
     </div>
   )
+}
+
+/** News tooltip date: 'M/D (요일)', weekend day name in red */
+function tipDate(key: string) {
+  const p = dateKeyParts(key)
+  return `${p.md} (${p.weekend ? `<span class="dow--weekend">${p.dow}</span>` : p.dow})`
 }
 
 export const Chart = memo(ChartImpl)

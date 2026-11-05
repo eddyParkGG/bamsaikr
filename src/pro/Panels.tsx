@@ -2,7 +2,7 @@ import { Chevron } from '../components/Icon'
 import { memo, useEffect, useRef, useState } from 'react'
 import type { OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
-import { fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
+import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
 import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
@@ -33,17 +33,12 @@ function Row({ label, help, children }: { label: string; help: string; children:
   )
 }
 
-const DOW = ['일', '월', '화', '수', '목', '금', '토']
-
 /** 'M/D (요일)' from a KST 'YYYYMMDD' key; Saturday and Sunday in red */
 function DateDow({ date }: { date: string }) {
-  const y = +date.slice(0, 4)
-  const m = +date.slice(4, 6)
-  const d = +date.slice(6, 8)
-  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+  const p = dateKeyParts(date)
   return (
     <>
-      {m}/{d} (<span className={dow === 0 || dow === 6 ? 'dow--weekend' : undefined}>{DOW[dow]}</span>)
+      {p.md} (<span className={p.weekend ? 'dow--weekend' : undefined}>{p.dow}</span>)
     </>
   )
 }
@@ -363,7 +358,7 @@ export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) 
           {q.data.investors.map((d) => (
             <tr key={d.date}>
               <td>
-                {+d.date.slice(4, 6)}/{+d.date.slice(6, 8)}
+                <DateDow date={d.date} />
               </td>
               {[d.individual, d.foreign, d.institution].map((v, i) => {
                 // Today's close is not final yet: value it at the live price
