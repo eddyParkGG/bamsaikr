@@ -1,7 +1,7 @@
 // Logo: a plump crescent moon above a cloud (gray, 3D). On hover a light sweep passes once and a yellow zigzag arrow draws in
-export function BrandMark({ size = 30 }: { size?: number }) {
+export function BrandMark({ size = 30, loop = false }: { size?: number; loop?: boolean }) {
   return (
-    <svg className="brand" width={size} height={size} viewBox="0 0 40 40" aria-hidden>
+    <svg className={loop ? 'brand brand--loop' : 'brand'} width={size} height={size} viewBox="0 0 40 40" aria-hidden>
       <defs>
         <radialGradient id="bm-moon" cx="0.35" cy="0.3" r="0.8">
           <stop offset="0" stopColor="#fbfbfc" />
@@ -51,6 +51,15 @@ export function BrandMark({ size = 30 }: { size?: number }) {
         />
       </g>
     </svg>
+  )
+}
+
+/** Full-screen loading state: the logo's hover motion on repeat, centred. Same markup as the splash in index.html */
+export function Splash() {
+  return (
+    <div className="splash" role="status" aria-label="불러오는 중">
+      <BrandMark size={44} loop />
+    </div>
   )
 }
 

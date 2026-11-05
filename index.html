@@ -77,11 +77,50 @@
         document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark'
       } catch (e) {}
     </script>
+    <style>
+      /* Loading screen: the logo's hover motion (light sweep + yellow bolt) on repeat, centred.
+         Inline so it shows before the app's CSS arrives; React's Suspense fallback reuses these classes */
+      .splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #101013; }
+      [data-theme='light'] .splash { background: #f2f4f6; }
+      .brand--loop .brand__bolt { clip-path: polygon(0 100%, 0 100%, 0 100%); animation: splash-bolt 1.6s cubic-bezier(0.3, 0.7, 0.2, 1) infinite; }
+      .brand--loop .brand__shine { animation: splash-shine 1.6s ease-out infinite; }
+      @keyframes splash-bolt {
+        0%, 12% { clip-path: polygon(0 100%, 0 100%, 0 100%); }
+        40%, 85% { clip-path: polygon(0 100%, 0 -120%, 220% 100%); }
+        85.1%, 100% { clip-path: polygon(0 100%, 0 100%, 0 100%); }
+      }
+      @keyframes splash-shine {
+        0% { transform: skewX(-20deg) translateX(0); }
+        45%, 100% { transform: skewX(-20deg) translateX(80px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .brand--loop .brand__bolt { animation: none; clip-path: none; }
+        .brand--loop .brand__shine { animation: none; }
+      }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    </style>
   </head>
   <body>
-    <div id="root">
-      <!-- Static summary for crawlers and AI agents; replaced on render -->
-      <main style="max-width:720px;margin:48px auto;padding:0 16px;color:#c3c3c6;font-family:sans-serif">
+      <div class="splash" role="status" aria-label="불러오는 중">
+        <!-- Same drawing as BrandMark in src/components/Brand.tsx -->
+        <svg class="brand brand--loop" width="44" height="44" viewBox="0 0 40 40" aria-hidden="true" style="overflow:visible">
+          <defs>
+            <radialGradient id="sp-moon" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fbfbfc" /><stop offset="0.5" stop-color="#d3d6db" /><stop offset="1" stop-color="#868c96" /></radialGradient>
+            <radialGradient id="sp-cloud" cx="0.4" cy="0.25" r="0.9"><stop offset="0" stop-color="#ffffff" /><stop offset="0.5" stop-color="#d6d9de" /><stop offset="1" stop-color="#8f949d" /></radialGradient>
+            <mask id="sp-cut"><rect width="40" height="40" fill="#fff" /><circle cx="31.5" cy="8.5" r="9" fill="#000" /></mask>
+            <linearGradient id="sp-bolt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF06A" /><stop offset="0.5" stop-color="#FFD60A" /><stop offset="1" stop-color="#F2A900" /></linearGradient>
+            <linearGradient id="sp-shine" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0" /><stop offset="0.5" stop-color="#fff" stop-opacity="0.75" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></linearGradient>
+            <mask id="sp-shape"><circle cx="24" cy="14" r="12" fill="#fff" mask="url(#sp-cut)" /><path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" fill="#fff" /></mask>
+          </defs>
+          <circle cx="24" cy="14" r="12" fill="url(#sp-moon)" mask="url(#sp-cut)" />
+          <path d="M6.6 36.2a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29.6 29.2a3.5 3.5 0 0 1-.8 7z" fill="#000" opacity="0.22" />
+          <path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" fill="url(#sp-cloud)" />
+          <g mask="url(#sp-shape)"><rect class="brand__shine" x="-30" y="0" width="18" height="40" fill="url(#sp-shine)" transform="skewX(-20)" /></g>
+          <g class="brand__bolt"><path d="M6.48 31.14 L23.74 22.92 L20.75 20.58 L29.76 16.77 L33.5 19.7 L32.61 6.95 L19.6 11.25 L23.35 14.17 L15.09 18.57 L18.08 20.91 Z" fill="url(#sp-bolt)" /></g>
+        </svg>
+      </div>
+      <!-- Static summary for crawlers and AI agents (not shown); replaced on render -->
+      <main class="sr-only">
         <h1>밤사이 · 국장이 닫힌 사이, 내일 가격을 먼저 보는 곳</h1>
         <p>국내 시장은 넥스트레이드까지 합쳐도 일주일 168시간 중 약 59시간만 열려요. 밤사이는 나머지 시간에도 하이퍼리퀴드(trade.xyz)에서 거래되는 삼성전자·SK하이닉스·현대차 가격을 업비트 원/USDC로 바꿔, 다음 날 장 시작 가격의 상승 확률과 예상 범위, 수수료·세금·환전 비용을 뺀 시세차익 기회를 보여드려요.</p>
         <ul>

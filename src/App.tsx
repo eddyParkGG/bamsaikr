@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { ASSET_BY_ID, isAssetId } from '../shared/assets'
+import { Splash } from './components/Brand'
 import { Boundary } from './components/Boundary'
 import { Header } from './components/Header'
 import { Ticker } from './components/Ticker'
@@ -14,18 +15,6 @@ import EasyHome from './pages/EasyHome'
 const ProTerminal = lazy(() => import('./pages/ProTerminal'))
 const Developers = lazy(() => import('./pages/Developers'))
 const About = lazy(() => import('./pages/About'))
-
-/** Loading shape for the About / API pages: title, subtitle and two panels in the same column */
-function DocSkeleton() {
-  return (
-    <div className="easy doc-skel" aria-hidden>
-      <div className="skeleton" style={{ width: '38%', height: 30, marginTop: 12 }} />
-      <div className="skeleton" style={{ width: '64%', height: 16, marginTop: 14 }} />
-      <div className="skeleton" style={{ height: 180, marginTop: 32, borderRadius: 'var(--r-panel)' }} />
-      <div className="skeleton" style={{ height: 240, marginTop: 12, borderRadius: 'var(--r-panel)' }} />
-    </div>
-  )
-}
 
 export default function App() {
   const path = usePath()
@@ -81,7 +70,7 @@ export default function App() {
       <Header />
       <main className={`shell ${isMarket ? 'shell--pro' : ''}`}>
         <Boundary key={path}>
-          <Suspense fallback={isDocs ? <DocSkeleton /> : <div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
+          <Suspense fallback={<Splash />}>{page}</Suspense>
         </Boundary>
       </main>
       <Ticker items={arb.data?.items} status={status.data} />
