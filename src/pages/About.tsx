@@ -22,7 +22,7 @@ export default function About() {
           </p>
           <ul>
             <li>하이퍼리퀴드 같은 해외 거래소에선 삼성전자·SK하이닉스가 밤에도 주말에도 거래돼요. 하이닉스만 하루 약 5억 달러예요.</li>
-            <li>그런데 가격이 달러(USDC)라 해외 거래소·증권 앱·환율 창 세 개를 띄우고 수수료까지 빼야 해서, 아무도 직접 계산하지 않아요.</li>
+            <li>가격이 달러(USDC)라 바로 비교는 어렵지만, 원화로 바꾸고 수수료까지 빼보면 두 시장 사이에 시세차익 기회가 있어요.</li>
           </ul>
         </div>
       </section>
@@ -73,7 +73,7 @@ export default function About() {
                     </span>
                   </div>
                 ))
-              : [0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 44 }} />)}
+              : [0, 1, 2].map((i) => <div key={i} className="about__hit skeleton" style={{ height: 44 }} />)}
           </div>
           <p className="about__h" style={{ marginTop: 20 }}>
             H2. "오를 확률"을 보여주면 장 시작 전에 다시 찾아온다
@@ -84,7 +84,7 @@ export default function About() {
           <p className="about__h" style={{ marginTop: 20 }}>
             H3·H4. 적중 이력을 보여주면 믿고, 비용 뺀 차익을 보여주면 주문까지 간다
           </p>
-          <p className="muted" style={{ fontSize: 13 }}>근거 펼침률 10% 이상, 차익 조회 → 주문 미리보기 전환 5% 이상을 봐요.</p>
+          <p className="muted" style={{ fontSize: 13 }}>근거 펼침률 10% 이상, 차익 조회 → 주문 버튼 클릭 5% 이상을 봐요.</p>
         </div>
       </section>
 
