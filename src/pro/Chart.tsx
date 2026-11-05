@@ -79,7 +79,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
         )
       if (p)
         rows.push(
-          `<div class="row"><i class="lg-dot" style="background:${perpC}"></i><span>하이퍼리퀴드</span><b>${f(p.c)}${asset.kind === 'index' ? '' : '원'}</b>${pr ? `<span class="k">${pr.live ? '괴리' : '종가 대비'}</span><b class="${pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}">${fmtPct(pr.v)}</b>` : ''}</div>`,
+          `<div class="row"><i class="lg-dot" style="background:${perpC}"></i><span>하이퍼리퀴드</span><b>${f(p.c)}${asset.kind === 'index' ? '' : '원'}</b>${pr ? `<span class="k">${pr.live ? '가격 차이' : '종가 대비'}</span><b class="${pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}">${fmtPct(pr.v)}</b>` : ''}</div>`,
         )
       if (s.ma) rows.push(`<div class="row"><span class="k">이동평균선</span>${live.current.params.ma.map((n, i) => `<span style="color:${MA_COLORS[i % MA_COLORS.length]}">${n}</span>`).join('')}</div>`)
       lg.innerHTML = rows.join('')
@@ -296,7 +296,7 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
       )}
       {pr && (
         <div className="kv">
-          <dt>{pr.live ? '괴리율' : '직전 종가 대비'}</dt>
+          <dt>{pr.live ? '가격 차이' : '직전 종가 대비'}</dt>
           <dd className={pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}>{fmtPct(pr.v)}</dd>
         </div>
       )}

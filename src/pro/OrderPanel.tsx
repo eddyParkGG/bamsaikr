@@ -207,7 +207,7 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
       {arb && (
         <div className="pair-box num">
           <div>
-            <span className="muted">지금 괴리</span>
+            <span className="muted">지금 가격 차이</span>
             <b className={tone(arb.premiumPct)} data-fit>{fmtPct(arb.premiumPct)}</b>
           </div>
           <div>

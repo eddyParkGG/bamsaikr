@@ -53,7 +53,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
     group: '아래 패널',
     items: [
       { k: 'volume', label: '거래량 (시장별)', help: '국내 시장과 하이퍼리퀴드 거래량을 따로 보여줘요' },
-      { k: 'premium', label: '괴리율', help: '하이퍼리퀴드 가격이 국내 가격보다 몇 % 비싸거나 싼지 보여줘요' },
+      { k: 'premium', label: '가격 차이', help: '하이퍼리퀴드 가격이 국내 가격보다 몇 % 비싸거나 싼지 보여줘요' },
       { k: 'funding', label: '펀딩비', help: '하이퍼리퀴드에서 1시간마다 롱·숏이 주고받는 비용이에요. 플러스면 사려는 사람이 많아요' },
       { k: 'rsi', label: 'RSI', param: 'rsi', help: '최근 오른 힘과 내린 힘을 0~100으로 나타내요. 70 위는 과열, 30 아래는 침체로 봐요' },
       { k: 'macd', label: 'MACD', param: 'macd', help: '짧은 평균과 긴 평균의 차이예요. 시그널선을 위로 뚫으면 상승 전환 신호로 봐요' },
@@ -309,7 +309,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           <dd>
             {fmtKrw(perpKrw, isIdx)}
           </dd>
-          <dt>{arb.mode === 'live' ? '괴리율' : '종가 대비'}</dt>
+          <dt>{arb.mode === 'live' ? '가격 차이' : '종가 대비'}</dt>
           <dd className={tone(premium)}>{fmtPct(premium)}</dd>
         </div>
         <div className="stats__group">

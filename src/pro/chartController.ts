@@ -210,7 +210,7 @@ export class ChartController {
         key: 'prem',
         pane: 'premium',
         create: (ch, p) => {
-          const se = ch.addSeries(HistogramSeries, { priceFormat: { type: 'custom', formatter: (v: number) => `${v.toFixed(2)}%` }, priceLineVisible: false, title: '괴리율' }, p)
+          const se = ch.addSeries(HistogramSeries, { priceFormat: { type: 'custom', formatter: (v: number) => `${v.toFixed(2)}%` }, priceLineVisible: false, title: '가격 차이' }, p)
           se.createPriceLine({ price: 0, color: c.line, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: false })
           return se
         },

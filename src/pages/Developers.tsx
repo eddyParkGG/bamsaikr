@@ -4,11 +4,11 @@ import { track } from '../lib/ga'
 const origin = typeof location !== 'undefined' ? location.origin : ''
 
 const ENDPOINTS: [string, string, string][] = [
-  ['GET', '/api/v1/arb', '두 시장 괴리율과 비용 뺀 순차익 (전체 또는 ?asset=)'],
+  ['GET', '/api/v1/arb', '두 시장 가격 차이와 비용 뺀 순차익 (전체 또는 ?asset=)'],
   ['GET', '/api/v1/predict?asset=SMSN', '내일 아침 8시 국내 시장 예상: 오를 확률, 예상 가격, 80% 구간, 하이퍼리퀴드 방향 적중률'],
   ['GET', '/api/v1/convergence?asset=SKHX', '예측 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 아침 8시 국내 움직임, 방향대로 열렸는지'],
   ['GET', '/api/v1/perps', '하이퍼리퀴드 한국 상품 7개 시세·펀딩·미결제약정'],
-  ['GET', '/api/v1/series?asset=SMSN&interval=5m', '차트용 캔들(두 시장), USDC 환율, 괴리율, 펀딩비'],
+  ['GET', '/api/v1/series?asset=SMSN&interval=5m', '차트용 캔들(두 시장), USDC 환율, 가격 차이, 펀딩비'],
   ['GET', '/api/v1/orderbook?asset=SMSN', '하이퍼리퀴드 호가 + 국내 호가'],
   ['GET', '/api/v1/news?asset=SKHX', '날짜별 대표 이슈 (하루 1건)'],
   ['GET', '/api/v1/flows?asset=SMSN', '투자자별 순매수 (개인·외국인·기관, 주식 수와 그날 종가)'],
