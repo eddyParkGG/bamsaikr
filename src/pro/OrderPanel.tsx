@@ -1,9 +1,9 @@
-import { memo, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import type { ArbSnapshot } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import type { HlNetwork } from '../../shared/hlOrder'
 import { track } from '../lib/ga'
-import { fmtPct, fmtWon } from '../lib/format'
+import { fmtPct, fmtWon, tone } from '../lib/format'
 import { post } from '../lib/query'
 
 type Tab = 'perp' | 'krx' | 'pair'
@@ -126,7 +126,7 @@ function PerpForm({ asset }: { asset: Asset }) {
           </button>
         </div>
       </Row>
-      {network === 'mainnet' && <p className="notice">메인넷은 실제 돈이 오가요. 한국 종목 perp는 격리 마진 전용이고, 국내 투자자 보호 대상이 아니에요.</p>}
+      {network === 'mainnet' && <p className="notice">메인넷은 실제 돈이 오가요. 한국 종목은 격리 마진 전용이고, 국내 투자자 보호 대상이 아니에요.</p>}
 
       {via === 'wallet' ? (
         !master ? (
@@ -258,7 +258,7 @@ function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
         )}
       </div>
       <p className="faint" style={{ fontSize: 12 }}>
-        {live ? '토스증권 계좌로 바로 주문돼요. 모의투자가 없어서 실제 돈이 나가요.' : '토스증권은 모의투자가 없어서 이 화면에서는 주문 내용만 확인해요. 실제 주문은 서버 주인이 켜야 돼요.'}
+        {live ? '연결된 증권 계좌로 바로 주문돼요. 모의투자가 없어서 실제 돈이 나가요.' : '국내 주식은 모의투자가 없어서 주문 내용만 미리 확인할 수 있어요.'}
       </p>
       <Result value={out} error={err} />
     </div>
@@ -284,9 +284,9 @@ function PairForm({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot | null;
           </div>
           <div>
             <span className="muted">비용 뺀 순차익</span>
-            <b className={arb.net.netPct > 0 ? 'up' : 'strong'} data-fit>{fmtPct(arb.net.netPct)}</b>
+            <b className={tone(arb.net.netPct)} data-fit>{fmtPct(arb.net.netPct)}</b>
           </div>
-          <p>{dir === 'perp_short_stock_long' ? 'perp 매도 + 주식 매수' : 'perp 매수 + 주식 매도'}</p>
+          <p>{dir === 'perp_short_stock_long' ? '하이퍼리퀴드 매도 + 주식 매수' : '하이퍼리퀴드 매수 + 주식 매도'}</p>
         </div>
       )}
       <Row label="금액">
@@ -315,11 +315,15 @@ function PairForm({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot | null;
 
 function OrderPanelImpl({ asset, arb, liveKrx }: { asset: Asset; arb: ArbSnapshot | null; liveKrx: boolean }) {
   const [tab, setTab] = useState<Tab>('perp')
-  const tabs: [Tab, string][] = [
-    ['perp', 'perp 주문'],
-    ['krx', '주식 주문'],
-    ['pair', '차익 페어'],
-  ]
+  const tabs: [Tab, string][] =
+    asset.kind === 'stock'
+      ? [
+          ['perp', '하이퍼리퀴드'],
+          ['krx', '국내 주식'],
+          ['pair', '시세차익 페어'],
+        ]
+      : [['perp', '하이퍼리퀴드 주문']]
+  useEffect(() => setTab('perp'), [asset.id])
   return (
     <section className="panel">
       <div className="panel__head">

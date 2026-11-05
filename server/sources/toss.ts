@@ -27,13 +27,13 @@ export function tossToken(): Promise<string> {
       signal: AbortSignal.timeout(8000),
     })
     const j = (await res.json()) as { access_token?: string; error?: { code: string; message: string } }
-    if (!res.ok || !j.access_token) throw new TossError(res.status, j.error?.code ?? 'auth', j.error?.message ?? '토스증권 인증 실패')
+    if (!res.ok || !j.access_token) throw new TossError(res.status, j.error?.code ?? 'auth', j.error?.message ?? '증권사 인증 실패')
     return j.access_token
   })
 }
 
 async function call<T>(path: string, init: RequestInit & { account?: boolean } = {}, retry = 2): Promise<T> {
-  if (!tossEnabled()) throw new TossError(503, 'no-key', '토스증권 키가 설정되지 않았어요')
+  if (!tossEnabled()) throw new TossError(503, 'no-key', '증권사 API 키가 설정되지 않았어요')
   const token = await tossToken()
   const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   if (init.account) headers['X-Tossinvest-Account'] = String(await accountSeq())
@@ -48,7 +48,7 @@ async function call<T>(path: string, init: RequestInit & { account?: boolean } =
     invalidate('toss:token')
     return call(path, init, 0)
   }
-  if (!res.ok || j.error) throw new TossError(res.status, j.error?.code ?? String(res.status), j.error?.message ?? '토스증권 API 오류')
+  if (!res.ok || j.error) throw new TossError(res.status, j.error?.code ?? String(res.status), j.error?.message ?? '증권사 API 오류')
   return j.result as T
 }
 
@@ -188,7 +188,7 @@ export function accountSeq() {
     if (process.env.TOSS_ACCOUNT_SEQ) return Number(process.env.TOSS_ACCOUNT_SEQ)
     const r = await call<{ accountSeq: number; accountType: string }[]>(`/api/v1/accounts`)
     const acc = r.find((a) => a.accountType === 'BROKERAGE') ?? r[0]
-    if (!acc) throw new TossError(404, 'no-account', '토스증권 계좌가 없어요')
+    if (!acc) throw new TossError(404, 'no-account', '증권 계좌가 없어요')
     return acc.accountSeq
   })
 }

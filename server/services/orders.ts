@@ -30,7 +30,6 @@ export async function placeKrxOrder(asset: Asset, req: KrxOrderReq) {
   const quote = await krxQuote(asset)
   const preview = {
     market: 'krx' as const,
-    broker: '토스증권',
     code: asset.krxCode,
     name: asset.name,
     side: req.side,
@@ -41,7 +40,7 @@ export async function placeKrxOrder(asset: Asset, req: KrxOrderReq) {
     request: tossOrderBody({ code: asset.krxCode, side: req.side, qty: req.qty, price: req.price }),
   }
   if (req.dryRun !== false) return { dryRun: true, liveAvailable: tossLiveOrders(), preview }
-  if (!tossLiveOrders()) throw new OrderError(403, '이 서버는 실제 주문을 꺼뒀어요. 토스증권은 모의투자가 없어서 실제 돈이 나가요')
+  if (!tossLiveOrders()) throw new OrderError(403, '이 서버는 실제 주문을 꺼뒀어요. 국내 주식은 모의투자가 없어서 실제 돈이 나가요')
   const result = await tossOrder({ code: asset.krxCode, side: req.side, qty: req.qty, price: req.price })
   return { dryRun: false, preview, result }
 }
@@ -88,8 +87,16 @@ export interface PerpOrderReq {
 export async function placePerpOrder(asset: Asset, req: PerpOrderReq) {
   if (!(req.size > 0)) throw new OrderError(400, '수량을 입력해 주세요')
   const network = req.dryRun === false ? resolveNetwork(req.network) : (req.network ?? 'testnet')
+  if (req.dryRun !== false) {
+    try {
+      return { dryRun: true, plan: await planPerpOrder(network, { coin: asset.perp, ...req }) }
+    } catch (e) {
+      // Testnet books for HIP-3 coins are often empty: price the preview off the mainnet book instead
+      if (network !== 'testnet') throw e
+      return { dryRun: true, pricedFrom: 'mainnet', plan: await planPerpOrder('mainnet', { coin: asset.perp, ...req }) }
+    }
+  }
   const plan = await planPerpOrder(network, { coin: asset.perp, ...req })
-  if (req.dryRun !== false) return { dryRun: true, plan }
   const agent = serverAgent()
   if (!agent) throw new OrderError(503, '서버에 하이퍼리퀴드 에이전트 지갑이 설정되지 않았어요')
   const status = await sendPerpOrder(agent.wallet, plan)
@@ -110,6 +117,7 @@ export async function perpPositions(network: HlNetwork, user?: string) {
 
 /** Arbitrage pair: perp on one side + stock on the opposite side. 1 share = 1 perp contract */
 export async function placePairOrder(asset: Asset, req: { notionalKrw: number; direction: 'perp_short_stock_long' | 'perp_long_stock_short'; network?: HlNetwork; dryRun?: boolean }) {
+  if (asset.kind !== 'stock') throw new OrderError(400, `${asset.name}은 국내 주식과 1:1로 맞출 수 없어서 차익 페어를 지원하지 않아요`)
   const quote = await krxQuote(asset)
   const qty = Math.floor(req.notionalKrw / quote.price)
   if (qty < 1) throw new OrderError(400, `1주(${quote.price.toLocaleString()}원) 이상 금액을 입력해 주세요`)

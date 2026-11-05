@@ -34,7 +34,7 @@ function connect(): Promise<void> {
         ping = setInterval(() => sock.readyState === WebSocket.OPEN && sock.send('PING'), 60_000)
         resolve()
       }
-      sock.onerror = () => reject(new Error('토스증권 웹소켓 연결 실패'))
+      sock.onerror = () => reject(new Error('증권사 웹소켓 연결 실패'))
       sock.onclose = () => {
         clearInterval(ping)
         ws = null
