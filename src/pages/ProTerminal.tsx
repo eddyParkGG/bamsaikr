@@ -556,7 +556,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
 
       {tab === 'predict' && <PredictPanels p={pred.data ?? null} asset={asset} />}
       {tab === 'conv' && (
-        <section className="panel" style={{ marginTop: 8 }}>
+        <section className="panel panel--fill" style={{ marginTop: 8, height: chartH }}>
           <div className="panel__head">
             <span className="panel__title">예측 기록</span>
             <span className="faint" style={{ fontSize: 12, marginLeft: 6 }}>
@@ -567,7 +567,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
         </section>
       )}
       {tab === 'flows' && (
-        <section className="panel" style={{ marginTop: 8 }}>
+        <section className="panel panel--fill" style={{ marginTop: 8, height: chartH }}>
           <div className="panel__head">
             <span className="panel__title">개인 · 외국인 · 기관</span>
           </div>
