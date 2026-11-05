@@ -89,7 +89,11 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
             {t.short}
           </p>
         )}
-        <p className="easy-row__sub" data-fit>1천만원 기준</p>
+        {t.kind === 'go' && (
+          <p className="easy-row__sub" data-fit>
+            1천만원 기준
+          </p>
+        )}
       </div>
     </Link>
   )
