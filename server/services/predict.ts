@@ -10,8 +10,7 @@ import type { Asset } from '../../shared/assets.js'
 import { isTradingDay, kstDateKey, kstToMs, nextRegularOpen, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
 import { getPerpCandles, getPerpCtxs, type Candle } from '../sources/hyperliquid.js'
-import { krxHolidays, krxQuote } from '../sources/krx.js'
-import { regularSessions } from '../sources/krxSessions.js'
+import { krxHolidays, krxQuote, krxSessions } from '../sources/krx.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
 
 const H = 3600_000
@@ -151,7 +150,7 @@ export function loadHistory(asset: Asset) {
     const perp = await getPerpCandles(asset.perp, '1h', 0)
     const start = perp[0]?.t ?? Date.now() - 200 * 86400_000
     const [sessions, fx, holidays] = await Promise.all([
-      regularSessions(asset.krxCode, kstDateKey(start - 5 * 86400_000)),
+      krxSessions(asset, kstDateKey(start - 5 * 86400_000)),
       asset.fx ? getUsdcKrwHourly(start) : Promise.resolve([] as FxPoint[]),
       krxHolidays(),
     ])
@@ -218,7 +217,7 @@ export async function predictOpen(asset: Asset) {
   const regularDoneToday = isTradingDay(now, holidays) && now >= todayClose
   const inSession = session === 'regular'
   const last = events[events.length - 1]
-  const sessions = await regularSessions(asset.krxCode, kstDateKey(now - 10 * 86400_000))
+  const sessions = await krxSessions(asset, kstDateKey(now - 10 * 86400_000))
   const lastBar = sessions.filter((d) => d.close != null && (d.date < todayKey || regularDoneToday)).map((d) => ({ date: d.date, c: d.close! })).at(-1)
   const refClose = inSession ? quote.price : (lastBar?.c ?? quote.prevClose)
   const refCloseAt = inSession ? todayClose : lastBar ? kstToMs(lastBar.date, '1530') : todayClose

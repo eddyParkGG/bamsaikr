@@ -7,7 +7,7 @@ import { loadHistory, predictOpen } from './services/predict.js'
 import { newsMarkers } from './services/news.js'
 import { placePairOrder } from './services/orders.js'
 
-const assetProp = { type: 'string', enum: ASSETS.map((a) => a.id), description: 'SMSN=Samsung Electronics, SKHX=SK hynix, HYUNDAI=Hyundai Motor' }
+const assetProp = { type: 'string', enum: ASSETS.map((a) => a.id), description: 'SMSN=Samsung Electronics, SKHX=SK hynix, HYUNDAI=Hyundai Motor, SKHY=SK hynix ADR (0.1 share), KR200=KOSPI 200, EWY=MSCI Korea ETF, KORU=3x Korea ETF' }
 
 const TOOLS = [
   {

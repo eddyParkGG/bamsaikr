@@ -2,10 +2,10 @@ import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
 import { streamSSE } from 'hono/streaming'
 import { subscribeKrx } from './sources/tossWs.js'
-import { ASSET_BY_ID, ASSETS, isAssetId, type Asset } from '../shared/assets.js'
+import { ASSET_BY_ID, ASSETS, canPredict, hasKrx, isAssetId, PREDICTABLE, type Asset } from '../shared/assets.js'
 import { nextRegularOpen, prevRegularClose, sessionAt } from '../shared/session.js'
 import { TossError, tossEnabled, tossInvestors } from './sources/toss.js'
-import { getPerpBook } from './sources/hyperliquid.js'
+import { getPerpBook, getPerpCtxs } from './sources/hyperliquid.js'
 import { krxHolidays, krxOrderbook, krxSource } from './sources/krx.js'
 import { arbAll, arbSnapshot, DEFAULT_COST, type CostInput } from './services/arb.js'
 import { loadHistory, predictOpen } from './services/predict.js'
@@ -48,6 +48,19 @@ function assetOf(c: Context): Asset {
   const id = (c.req.query('asset') ?? c.req.param('asset') ?? '').toUpperCase()
   if (!isAssetId(id)) throw new OrderError(400, `asset 은 ${ASSETS.map((a) => a.id).join(', ')} 중 하나예요`)
   return ASSET_BY_ID[id]
+}
+
+function predictableOf(c: Context): Asset {
+  const a = comparableOf(c)
+  if (!canPredict(a)) throw new OrderError(400, `${a.name}은 미국 상장 상품이라 다음 날 국내 가격 예측을 하지 않아요`)
+  return a
+}
+
+/** Premium/prediction endpoints only make sense for assets with a domestic counterpart */
+function comparableOf(c: Context): Asset {
+  const a = assetOf(c)
+  if (!hasKrx(a)) throw new OrderError(400, `${a.name}은 국내에 같은 가격의 상품이 없어서 비교할 수 없어요`)
+  return a
 }
 
 /**
@@ -98,21 +111,34 @@ v1.get('/indicators', async (c) => {
 v1.get('/arb', async (c) => {
   c.header('Cache-Control', 'public, s-maxage=1, stale-while-revalidate=4')
   const cost = costFrom(c)
-  if (c.req.query('asset')) return c.json(await arbSnapshot(assetOf(c), cost))
+  if (c.req.query('asset')) return c.json(await arbSnapshot(comparableOf(c), cost))
   const items = await arbAll(cost)
   return c.json({ items, best: [...items].sort((a, b) => b.net.netPct - a.net.netPct)[0] ?? null, cost })
 })
 
+// Hyperliquid market state for every listed asset (works for perp-only assets too)
+v1.get('/perps', async (c) => {
+  c.header('Cache-Control', 'public, s-maxage=1, stale-while-revalidate=4')
+  const ctxs = await getPerpCtxs()
+  const items = ASSETS.map((a) => {
+    const x = ctxs.get(a.perp)
+    if (!x) return null
+    const mid = x.midPx ?? x.markPx
+    return { asset: a.id, coin: a.perp, mid, mark: x.markPx, prevDay: x.prevDayPx, fundingHourly: x.funding, openInterest: x.openInterest, volume24hUsd: x.dayNtlVlm, maxLeverage: x.maxLeverage }
+  }).filter((x) => x != null)
+  return c.json({ items })
+})
+
 v1.get('/predict', async (c) => {
   c.header('Cache-Control', 'public, s-maxage=5, stale-while-revalidate=30')
-  if (c.req.query('asset')) return c.json(await predictOpen(assetOf(c)))
-  const items = await Promise.all(ASSETS.map((a) => predictOpen(a)))
+  if (c.req.query('asset')) return c.json(await predictOpen(predictableOf(c)))
+  const items = await Promise.all(PREDICTABLE.map((a) => predictOpen(a)))
   return c.json({ items })
 })
 
 v1.get('/convergence', async (c) => {
   c.header('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-  const h = await loadHistory(assetOf(c))
+  const h = await loadHistory(predictableOf(c))
   const limit = Math.min(500, Number(c.req.query('limit') ?? 200))
   return c.json({ backtest: h.backtest, events: h.events.slice(-limit).reverse() })
 })
@@ -127,7 +153,7 @@ v1.get('/series', async (c) => {
 
 v1.get('/orderbook', async (c) => {
   const asset = assetOf(c)
-  const [perp, krx] = await Promise.all([getPerpBook(asset.perp), krxOrderbook(asset)])
+  const [perp, krx] = await Promise.all([getPerpBook(asset.perp), hasKrx(asset) ? krxOrderbook(asset) : null])
   return c.json({ perp, krx })
 })
 
@@ -147,16 +173,21 @@ v1.get('/news', async (c) => {
 v1.get('/flows', async (c) => {
   const asset = assetOf(c)
   c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+  if (!hasKrx(asset)) return c.json({ investors: [], available: false })
   return c.json({ investors: await tossInvestors(asset.krxCode), available: true })
 })
 
 // Domestic live trades/orderbook (Toss Securities WebSocket relay, SSE). The browser reconnects automatically after the max function duration
 v1.get('/stream/krx', async (c) => {
-  const asset = assetOf(c)
+  const asset = comparableOf(c)
+  const r = asset.ratio
   return streamSSE(c, async (stream) => {
     let closed = false
     const unsub = await subscribeKrx(asset.krxCode, (m) => {
-      if (!closed) stream.writeSSE({ event: m.type, data: JSON.stringify(m) }).catch(() => {})
+      if (closed) return
+      // Scale to one perp unit (SKHY ADR = 0.1 common share)
+      const out = r === 1 ? m : m.type === 'trade' ? { ...m, price: m.price * r } : { ...m, asks: m.asks.map((l) => ({ ...l, px: l.px * r })), bids: m.bids.map((l) => ({ ...l, px: l.px * r })) }
+      stream.writeSSE({ event: m.type, data: JSON.stringify(out) }).catch(() => {})
     })
     stream.onAbort(() => {
       closed = true

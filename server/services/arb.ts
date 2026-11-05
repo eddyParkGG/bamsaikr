@@ -1,5 +1,5 @@
 // Compute the premium between the two markets and the net arbitrage left after costs
-import { ASSETS, type Asset } from '../../shared/assets.js'
+import { COMPARABLE, type Asset } from '../../shared/assets.js'
 import { sessionAt, type Session } from '../../shared/session.js'
 import { getPerpCtxs } from '../sources/hyperliquid.js'
 import { krxHolidays, krxQuote } from '../sources/krx.js'
@@ -74,9 +74,9 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
   else if (direction === 'perp_long_stock_short') {
     executable = false
     note = '주식을 빌려서 파는 건 개인이 하기 어려워요. 이미 갖고 있는 주식을 팔고 해외 시장에서 사는 방식으로만 가능해요.'
-  } else if (asset.kind === 'index') note = '지수는 직접 살 수 없어서 KODEX 200 같은 ETF로 대신 담아야 해요. 추적오차만큼 차이가 날 수 있어요.'
+  } else if (asset.kind === 'adr') note = '미국 ADR과 국내 보통주는 바로 바꿀 수 없어서, 차이가 오래 유지될 수 있어요.'
   else note = '해외 시장에서 팔고 국내 주식을 사두면, 두 가격이 다시 붙을 때 차이만큼 남아요.'
-  if (netPct <= 0) executable = false
+  if (netPct <= 0 || asset.kind !== 'stock') executable = false
 
   return {
     asset: asset.id,
@@ -112,6 +112,6 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
 }
 
 export async function arbAll(cost?: CostInput) {
-  const res = await Promise.allSettled(ASSETS.map((a) => arbSnapshot(a, cost)))
+  const res = await Promise.allSettled(COMPARABLE.map((a) => arbSnapshot(a, cost)))
   return res.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : []))
 }

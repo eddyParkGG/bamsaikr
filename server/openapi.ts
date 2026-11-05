@@ -1,5 +1,5 @@
 // Minimal OpenAPI 3.1 document so agents can read it and call right away
-const asset = { name: 'asset', in: 'query', required: true, schema: { type: 'string', enum: ['SMSN', 'SKHX', 'HYUNDAI'] }, description: 'SMSN=Samsung Electronics, SKHX=SK hynix, HYUNDAI=Hyundai Motor' }
+const asset = { name: 'asset', in: 'query', required: true, schema: { type: 'string', enum: ['SMSN', 'SKHX', 'HYUNDAI', 'SKHY', 'KR200', 'EWY', 'KORU'] }, description: 'SMSN/SKHX/HYUNDAI: KRX stocks (premium + prediction). SKHY: SK hynix ADR, compared with 0.1 share (premium only). KR200/EWY/KORU: Hyperliquid price only' }
 const assetOpt = { ...asset, required: false, description: 'All assets if omitted' }
 const bps = (name: string, d: string) => ({ name, in: 'query', required: false, schema: { type: 'number' }, description: d })
 const auth = [{ bearer: [] }]

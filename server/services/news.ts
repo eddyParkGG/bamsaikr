@@ -16,8 +16,11 @@ export interface NewsMarker {
 export async function newsMarkers(asset: Asset): Promise<NewsMarker[]> {
   const byDate = new Map<string, NewsMarker>()
 
+  // ADR follows its common share; index and ETF products follow every market-wide issue
+  const related = (ids: string[]) =>
+    asset.kind === 'index' || asset.kind === 'etf' ? true : ids.includes(asset.kind === 'adr' ? (asset.krxCode === '000660' ? 'SKHX' : asset.id) : asset.id)
   for (const e of CURATED_EVENTS) {
-    if (!e.assets.includes(asset.id)) continue
+    if (!related(e.assets)) continue
     const date = e.date.replace(/-/g, '')
     byDate.set(date, {
       t: kstToMs(date, (e.time ?? '09:00').replace(':', '')),

@@ -20,7 +20,15 @@ export interface KrxQuote {
   source: 'toss'
 }
 
+/** Prices are scaled by asset.ratio so they are directly comparable to one perp unit (SKHY ADR = 0.1 share) */
 export async function krxQuote(a: Asset): Promise<KrxQuote> {
+  if (!a.krxCode) throw new Error(`${a.id} has no KRX counterpart`)
+  const q = await rawQuote(a)
+  const r = a.ratio
+  return { ...q, price: q.price * r, prevClose: q.prevClose * r, open: q.open * r, high: q.high * r, low: q.low * r }
+}
+
+async function rawQuote(a: Asset): Promise<KrxQuote> {
   const [prices, daily] = await Promise.all([tossPrices([a.krxCode]), tossCandles(a.krxCode, '1d', Date.now() - 12 * 86400_000)])
   const price = prices.get(a.krxCode)?.price ?? daily.at(-1)?.c ?? 0
   const last = daily.at(-1)
@@ -54,18 +62,32 @@ export interface DailyBar {
 }
 
 export async function krxDaily(a: Asset, from: string, _to?: string): Promise<DailyBar[]> {
+  if (!a.krxCode) return []
+  const r = a.ratio
   const rows = await tossCandles(a.krxCode, '1d', kstToMs(from))
-  return rows.map((k) => ({ date: kstDateKey(k.t), o: k.o, h: k.h, l: k.l, c: k.c, v: k.v }))
+  return rows.map((k) => ({ date: kstDateKey(k.t), o: k.o * r, h: k.h * r, l: k.l * r, c: k.c * r, v: k.v }))
 }
 
 /** 1-minute candles (consolidated, so 08:00~20:00 incl. Nextrade). Toss stamps bar end time, so shift back 1 min to bar start */
 export async function krxMinutes(a: Asset, since: number): Promise<Candle[]> {
+  if (!a.krxCode) return []
+  const r = a.ratio
   const rows = await tossMinutes(a.krxCode, since)
-  return rows.filter((k) => k.v > 0).map((k) => ({ ...k, t: k.t - 60_000 }))
+  return rows.filter((k) => k.v > 0).map((k) => ({ t: k.t - 60_000, o: k.o * r, h: k.h * r, l: k.l * r, c: k.c * r, v: k.v }))
 }
 
-export function krxOrderbook(a: Asset) {
-  return tossOrderbook(a.krxCode)
+export async function krxOrderbook(a: Asset) {
+  if (!a.krxCode) return null
+  const b = await tossOrderbook(a.krxCode)
+  const r = a.ratio
+  return r === 1 ? b : { ...b, asks: b.asks.map((l) => ({ ...l, px: l.px * r })), bids: b.bids.map((l) => ({ ...l, px: l.px * r })) }
+}
+
+/** KRX regular-session open/close, scaled to one perp unit */
+export async function krxSessions(a: Asset, from: string) {
+  if (!a.krxCode) return []
+  const r = a.ratio
+  return (await regularSessions(a.krxCode, from)).map((s) => ({ ...s, open: s.open * r, close: s.close == null ? null : s.close * r }))
 }
 
 /**
