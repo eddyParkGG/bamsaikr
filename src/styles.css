@@ -519,7 +519,6 @@ p {
 /* Logo motion */
 .brand {
   overflow: visible;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 .brand__bolt {
   /* Diagonal wipe from the bottom-left corner up to the arrow tip */

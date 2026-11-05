@@ -6,12 +6,12 @@ export function BrandMark({ size = 30, loop = false }: { size?: number; loop?: b
         <radialGradient id="bm-moon" cx="0.35" cy="0.3" r="0.8">
           <stop offset="0" stopColor="#fbfbfc" />
           <stop offset="0.5" stopColor="#d3d6db" />
-          <stop offset="1" stopColor="#868c96" />
+          <stop offset="1" stopColor="#a6abb3" />
         </radialGradient>
         <radialGradient id="bm-cloud" cx="0.4" cy="0.25" r="0.9">
           <stop offset="0" stopColor="#ffffff" />
           <stop offset="0.5" stopColor="#d6d9de" />
-          <stop offset="1" stopColor="#8f949d" />
+          <stop offset="1" stopColor="#b1b5bc" />
         </radialGradient>
         <mask id="bm-cut">
           <rect width="40" height="40" fill="#fff" />
@@ -35,9 +35,14 @@ export function BrandMark({ size = 30, loop = false }: { size?: number; loop?: b
       </defs>
       {/* Crescent moon */}
       <circle cx="24" cy="14" r="12" fill="url(#bm-moon)" mask="url(#bm-cut)" />
-      {/* Cloud (shadow below + body) */}
-      <path d="M6.6 36.2a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29.6 29.2a3.5 3.5 0 0 1-.8 7z" fill="#000" opacity="0.22" />
-      <path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" fill="url(#bm-cloud)" />
+      {/* Cloud, with a thin background-coloured outline so it stays separate from the moon at small sizes */}
+      <path
+        d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z"
+        fill="url(#bm-cloud)"
+        stroke="var(--bg-screen, #101013)"
+        strokeWidth="1.6"
+        paintOrder="stroke"
+      />
       {/* Hover: light sweep */}
       <g mask="url(#bm-shape)">
         <rect className="brand__shine" x="-30" y="0" width="18" height="40" fill="url(#bm-shine)" transform="skewX(-20)" />
