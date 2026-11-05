@@ -148,10 +148,15 @@ export class NewsPins extends Base {
             ctx.beginPath()
             if (g.length === 1) {
               // Single item: speech bubble with a newspaper glyph, tail pointing at the bar
+              // Body and tail are filled separately: in one path their opposite windings cancel
+              // where they overlap and leave a hairline gap
               ctx.roundRect(x - w / 2, top, w, h, 5)
-              ctx.moveTo(x - 3, top + h - 0.5)
+              ctx.fill()
+              ctx.beginPath()
+              ctx.moveTo(x - 3.5, top + h - 3)
               ctx.lineTo(x, top + h + 4)
-              ctx.lineTo(x + 3, top + h - 0.5)
+              ctx.lineTo(x + 3.5, top + h - 3)
+              ctx.closePath()
               ctx.fill()
               ctx.fillStyle = self.ink
               const gx = x - 5
@@ -164,9 +169,12 @@ export class NewsPins extends Base {
               const r = active ? 11 : 10
               const cy = top + h / 2
               ctx.arc(x, cy, r, 0, Math.PI * 2)
-              ctx.moveTo(x - 3, cy + r - 1)
+              ctx.fill()
+              ctx.beginPath()
+              ctx.moveTo(x - 3.5, cy + r - 3)
               ctx.lineTo(x, cy + r + 4)
-              ctx.lineTo(x + 3, cy + r - 1)
+              ctx.lineTo(x + 3.5, cy + r - 3)
+              ctx.closePath()
               ctx.fill()
               ctx.fillStyle = self.ink
               ctx.font = `700 ${g.length > 9 ? 10 : 11}px Pretendard Variable, Pretendard, sans-serif`
