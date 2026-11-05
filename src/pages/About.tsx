@@ -9,7 +9,7 @@ export default function About() {
     <div className="easy about">
       <section className="easy-hero">
         <h1>밤사이가 풀려는 문제</h1>
-        <p>국장이 닫힌 사이에 생긴 일이 내일 아침 시가에 어떻게 반영될지, 장 열리기 전에 먼저 보여드려요.</p>
+        <p>국장이 닫힌 사이에 생긴 일이 내일 아침 가격에 어떻게 반영될지, 장 열리기 전에 먼저 보여드려요.</p>
       </section>
 
       <section className="panel about__block">
@@ -18,12 +18,11 @@ export default function About() {
         </div>
         <div className="panel__body about__body">
           <p className="about__lead">
-            국내 주식시장은 일주일 168시간 중 <b>32.5시간</b>만 열려요. 나머지 <b>81%</b>의 시간에 생긴 뉴스가 다음 날 시가에 얼마나 반영될지 개인 투자자는 알 방법이 없어요.
+            국내 주식시장은 일주일 168시간 중 <b>32.5시간</b>만 열려요. 나머지 <b>81%</b>의 시간에 생긴 뉴스가 다음 날 가격에 얼마나 반영될지 개인 투자자는 알 방법이 없어요.
           </p>
           <ul>
             <li>하이퍼리퀴드 같은 해외 거래소에선 삼성전자·SK하이닉스가 밤에도 주말에도 거래돼요. 하이닉스만 하루 약 5억 달러예요.</li>
-            <li>그런데 가격이 달러(USDC)로 표시되고, 환율과 수수료를 빼야 해서 아무도 직접 계산하지 않아요.</li>
-            <li>두 시장 차이로 돈을 벌 수 있는지 보려면 창 세 개(해외 거래소, 증권 앱, 환율)를 띄워야 해요.</li>
+            <li>그런데 가격이 달러(USDC)라 해외 거래소·증권 앱·환율 창 세 개를 띄우고 수수료까지 빼야 해서, 아무도 직접 계산하지 않아요.</li>
           </ul>
         </div>
       </section>
@@ -35,11 +34,11 @@ export default function About() {
         <div className="panel__body about__body">
           <dl className="about__targets">
             <div>
-              <dt>쉬운 모드</dt>
-              <dd>삼성전자·SK하이닉스를 가진 직장인. 출근길 08~09시에 "오늘 시가 어떨까"가 궁금한 사람</dd>
+              <dt>요약 탭</dt>
+              <dd>삼성전자·SK하이닉스를 가진 직장인. 출근길 08~09시에 "오늘 장 시작하면 어떨까"가 궁금한 사람</dd>
             </div>
             <div>
-              <dt>프로 모드</dt>
+              <dt>상세 탭</dt>
               <dd>주식과 코인을 같이 하는 트레이더. 두 시장 차이와 개장 갭을 매매에 쓰는 사람</dd>
             </div>
             <div>
@@ -55,9 +54,9 @@ export default function About() {
           <span className="panel__title">가설과 지금까지의 결과</span>
         </div>
         <div className="panel__body about__body">
-          <p className="about__h">H1. 해외 가격으로 다음 시가의 방향을 80% 이상 맞힐 수 있다</p>
+          <p className="about__h">H1. 해외 선물 탈중앙 거래소 가격으로 다음 날 장 시작 가격의 방향을 80% 이상 맞힐 수 있다</p>
           <p className="muted" style={{ fontSize: 13 }}>
-            그날 이전 데이터로만 학습해서 그날 시가를 맞혀봤어요 (2026년 2월~, 종목별 119번).
+            그날 이전 데이터로만 학습해서 그날 장 시작 가격을 맞혀봤어요 (2026년 2월~, 종목별 119번).
           </p>
           <div className="about__hits">
             {preds.data
@@ -90,7 +89,7 @@ export default function About() {
       </section>
 
       <p className="faint" style={{ fontSize: 12, marginTop: 20 }}>
-        투자 판단을 돕는 참고 정보예요. 예측은 틀릴 수 있고, 해외 perp는 국내 투자자 보호 대상이 아니에요.
+        투자 판단을 돕는 참고 정보예요. 예측은 틀릴 수 있고, 하이퍼리퀴드 거래는 국내 투자자 보호 대상이 아니에요.
       </p>
     </div>
   )

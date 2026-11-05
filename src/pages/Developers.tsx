@@ -5,16 +5,16 @@ const origin = typeof location !== 'undefined' ? location.origin : ''
 
 const ENDPOINTS: [string, string, string][] = [
   ['GET', '/api/v1/arb', '두 시장 괴리율과 비용 뺀 순차익 (전체 또는 ?asset=)'],
-  ['GET', '/api/v1/predict?asset=SMSN', '다음 개장 시가 예측: 상승 확률, 예상 시가, 80% 구간, 과거 적중률'],
-  ['GET', '/api/v1/convergence?asset=SKHX', '개장일별 perp 갭 vs 실제 시가 갭, 어느 쪽이 맞췄는지'],
+  ['GET', '/api/v1/predict?asset=SMSN', '다음 장 시작 가격 예측: 상승 확률, 예상 가격, 80% 구간, 과거 적중률'],
+  ['GET', '/api/v1/convergence?asset=SKHX', '개장일별 하이퍼리퀴드 차이 vs 실제 장 시작 가격 차이'],
   ['GET', '/api/v1/series?asset=SMSN&interval=5m', '차트용 캔들(두 시장), 원/USDC, 괴리율, 펀딩비'],
-  ['GET', '/api/v1/orderbook?asset=SMSN', 'perp 호가 + KRX/NXT 호가'],
+  ['GET', '/api/v1/orderbook?asset=SMSN', '하이퍼리퀴드 호가 + 국내 호가'],
   ['GET', '/api/v1/news?asset=SKHX', '날짜별 대표 이슈 (하루 1건)'],
   ['GET', '/api/v1/flows?asset=SMSN', '투자자별 순매수 (KIS)'],
   ['GET', '/api/v1/status', '지금 장 상태, 다음 개장 시각'],
   ['POST', '/api/v1/orders/krx?asset=SMSN', '국내 주식 주문 (기본 dryRun)'],
-  ['POST', '/api/v1/orders/perp?asset=SMSN', '하이퍼리퀴드 perp 주문 (기본 dryRun, 테스트넷)'],
-  ['POST', '/api/v1/orders/pair?asset=SMSN', '차익 페어 주문 (perp + 주식 반대 방향)'],
+  ['POST', '/api/v1/orders/perp?asset=SMSN', '하이퍼리퀴드 주문 (기본 dryRun, 테스트넷)'],
+  ['POST', '/api/v1/orders/pair?asset=SMSN', '시세차익 페어 주문 (하이퍼리퀴드 + 주식 반대 방향)'],
   ['GET', '/api/v1/account/krx', 'KIS 잔고'],
   ['GET', '/api/v1/account/perp?user=0x...', 'HL 포지션·미체결'],
 ]
@@ -94,7 +94,7 @@ export default function Developers() {
           <li>모든 주문 API는 기본이 dryRun이에요. 보낼 내용만 돌려주고 실제로는 보내지 않아요.</li>
           <li>실주문은 서버에 API_TOKEN을 설정하고 Authorization: Bearer 헤더를 넣어야 해요.</li>
           <li>하이퍼리퀴드는 기본이 테스트넷이에요. 메인넷은 서버에서 따로 열어야 해요.</li>
-          <li>perp 주문은 출금 권한이 없는 에이전트 지갑으로만 서명해요.</li>
+          <li>하이퍼리퀴드 주문은 출금 권한이 없는 에이전트 지갑으로만 서명해요.</li>
           <li>MCP에는 주문 미리보기만 열어뒀어요.</li>
         </ul>
       </section>

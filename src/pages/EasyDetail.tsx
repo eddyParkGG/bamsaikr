@@ -101,7 +101,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
 
       {/* Question 1: up or down */}
       <section className="panel q-card">
-        <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 시가, 오를까요?` : '다음 시가, 오를까요?'}</p>
+        <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 가격, 오를까요?` : '다음 장 가격, 오를까요?'}</p>
         {p && !predictionReady(p) ? (
           <>
             <p className="q-card__a" data-fit>{IN_SESSION.title}</p>
@@ -121,7 +121,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
             </button>
             {why && (
               <div className="notice" style={{ marginTop: 8 }}>
-                장이 닫혀 있는 동안 {PERP_PLAIN} 가격을 원/USDC 환율로 바꿔서, 마지막 종가와 얼마나 벌어졌는지 봐요. 지난 {p.model.n}번의 개장에서 이 차이가 실제 시가에
+                장이 닫혀 있는 동안 {PERP_PLAIN} 가격을 원/USDC 환율로 바꿔서, 마지막 종가와 얼마나 벌어졌는지 봐요. 지난 {p.model.n}번의 개장에서 이 차이가 실제 장 시작 가격에
                 얼마나 반영됐는지 학습해서 확률을 내요.
               </div>
             )}
@@ -138,7 +138,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
             </div>
             <dl className="q-facts">
               <div>
-                <dt>예상 시가</dt>
+                <dt>예상 시작 가격</dt>
                 <dd className="num" data-fit>
                   {fmtPrice(p.expectedOpen, isIdx)}
                   {unit} <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
@@ -170,7 +170,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
             </button>
             {why && (
               <div className="notice" style={{ marginTop: 8 }}>
-                장이 닫혀 있는 동안 {PERP_PLAIN} 가격을 원/USDC 환율로 바꿔서, 마지막 종가와 얼마나 벌어졌는지 봐요. 지난 {p.model.n}번의 개장에서 이 차이가 실제 시가에
+                장이 닫혀 있는 동안 {PERP_PLAIN} 가격을 원/USDC 환율로 바꿔서, 마지막 종가와 얼마나 벌어졌는지 봐요. 지난 {p.model.n}번의 개장에서 이 차이가 실제 장 시작 가격에
                 얼마나 반영됐는지 학습해서 확률을 내요. 개장까지 시간이 많이 남을수록 범위를 넓게 잡아요. 예측은 매번 그날 이전 데이터로만 해서 실제와 비교했어요.
               </div>
             )}
@@ -207,7 +207,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
                 <p className="q-card__a" data-fit>장 열리면 바로 확인할 수 있어요</p>
                 <p className="q-card__reason">
                   국내 주식시장이 닫혀 있어서 지금은 주식을 사고팔 수 없어요. 대신 {PERP_PLAIN} 가격이 종가보다 {fmtPct(arb.premiumPct)} 벌어져 있어요. 이 차이는 보통 다음
-                  시가에 대부분 반영돼요.
+                  장 시작 가격에 대부분 반영돼요.
                 </p>
               </>
             ) : (
@@ -216,7 +216,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
                   {net > 0 && arb.net.executable ? `약 ${fmtWon(net)}원 남아요` : '지금은 남는 게 없어요'}
                 </p>
                 <p className="q-card__reason">
-                  {PERP_PLAIN}이 {fmtPct(Math.abs(arb.premiumPct), 2, false)} {arb.premiumPct >= 0 ? '비싸요' : '싸요'}. 수수료·세금·환전 비용{' '}
+                  {PERP_PLAIN}가 {fmtPct(Math.abs(arb.premiumPct), 2, false)} {arb.premiumPct >= 0 ? '비싸요' : '싸요'}. 수수료·세금·환전 비용{' '}
                   {fmtPct(arb.net.costs.stock + arb.net.costs.perp + arb.net.costs.fx, 2, false)}를 빼면 {fmtPct(arb.net.netPct)}예요.
                 </p>
                 <p className="faint" style={{ fontSize: 13, margin: '8px 0 0' }}>

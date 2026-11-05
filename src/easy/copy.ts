@@ -12,4 +12,4 @@ export function probLabel(probUp: number) {
   return probUp >= 0.5 ? { label: '오를 확률', value: Math.round(probUp * 100), tone: 'up' } : { label: '내릴 확률', value: Math.round((1 - probUp) * 100), tone: 'down' }
 }
 
-export const PERP_PLAIN = '해외 24시간 시장'
+export const PERP_PLAIN = '하이퍼리퀴드'

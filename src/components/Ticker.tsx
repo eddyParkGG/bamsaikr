@@ -3,7 +3,7 @@ import type { ArbSnapshot, Status } from '../../shared/api'
 import { fmtPct, fmtPrice, kstDay, untilText } from '../lib/format'
 import { subscribeUsdc, useLive } from '../lib/live'
 
-/** Bottom strip (where Toss Securities shows indices): market status, KRW/USDC, perp converted price */
+/** Bottom strip (where brokerage apps show indices): market status, KRW/USDC, perp converted price */
 export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnapshot[]; status?: Status }) {
   useEffect(() => subscribeUsdc(), [])
   const usdc = useLive((s) => s.usdc?.rate)
@@ -21,7 +21,7 @@ export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnaps
       </span>
       {items?.map((s) => (
         <span key={s.asset}>
-          <span className="faint">{s.name} perp</span> {fmtPrice(s.perpKrw)}{' '}
+          <span className="faint">{s.name} 하이퍼리퀴드</span> {fmtPrice(s.perpKrw)}{' '}
           <span className={s.perp.changePct >= 0 ? 'up' : 'down'}>{fmtPct(s.perp.changePct)}</span>
         </span>
       ))}

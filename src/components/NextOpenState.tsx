@@ -9,7 +9,7 @@ export const predictionReady = (p: Prediction | null | undefined) => !!p && p.st
 export const IN_SESSION = {
   title: '지금은 국내 시장이 열려 있어요',
   short: '15:30 마감 후 예측',
-  body: '두 시장이 같이 열려 있을 땐 해외 가격이 국내 주가를 바로 따라가서, 다음 시가를 미리 알려줄 정보가 거의 없어요. 15:30에 장이 끝나면 예측을 보여드려요.',
+  body: '두 시장이 같이 열려 있을 땐 해외 가격이 국내 주가를 바로 따라가서, 다음 날 가격을 미리 알려줄 정보가 거의 없어요. 15:30에 장이 끝나면 예측을 보여드려요.',
 }
 
 /** Notice shown wherever a prediction would be. `compact` for list rows and small panels */
