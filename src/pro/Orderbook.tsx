@@ -47,14 +47,25 @@ function Book({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const midRef = useRef<HTMLDivElement>(null)
-  const ready = asks.length > 0 && bids.length > 0
-  // Start scrolled so the spread sits in the middle (like a brokerage PC book)
+  // Scroll is anchored to the spread (where asks meet bids): rows appearing above or below never
+  // move the view. Manual scrolling just changes the remembered distance from the spread.
+  const offset = useRef<number | null>(null)
+  useEffect(() => {
+    offset.current = null
+  }, [centerKey])
   useLayoutEffect(() => {
     const sc = scrollRef.current
     const mid = midRef.current
-    if (!sc || !mid || !ready) return
-    sc.scrollTop = mid.offsetTop - sc.clientHeight / 2
-  }, [ready, centerKey])
+    if (!sc || !mid) return
+    if (offset.current == null) offset.current = -sc.clientHeight / 2
+    const want = mid.offsetTop + offset.current
+    if (Math.abs(sc.scrollTop - want) > 1) sc.scrollTop = want
+  })
+  const onScroll = () => {
+    const sc = scrollRef.current
+    const mid = midRef.current
+    if (sc && mid && offset.current != null) offset.current = sc.scrollTop - mid.offsetTop
+  }
   const a = asks.slice(0, ROWS).reverse()
   const b = bids.slice(0, ROWS)
   const max = Math.max(1, ...a.map((l) => l.sz), ...b.map((l) => l.sz))
@@ -81,7 +92,7 @@ function Book({
   const tapeRows = tape.slice(0, Math.max(6, b.length * 2 - 2))
   return (
     <>
-      <div className="ob2-scroll" ref={scrollRef}>
+      <div className="ob2-scroll" ref={scrollRef} onScroll={onScroll}>
         <div className="ob2 num">
           {a.map((l, i) => (
             <div className="ob2__row ob2__row--ask" key={`a${i}`}>
