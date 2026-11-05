@@ -21,7 +21,7 @@ import { OrderPanel } from '../pro/OrderPanel'
 import { ConvergenceTable, FlowsPanel, PredictPanels } from '../pro/Panels'
 import type { ChartSettings } from '../pro/settings'
 import { ParamsSheet, type ParamKey } from '../pro/ParamsSheet'
-import { readSideWidth, SplitHandle } from '../pro/SplitHandle'
+import { readWidth, SplitHandle } from '../pro/SplitHandle'
 
 const Chart = lazy(() => import('../pro/Chart').then((m) => ({ default: m.Chart })))
 
@@ -357,7 +357,16 @@ type Tab = 'chart' | 'predict' | 'conv' | 'flows'
 export default function ProTerminal({ asset }: { asset: Asset }) {
   const { interval, setInterval, chart: settings, toggle, theme, params } = usePrefs()
   const [tab, setTab] = useState<Tab>('chart')
-  const [sideW, setSideW] = useState(readSideWidth)
+  const [obW, setObW] = useState(() => readWidth('bamsai-ob-w'))
+  const [orderW, setOrderW] = useState(() => readWidth('bamsai-order-w'))
+  // Chart only, filling the window (toggle next to the background legend; Esc closes)
+  const [full, setFull] = useState(false)
+  useEffect(() => {
+    if (!full) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setFull(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [full])
   const [openNews, setOpenNews] = useState<NewsMarker | null>(null)
 
   const arbAll = useArb()
@@ -404,20 +413,9 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     if (k === 'predict' || k === 'conv') track('model_explain_open', { asset: asset.id, tab: k })
   }
 
-  // Chart and order book fill the screen below the stock head: no page scroll on the chart tab.
-  // 60px = the page's bottom padding (bottom bar + margin)
-  // The stock head and the chart stay put; the page scrolls only the right column (today's issue slides away,
-  // then the order book and order form line up with the chart). 60px = the page's bottom padding (bottom bar + margin)
+  // Chart, order book and order form fill the screen below the stock head: the page never scrolls.
+  // 8px gap above, 60px = the page's bottom padding (bottom bar + margin)
   const headRef = useRef<HTMLDivElement>(null)
-  // Right-column content sliding under the stock head fades out instead of a hard cut (only once scrolled)
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 2)
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
-  }, [])
-  const [pinTop, setPinTop] = useState(300)
   const [chartH, setChartH] = useState(600)
   useEffect(() => {
     const measure = () => {
@@ -425,7 +423,6 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       if (!head) return
       const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 60
       const top = Math.round(headerH + head.getBoundingClientRect().height + 8)
-      setPinTop(top)
       setChartH(Math.max(480, Math.round(window.innerHeight - top - 60)))
     }
     measure()
@@ -440,22 +437,23 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
 
   return (
     <>
-      <div ref={headRef} className={tab === 'chart' ? 'phead phead--pin' : 'phead'}>
+      <div ref={headRef}>
         {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
-        <div className="ptabs" role="tablist">
-          {tabs.map(([k, label]) => (
-            <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
-              {label}
-            </button>
-          ))}
-      </div>
+        <div className="ptabs-row">
+          <div className="ptabs" role="tablist">
+            {tabs.map(([k, label]) => (
+              <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <TodayIssue asset={asset.id} limit={1} onOpen={onNews} inline />
+        </div>
       </div>
 
-      {tab === 'chart' && <div className="pro-fade" aria-hidden />}
-      {tab === 'chart' && <div className={scrolled ? 'pro-topfade is-on' : 'pro-topfade'} style={{ '--pin-top': `${pinTop}px`, '--side-w': `${sideW}px` } as React.CSSProperties} aria-hidden />}
       {tab === 'chart' && (
-        <div className="pro-grid" style={{ '--side-w': `${sideW}px`, '--chart-h': `${chartH}px`, '--pin-top': `${pinTop}px` } as React.CSSProperties}>
-          <section className="panel pro-chart">
+        <div className="pro-grid" style={{ '--ob-w': `${obW}px`, '--order-w': `${orderW}px`, '--chart-h': `${chartH}px` } as React.CSSProperties}>
+          <section className={full ? 'panel pro-chart pro-chart--full' : 'panel pro-chart'}>
             <div className="panel__head">
               <span className="panel__title">차트</span>
               <div className="chart-tools">
@@ -520,6 +518,17 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                     국내 시장 휴장
                   </span>
                 </span>
+                <button className="icon-btn chart-full" aria-label={full ? '차트 작게 보기' : '차트 크게 보기'} title={full ? '작게 보기 (Esc)' : '크게 보기'} onClick={() => setFull(!full)}>
+                  {full ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
             <div className="chartbox">
@@ -558,15 +567,13 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
             </div>
           </section>
 
-          <SplitHandle width={sideW} onChange={setSideW} />
-
-          <div className="pro-col">
-            <TodayIssue asset={asset.id} limit={1} onOpen={onNews} />
-            {/* Order book + order form stick to the chart's top edge and fill its height */}
-            <div className="pro-trade">
-              <Orderbook asset={asset} arb={arb} />
-              <OrderPanel asset={asset} arb={arb} liveKrx={!!status.data?.liveKrxOrders} />
-            </div>
+          <SplitHandle width={obW} onChange={setObW} storageKey="bamsai-ob-w" label="호가 너비 조절" />
+          <div className="pro-trade">
+            <Orderbook asset={asset} arb={arb} />
+          </div>
+          <SplitHandle width={orderW} onChange={setOrderW} storageKey="bamsai-order-w" label="주문 너비 조절" />
+          <div className="pro-trade">
+            <OrderPanel asset={asset} arb={arb} liveKrx={!!status.data?.liveKrxOrders} />
           </div>
         </div>
       )}

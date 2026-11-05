@@ -251,16 +251,28 @@
 .pro-grid {
   /* --chart-h is set from the page: the screen height left under the stock head (no page scroll) */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8px var(--side-w, 340px);
+  /* 차트 | 호가 | 주문, each boundary draggable */
+  grid-template-columns: minmax(0, 1fr) 8px var(--ob-w, 340px) 8px var(--order-w, 340px);
   align-items: start;
   margin-top: 8px;
 }
 .pro-chart {
-  position: sticky;
-  top: var(--pin-top);
   height: var(--chart-h);
 }
-/* Order book + order form: same height as the chart */
+/* Chart only, filling the window */
+.pro-chart--full {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  height: 100dvh;
+  border-radius: 0;
+}
+.chart-full {
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+}
+/* Order book / order form columns: same height as the chart, the panel fills it */
 .pro-trade {
   height: var(--chart-h);
   display: flex;
@@ -287,8 +299,6 @@
 
 /* Chart ↔ right column resize handle: hidden until hover, 4px key-color bar */
 .split {
-  position: sticky;
-  top: var(--pin-top);
   height: var(--chart-h);
   width: 10px;
   margin-left: -1px;
@@ -324,46 +334,6 @@ body.is-resizing,
 body.is-resizing * {
   cursor: ew-resize !important;
   user-select: none !important;
-}
-.pro-col {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-/* Chart tab: the stock head stays under the top menu while the page scrolls the right column */
-.phead--pin {
-  position: sticky;
-  top: var(--header-h);
-  z-index: 6;
-  background: var(--bg-screen);
-}
-/* Same at the top: the right column fades as it slides under the pinned stock head */
-.pro-topfade {
-  position: fixed;
-  top: calc(var(--pin-top) - 8px);
-  right: 24px;
-  width: var(--side-w);
-  height: 28px;
-  z-index: 5;
-  pointer-events: none;
-  background: linear-gradient(to bottom, var(--bg-screen), transparent);
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.pro-topfade.is-on {
-  opacity: 1;
-}
-/* Right-column content running past the screen fades into the space above the bottom bar instead of a hard cut */
-.pro-fade {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 36px;
-  height: 24px;
-  z-index: 3;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--bg-screen));
 }
 .chart-tools {
   display: flex;
@@ -1002,9 +972,10 @@ body.is-resizing * {
   margin: 0;
 }
 
-@media (max-width: 1100px) {
+/* Tablet: chart across the top, order book and order form side by side below; the page scrolls */
+@media (max-width: 1280px) {
   .pro-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
     min-height: 0;
   }
@@ -1014,23 +985,41 @@ body.is-resizing * {
   .pro-trade {
     height: auto;
   }
-  .phead--pin {
-    position: static;
-  }
-  .pro-fade,
-  .pro-topfade {
-    display: none;
-  }
   .pro-trade .ob2-scroll {
     height: 360px;
     flex: none;
   }
-  /* One column: the page scrolls normally */
   .pro-chart {
-    position: static;
+    grid-column: 1 / -1;
     --chart-h: clamp(420px, 70vh, 640px);
     height: var(--chart-h);
   }
+}
+/* Phone: chart, order book, order form stacked; today's issue drops under the tabs */
+@media (max-width: 720px) {
+  .pro-grid {
+    grid-template-columns: 1fr;
+  }
+  .ptabs-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .ptabs-row .issue-inline {
+    margin-left: 0;
+    max-width: 100%;
+    padding: 0 4px;
+  }
+  /* Chart toolbar stays on one line and scrolls sideways; the background legend is left out */
+  .pro-chart .chart-tools {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .pro-chart .band-legend {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
   .cols3 {
     grid-template-columns: 1fr;
   }
@@ -2517,4 +2506,39 @@ body {
   .panel--fill .table-wrap {
     max-height: calc(100vh - 260px);
   }
+}
+
+/* Stock tabs with today's issue on the same line, at the right end */
+.ptabs-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.issue-inline {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 60%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.issue-inline:hover {
+  background: var(--fill);
+}
+.issue-inline__label {
+  flex-shrink: 0;
+  color: var(--text-3);
+}
+.issue-inline__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

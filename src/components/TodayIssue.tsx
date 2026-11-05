@@ -8,13 +8,30 @@ import { useQuery } from '../lib/query'
 import { StockLogo } from './Brand'
 
 /** Today's issues. For the given asset, or across all assets when omitted, newest first */
-export const TodayIssue = memo(function TodayIssue({ asset, limit = 3, onOpen }: { asset?: string; limit?: number; onOpen?: (n: NewsMarker) => void }) {
+export const TodayIssue = memo(function TodayIssue({ asset, limit = 3, onOpen, inline = false }: { asset?: string; limit?: number; onOpen?: (n: NewsMarker) => void; inline?: boolean }) {
   const q = useQuery<{ items: (NewsMarker & { asset?: string })[] }>(asset ? `/api/v1/news?asset=${asset}` : `/api/v1/news?limit=${limit}`, 300_000)
   const all = asset ? [...(q.data?.items ?? [])].reverse() : (q.data?.items ?? [])
   // Only the latest day: today's issues, or the most recent day's when nothing happened today
   const latest = all[0]?.date
   const items = all.filter((n) => n.date === latest).slice(0, limit)
   const isToday = latest === kstDate(Date.now())
+  const open = (n: NewsMarker & { asset?: string }) => {
+    track('news_open', { from: 'issue', date: n.date })
+    if (onOpen) onOpen(n)
+    else if (n.url) window.open(n.url, '_blank', 'noreferrer')
+  }
+  // One line at the right end of the stock tabs
+  if (inline) {
+    const n = items[0]
+    if (!n) return null
+    return (
+      <button className="issue-inline" onClick={() => open(n)}>
+        <i className="dot-key" />
+        <span className="issue-inline__label">{isToday ? '오늘의 이슈' : `최근 이슈 · ${kstDay(n.t)}`}</span>
+        <span className="issue-inline__title">{n.title}</span>
+      </button>
+    )
+  }
   return (
     <section className="panel issue">
       <div className="panel__head">
@@ -30,11 +47,7 @@ export const TodayIssue = memo(function TodayIssue({ asset, limit = 3, onOpen }:
               <li key={n.date + n.title}>
                 <button
                   className="issue__row"
-                  onClick={() => {
-                    track('news_open', { from: 'issue', date: n.date })
-                    if (onOpen) onOpen(n)
-                    else if (n.url) window.open(n.url, '_blank', 'noreferrer')
-                  }}
+                  onClick={() => open(n)}
                 >
                   {n.asset && <StockLogo id={n.asset} size={20} />}
                   <span className="issue__title">{n.title}</span>

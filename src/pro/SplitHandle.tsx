@@ -1,30 +1,39 @@
 import { useRef, useState } from 'react'
 
-const MIN = 300
+const MIN = 260
 const MAX = 640
-const KEY = 'bamsai-side-w'
+const DEFAULT = 340
 
-export function readSideWidth() {
+/** Saved width of a column (order book, order form), else 340px */
+export function readWidth(key: string) {
   try {
-    const v = Number(localStorage.getItem(KEY))
-    return v >= MIN && v <= MAX ? v : 340
+    const v = Number(localStorage.getItem(key))
+    if (v >= MIN && v <= MAX) return v
   } catch {
-    return 340
+    /* private mode */
   }
+  return DEFAULT
 }
 
 /**
- * Drag handle between the chart and the right column (like a brokerage PC panel grid):
- * invisible until hovered, then a 4px key-color bar fading out at both ends
+ * Drag handle on the left edge of a column (like a brokerage PC panel grid): dragging left widens the column,
+ * the chart gives up the space. Invisible until hovered, then a 4px key-color bar fading out at both ends
  */
-export function SplitHandle({ width, onChange }: { width: number; onChange: (w: number) => void }) {
+export function SplitHandle({ width, onChange, storageKey, label }: { width: number; onChange: (w: number) => void; storageKey: string; label: string }) {
   const [dragging, setDragging] = useState(false)
   const start = useRef<{ x: number; w: number } | null>(null)
+  const save = (w: number) => {
+    try {
+      localStorage.setItem(storageKey, String(w))
+    } catch {
+      /* private mode */
+    }
+  }
   return (
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="차트와 오른쪽 패널 너비 조절"
+      aria-label={label}
       aria-valuemin={MIN}
       aria-valuemax={MAX}
       aria-valuenow={width}
@@ -44,13 +53,12 @@ export function SplitHandle({ width, onChange }: { width: number; onChange: (w: 
         start.current = null
         setDragging(false)
         document.body.classList.remove('is-resizing')
-        try {
-          localStorage.setItem(KEY, String(width))
-        } catch {
-          /* private mode */
-        }
+        save(width)
       }}
-      onDoubleClick={() => onChange(340)}
+      onDoubleClick={() => {
+        onChange(DEFAULT)
+        save(DEFAULT)
+      }}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft') onChange(Math.min(MAX, width + 16))
         if (e.key === 'ArrowRight') onChange(Math.max(MIN, width - 16))
