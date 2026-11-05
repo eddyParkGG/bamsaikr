@@ -4,9 +4,10 @@ import { hasKrx, type Asset } from '../../shared/assets'
 import { fmtPct, fmtPrice, fmtUsd, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, useLive, type Level, type Trade } from '../lib/live'
 import { useQuery } from '../lib/query'
-import type { PerpQuote } from '../components/AssetSearch'
+import { usePerps, useUsdcRate } from '../lib/data'
 import { toast } from '../components/Toast'
 import { useTicket } from './ticket'
+import { SESSION_LABEL } from '../lib/market'
 
 type Tab = 'perp' | 'krx'
 const ROWS = 20
@@ -159,7 +160,6 @@ function Book({
   )
 }
 
-const SESSION_TEXT = { regular: '정규장', nxt: '넥스트레이드', closed: '장 마감' } as const
 
 function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const krxOk = hasKrx(asset)
@@ -175,9 +175,8 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
   const perpTape = useLive((s) => s.tape[asset.perp])
   const krxLive = useLive((s) => (krxOk ? s.krxBook[asset.krxCode] : undefined))
   const krxTape = useLive((s) => (krxOk ? s.tape[asset.krxCode] : undefined))
-  const rate = useLive((s) => s.usdc?.rate)
-  const perps = useQuery<{ items: PerpQuote[] }>('/api/v1/perps', 5000)
-  const pq = perps.data?.items.find((x) => x.asset === asset.id)
+  const rate = useUsdcRate()
+  const pq = usePerps(asset.id).item
   // REST orderbook for the first render until live data arrives
   const first = useQuery<{ krx: { asks: Level[]; bids: Level[] } | null }>(tab === 'krx' && !krxLive ? `/api/v1/orderbook?asset=${asset.id}` : null)
   const krx = krxLive ?? first.data?.krx ?? undefined
@@ -265,7 +264,7 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
             info={krxInfo}
             fmt={(v) => fmtPrice(v, isIdx)}
             sizeFmt={(v) => v.toLocaleString('ko-KR')}
-            session={arb ? SESSION_TEXT[arb.session] : ''}
+            session={arb ? SESSION_LABEL[arb.session] : ''}
             centerKey={`krx:${asset.id}`}
             onPick={(px) => (asset.kind === 'stock' ? pickPrice('krx', px) : toast('이 종목은 국내 주문을 지원하지 않아요'))}
           />

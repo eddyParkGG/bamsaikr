@@ -3,6 +3,7 @@ import type { ISeriesApi, UTCTimestamp } from 'lightweight-charts'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
+import { SESSION_LABEL, venueAt } from '../lib/market'
 import { fmtKoreanUnit, fmtPct, fmtPrice } from '../lib/format'
 import { useLive } from '../lib/live'
 import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
@@ -237,14 +238,12 @@ function cardTitle(t: number, interval: ChartInterval) {
   return interval === '1d' ? day : `${day} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
 }
 
+/** Venue of a bar (clock-based; holidays read as 휴장 by the chart's background already) */
 function sessionLabel(t: number) {
-  const d = new Date(t * 1000)
-  const wd = d.getUTCDay()
-  const m = d.getUTCHours() * 60 + d.getUTCMinutes()
-  if (wd === 0 || wd === 6) return '주말 · 하이퍼리퀴드만 거래'
-  if (m >= 540 && m < 930) return '정규장'
-  if ((m >= 480 && m < 540) || (m >= 930 && m < 1200)) return '넥스트레이드'
-  return '휴장 · 하이퍼리퀴드만 거래'
+  const v = venueAt(t * 1000)
+  if (v === 'weekend') return '주말 · 하이퍼리퀴드만 거래'
+  if (v === 'closed') return `${SESSION_LABEL.closed} · 하이퍼리퀴드만 거래`
+  return SESSION_LABEL[v]
 }
 
 /** Info card pinned where the user clicked */

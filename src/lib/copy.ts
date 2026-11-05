@@ -1,4 +1,4 @@
-// Easy mode copy. Conclusion first, one big number, jargon spelled out
+// Shared copy: plain-language verdicts and probability labels used by the home list and the stock detail
 export function verdict(probUp: number) {
   if (probUp >= 0.7) return { text: '오를 가능성이 높아요', tone: 'up' as const }
   if (probUp >= 0.57) return { text: '조금 오를 것 같아요', tone: 'up' as const }

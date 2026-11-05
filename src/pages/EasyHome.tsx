@@ -2,10 +2,11 @@ import { useEffect } from 'react'
 import { IN_SESSION, InSessionNotice, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
-import { probLabel, verdict, PERP_PLAIN } from '../easy/copy'
+import { probLabel, verdict, PERP_PLAIN } from '../lib/copy'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtWon, kstDay, leftText, openDayText, regularCloseAt, sessionCloseAt, untilText } from '../lib/format'
-import { useQuery } from '../lib/query'
+import { fmtPct, fmtPrice, fmtWon, openDayText } from '../lib/format'
+import { SessionLine } from '../lib/market'
+import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
 import { StockLogo } from '../components/Brand'
 import { TodayIssue } from '../components/TodayIssue'
@@ -21,12 +22,7 @@ function StatusLine({ s }: { s?: Status }) {
         : `국내 주식시장은 닫혀 있어요. ${PERP_PLAIN}는 지금도 거래 중이에요`
   return (
     <p>
-      {msg} ·{' '}
-      {s.session === 'regular'
-        ? `장 마감까지 ${leftText(regularCloseAt())}`
-        : s.session === 'nxt'
-          ? `넥스트레이드 마감까지 ${leftText(sessionCloseAt('nxt'))} · 정규장 ${kstDay(s.nextOpen)} 오전 9시`
-          : `다음 개장 ${kstDay(s.nextOpen)} 오전 9시 (${untilText(s.nextOpen)})`}
+      {msg} · <SessionLine status={s} style="words" />
     </p>
   )
 }
@@ -100,9 +96,9 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
 }
 
 export default function EasyHome() {
-  const status = useQuery<Status>('/api/v1/status', 60_000)
-  const preds = useQuery<{ items: Prediction[] }>('/api/v1/predict', 30_000)
-  const arb = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 5000)
+  const status = useStatus()
+  const preds = usePredictions()
+  const arb = useArb()
 
   useEffect(() => {
     if (preds.data && status.data) track('prediction_view', { from: 'home', session: status.data.session })

@@ -1,5 +1,7 @@
 // GA4. No-op without a measurement ID (local dev)
 // Event names map 1:1 to the hypothesis/metric tables in docs/experiments (see ga-events.md)
+import { kstMinutes, venueAt } from './market'
+
 const GA_ID = import.meta.env.VITE_GA_ID as string | undefined
 
 declare global {
@@ -11,12 +13,11 @@ declare global {
 
 /** Current market period (KST). Key axis for retention analysis: 'return visit before open' */
 export function kstWindow(now = Date.now()) {
-  const d = new Date(now + 9 * 3600_000)
-  const dow = d.getUTCDay()
-  const m = d.getUTCHours() * 60 + d.getUTCMinutes()
-  if (dow === 0 || dow === 6) return 'weekend'
+  const v = venueAt(now)
+  const m = kstMinutes(now)
+  if (v === 'weekend') return 'weekend'
   if (m >= 480 && m < 540) return 'preopen' // 08:00~09:00
-  if (m >= 540 && m < 930) return 'regular'
+  if (v === 'regular') return 'regular'
   if (m >= 930 && m < 1200) return 'after'
   return 'night'
 }

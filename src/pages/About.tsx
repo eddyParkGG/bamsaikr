@@ -1,10 +1,9 @@
-import type { Prediction } from '../../shared/api'
 import { StockLogo } from '../components/Brand'
-import { useQuery } from '../lib/query'
+import { usePredictions } from '../lib/data'
 
 /** What this prototype is trying to prove: problem, target, hypotheses and how they are measured */
 export default function About() {
-  const preds = useQuery<{ items: Prediction[] }>('/api/v1/predict', 300_000)
+  const preds = usePredictions()
   return (
     <div className="easy about">
       <section className="easy-hero">

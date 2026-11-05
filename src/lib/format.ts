@@ -3,6 +3,8 @@ const dec2 = new Intl.NumberFormat('ko-KR', { minimumFractionDigits: 2, maximumF
 
 export const fmtWon = (v: number) => won.format(Math.round(v))
 export const fmtPrice = (v: number, isIndex = false) => (isIndex ? dec2.format(v) : won.format(Math.round(v)))
+/** Price with its unit: '1,270,000원', or index points as-is */
+export const fmtKrw = (v: number, isIndex = false) => `${fmtPrice(v, isIndex)}${isIndex ? '' : '원'}`
 export const fmtUsd = (v: number) => (v >= 100 ? dec2.format(v) : v.toPrecision(5))
 
 export function fmtPct(v: number, digits = 2, sign = true) {
@@ -63,19 +65,6 @@ export function openDayText(ms: number) {
   return `${DOW[d.getUTCDay()]}요일`
 }
 
-/** Today's KRX regular-session close (15:30 KST) as epoch ms */
-export function regularCloseAt(now = Date.now()) {
-  const d = new Date(now + KST)
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 15, 30) - KST
-}
-
-/** Remaining time without the trailing '뒤': '2시간 10분', '25분' */
-export function leftText(ms: number) {
-  const m = Math.max(0, Math.ceil((ms - Date.now()) / 60_000))
-  const h = Math.floor(m / 60)
-  return h ? `${h}시간${m % 60 ? ` ${m % 60}분` : ''}` : `${m}분`
-}
-
 /** Large won amounts in Korean units: 1.2조, 3,450억, 120만 */
 export function fmtWonUnit(v: number) {
   const a = Math.abs(v)
@@ -83,13 +72,4 @@ export function fmtWonUnit(v: number) {
   if (a >= 1e8) return `${Math.round(v / 1e8).toLocaleString('ko-KR')}억`
   if (a >= 1e4) return `${Math.round(v / 1e4).toLocaleString('ko-KR')}만`
   return Math.round(v).toLocaleString('ko-KR')
-}
-
-/** End of the trading window we are in: regular 15:30, NXT pre-market 08:50 or after-market 20:00 (KST) */
-export function sessionCloseAt(session: 'regular' | 'nxt' | 'closed', now = Date.now()) {
-  if (session === 'regular') return regularCloseAt(now)
-  const d = new Date(now + KST)
-  const m = d.getUTCHours() * 60 + d.getUTCMinutes()
-  const [h, mm] = m < 530 ? [8, 50] : [20, 0]
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, mm) - KST
 }

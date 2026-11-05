@@ -1,6 +1,8 @@
-import { memo, useEffect, useId, useState } from 'react'
+import { memo, useEffect, useId } from 'react'
 import type { Status } from '../../shared/api'
+import { useStatus } from '../lib/data'
 import { subscribeUsdc, useLive } from '../lib/live'
+import { kstMinutes, nxtOpenAt, useNow, venueAt } from '../lib/market'
 import { useQuery } from '../lib/query'
 
 interface Indicator {
@@ -68,34 +70,20 @@ function Card({ it }: { it: Indicator }) {
   )
 }
 
-/** KST minutes since midnight */
-const kstMinutes = (ms: number) => {
-  const d = new Date(ms + 9 * 3600_000)
-  return d.getUTCHours() * 60 + d.getUTCMinutes() + d.getUTCSeconds() / 60
-}
-
 /** Which venues are trading right now (NXT: 08:00–08:50, 09:00:30–15:20, 15:30–20:00) */
 function venues(status: Status | undefined, now: number) {
   const m = kstMinutes(now)
   // `closed` during 08:00–20:00 means a weekend or holiday
   const tradingDay = !!status && (status.session !== 'closed' || m < 480 || m >= 1200)
-  const isWeekend = [0, 6].includes(new Date(now + 9 * 3600_000).getUTCDay())
-  const day = tradingDay && !isWeekend
-  return {
-    regular: status?.session === 'regular',
-    nxt: day && ((m >= 480 && m < 530) || (m >= 540.5 && m < 920) || (m >= 930 && m < 1200)),
-  }
+  const day = tradingDay && venueAt(now) !== 'weekend'
+  return { regular: status?.session === 'regular', nxt: day && nxtOpenAt(m) }
 }
 
 export const IndicatorStrip = memo(function IndicatorStrip() {
   useEffect(() => subscribeUsdc(), [])
-  const status = useQuery<Status>('/api/v1/status', 60_000).data
+  const status = useStatus().data
   const q = useQuery<{ items: Indicator[] }>('/api/v1/indicators', 10_000)
-  const [now, setNow] = useState(Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 15_000)
-    return () => clearInterval(id)
-  }, [])
+  const now = useNow(15_000)
   const v = venues(status, now)
   return (
     <section className="ind-strip">

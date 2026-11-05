@@ -1,5 +1,7 @@
-export function SessionBadge({ session }: { session: 'regular' | 'nxt' | 'closed' }) {
-  if (session === 'regular') return <span className="badge badge--live">정규장</span>
-  if (session === 'nxt') return <span className="badge badge--nxt">넥스트레이드</span>
-  return <span className="badge">휴장 · 하이퍼리퀴드만 거래 중</span>
+import { SESSION_LABEL, type Session } from '../lib/market'
+
+const TONE: Record<Session, string> = { regular: 'badge badge--live', nxt: 'badge badge--nxt', closed: 'badge' }
+
+export function SessionBadge({ session }: { session: Session }) {
+  return <span className={TONE[session]}>{session === 'closed' ? `${SESSION_LABEL.closed} · 하이퍼리퀴드만 거래 중` : SESSION_LABEL[session]}</span>
 }

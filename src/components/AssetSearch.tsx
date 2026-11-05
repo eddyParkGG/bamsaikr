@@ -1,29 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ArbSnapshot } from '../../shared/api'
 import { ASSETS, type Asset, type AssetId } from '../../shared/assets'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, tone } from '../lib/format'
-import { useLive } from '../lib/live'
-import { useQuery } from '../lib/query'
+import { fmtKrw, fmtPct, tone } from '../lib/format'
+import { useArb, usePerps, useUsdcRate } from '../lib/data'
 import { navigate } from '../lib/router'
 import { StockLogo } from './Brand'
 
-export interface PerpQuote {
-  asset: AssetId
-  mid: number
-  prevDay: number
-  fundingHourly: number
-  openInterest: number
-  volume24hUsd: number
-  maxLeverage: number
-}
+export type { PerpQuote } from '../lib/data'
 
 /** Latest price per asset: domestic price when there is one, otherwise the Hyperliquid price in KRW */
 export function useAssetQuotes() {
-  const arb = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 3000)
-  const perps = useQuery<{ items: PerpQuote[] }>('/api/v1/perps', 3000)
-  const live = useLive((s) => s.usdc?.rate)
-  const rate = live ?? arb.data?.items.find((x) => x.fx)?.fx?.rate ?? 0
+  const arb = useArb()
+  const perps = usePerps()
+  const rate = useUsdcRate() ?? 0
   return useMemo(() => {
     const out: Partial<Record<AssetId, { price: number; changePct: number; isIdx: boolean }>> = {}
     for (const a of ASSETS) {
@@ -136,7 +125,7 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
                   <span>{a.note ?? subOf(a)}</span>
                 </span>
                 <span className="search__px num">
-                  <b>{qt ? `${fmtPrice(qt.price, qt.isIdx)}${qt.isIdx ? '' : '원'}` : '-'}</b>
+                  <b>{qt ? fmtKrw(qt.price, qt.isIdx) : '-'}</b>
                   {qt && <span className={tone(qt.changePct)}>{fmtPct(qt.changePct)}</span>}
                 </span>
                 <span className="search__enter" aria-hidden>

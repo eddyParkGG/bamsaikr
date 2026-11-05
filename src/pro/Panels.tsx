@@ -1,9 +1,11 @@
+import { Chevron } from '../components/Icon'
 import { memo, useEffect, useRef, useState } from 'react'
-import type { ArbSnapshot, OpenEvent, Prediction } from '../../shared/api'
+import type { OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
+import { useArb } from '../lib/data'
 import { InSessionNotice, predictionReady } from '../components/NextOpenState'
 
 export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Prediction | null; asset: Asset }) {
@@ -141,9 +143,7 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
     <div className="fchip-wrap" ref={ref}>
       <button className={`fchip ${value ? 'fchip--on' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)}>
         {current ? `${label} · ${current}` : label}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <Chevron />
       </button>
       {open && (
         <div className="fpop" role="dialog" aria-label={label}>
@@ -312,8 +312,7 @@ interface Flows {
 
 export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) {
   const q = useQuery<Flows>(`/api/v1/flows?asset=${asset.id}`, 60_000)
-  const arbQ = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 5000)
-  const livePx = arbQ.data?.items.find((x) => x.asset === asset.id)?.krx.price ?? null
+  const livePx = useArb(asset.id).item?.krx.price ?? null
   if (!q.data) return <div className="skeleton" style={{ height: 160, margin: 16 }} />
   if (!q.data.available)
     return (
