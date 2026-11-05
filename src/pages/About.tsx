@@ -38,7 +38,7 @@ export default function About() {
               <dd>삼성전자·SK하이닉스를 가진 직장인. 출근길 08~09시에 "오늘 장 시작하면 어떨까"가 궁금한 사람</dd>
             </div>
             <div>
-              <dt>종목 화면</dt>
+              <dt>종목 상세</dt>
               <dd>주식과 코인을 같이 하는 트레이더. 두 시장 차이와 개장 갭을 매매에 쓰는 사람</dd>
             </div>
             <div>
@@ -59,7 +59,7 @@ export default function About() {
             <span className="about__status about__status--done">통과</span>
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요 (정규장 시작 가격 기준, 2026년 4월 13일~, 종목별 139번. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요).
+            국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요. 하이퍼리퀴드에 한국 종목이 상장된 2026년 2월 20일 직후부터 지금까지의 모든 개장일이 대상이고, 시작 가격은 정규장 09:00 기준이에요. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요.
           </p>
           <div className="about__hits">
             {preds.data
@@ -68,12 +68,13 @@ export default function About() {
                     <StockLogo id={p.asset} size={28} />
                     <span className="strong">{p.name}</span>
                     <span className="spacer" />
-                    <b className="num" data-fit>
-                      {p.backtest.followRatePct}%
-                    </b>
                     <span className="faint num" style={{ fontSize: 12 }}>
-                      {p.backtest.followScored}번 중 {p.backtest.followYes}번 · 모델 예측 {p.backtest.hitRatePct}%
+                      {p.backtest.since && `${+p.backtest.since.slice(4, 6)}/${+p.backtest.since.slice(6, 8)}부터`} {p.backtest.followScored}번 중{' '}
+                      {p.backtest.followYes}번
                     </span>
+                    <b className="num" data-fit>
+                      {p.backtest.followRatePct?.toFixed(1)}%
+                    </b>
                   </div>
                 ))
               : [0, 1, 2].map((i) => <div key={i} className="about__hit skeleton" style={{ height: 44 }} />)}

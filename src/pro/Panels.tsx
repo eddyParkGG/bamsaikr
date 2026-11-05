@@ -94,12 +94,6 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
             </dd>
           </div>
           <div className="kv">
-            <dt>모델 예측 방향 적중</dt>
-            <dd data-fit>
-              {p.backtest.hitRatePct}% <span className="faint">({p.backtest.tested}번)</span>
-            </dd>
-          </div>
-          <div className="kv">
             <dt>80% 구간 실제 포함</dt>
             <dd data-fit>{p.backtest.coverage80Pct}%</dd>
           </div>
@@ -117,7 +111,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           </div>
         </dl>
         <p className="faint" style={{ fontSize: 12, marginTop: 6 }}>
-          방향대로 열림은 {p.backtest.since ? `${+p.backtest.since.slice(4, 6)}월 ${+p.backtest.since.slice(6, 8)}일` : ''}부터 모든 개장을 봤고, 둘 중 하나라도 ±0.05% 안쪽이었던 {p.backtest.followFlat}번은 뺐어요. 모델 예측은 그날 이전 데이터로만 학습한 결과예요 (walk-forward). 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
+          방향대로 열림은 하이퍼리퀴드 상장 직후인 {p.backtest.since ? `${+p.backtest.since.slice(4, 6)}월 ${+p.backtest.since.slice(6, 8)}일` : ''}부터 모든 개장({p.backtest.opens}번)을 봤고, 둘 중 하나라도 ±0.05% 안쪽이었던 {p.backtest.followFlat}번은 뺐어요. 예상 가격과 80% 구간은 그날 이전 데이터로만 계산한 결과예요. 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
         </p>
         </div>
       </section>
@@ -196,8 +190,8 @@ function hoursText(h: number) {
 
 const meetText = (m: number) => (m > 0.66 ? '주식이 따라감' : m < 0.34 ? '하이퍼리퀴드가 맞춤' : '가운데서 만남')
 
-type Filters = { follow: string; regime: string; gap: string; open: string; absorb: string; meet: string; hit: string }
-const ALL: Filters = { follow: '', regime: '', gap: '', open: '', absorb: '', meet: '', hit: '' }
+type Filters = { follow: string; regime: string; gap: string; open: string; absorb: string; meet: string }
+const ALL: Filters = { follow: '', regime: '', gap: '', open: '', absorb: '', meet: '' }
 
 const FOLLOW_TEXT = { yes: '따라감', no: '반대로', flat: '거의 그대로' } as const
 
@@ -208,7 +202,6 @@ const FILTERS: { key: keyof Filters; label: string; options: [string, string][] 
   { key: 'open', label: '실제 시작 차이', options: [['up', '올라서 시작'], ['down', '내려서 시작']] },
   { key: 'absorb', label: '따라간 정도', options: [['80', '80% 이상'], ['50', '50~80%'], ['low', '50% 미만']] },
   { key: 'meet', label: '만난 지점', options: [['stock', '주식이 따라감'], ['mid', '가운데서 만남'], ['perp', '하이퍼리퀴드가 맞춤']] },
-  { key: 'hit', label: '모델 예측', options: [['hit', '맞음'], ['miss', '틀림']] },
 ]
 
 function pass(e: OpenEvent, f: Filters) {
@@ -232,8 +225,6 @@ function pass(e: OpenEvent, f: Filters) {
     const k = m > 0.66 ? 'stock' : m < 0.34 ? 'perp' : 'mid'
     if (k !== f.meet) return false
   }
-  if (f.hit === 'hit' && e.hit !== true) return false
-  if (f.hit === 'miss' && e.hit !== false) return false
   return true
 }
 
@@ -266,7 +257,6 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
               </th>
               <th title="실제 차이 ÷ 하이퍼리퀴드 차이. 100%면 하이퍼리퀴드가 보여준 그대로 시작">따라간 정도</th>
               <th title="장 시작 후 1시간 동안 두 가격이 어디서 만났는지">만난 지점</th>
-              <th title="밤사이 모델이 낸 예측 방향이 맞았는지. 처음 20번은 모델 학습 기간">모델 예측</th>
             </tr>
           </thead>
           <tbody>
@@ -299,20 +289,11 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                     </span>
                   )}
                 </td>
-                <td>
-                  {e.hit == null ? (
-                    <span className="faint" title="모델을 세우는 데 처음 20번의 개장이 필요해서, 이 기간은 학습에만 썼어요">
-                      학습 기간
-                    </span>
-                  ) : (
-                    <span className="muted">{e.hit ? '맞음' : '틀림'}</span>
-                  )}
-                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="faint" style={{ textAlign: 'center', padding: 24 }}>
+                <td colSpan={7} className="faint" style={{ textAlign: 'center', padding: 24 }}>
                   조건에 맞는 개장일이 없어요
                 </td>
               </tr>

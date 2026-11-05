@@ -9,7 +9,7 @@
 import type { Asset } from '../../shared/assets.js'
 import { isTradingDay, kstDateKey, kstToMs, nextRegularOpen, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
-import { getPerpCandles, getPerpCtxs, type Candle } from '../sources/hyperliquid.js'
+import { getPerpCandles, getPerpCtxs, getPerpHourlySince, type Candle } from '../sources/hyperliquid.js'
 import { krxHolidays, krxQuote, krxSessions } from '../sources/krx.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
 
@@ -94,7 +94,7 @@ function candleAt(candles: Candle[], t: number): Candle | undefined {
   return undefined
 }
 
-function buildEvents(asset: Asset, daily: { date: string; o: number; c: number }[], perp: Candle[], fx: FxPoint[]): OpenEvent[] {
+function buildEvents(asset: Asset, daily: { date: string; o: number; c: number }[], perp: Candle[], fx: FxPoint[], perp4h: Candle[] = []): OpenEvent[] {
   const out: OpenEvent[] = []
   const krw = (px: number, t: number) => (asset.fx ? (rateAt(fx, t) ?? NaN) * px : px)
   for (let i = 1; i < daily.length; i++) {
@@ -102,7 +102,9 @@ function buildEvents(asset: Asset, daily: { date: string; o: number; c: number }
     const prev = daily[i - 1]
     const tOpen = kstToMs(d.date, '0900')
     if (tOpen > Date.now()) continue
-    const ref = candleAt(perp, tOpen - H) // close of the 08:00~08:59 bar
+    // Price just before the open: close of the 08:00~08:59 1h bar, or for older days (1h history is
+    // capped at 5,000 bars) the close of the 05:00~08:59 4h bar — both end at 09:00 KST
+    const ref = candleAt(perp, tOpen - H) ?? candleAt(perp4h, tOpen - 4 * H)
     if (!ref || !d.o) continue
     const perpRefKrw = krw(ref.c, tOpen - H)
     if (!Number.isFinite(perpRefKrw)) continue
@@ -147,14 +149,18 @@ function closedHoursVol(perp: Candle[], holidays: ReadonlySet<string>) {
   return Math.sqrt(rs.reduce((s, v) => s + (v - m) ** 2, 0) / (rs.length - 1))
 }
 
+/** Hyperliquid listed the Korean stock perps on 2026-02-19 (KST evening); history starts there */
+const HISTORY_FROM = Date.UTC(2026, 1, 18)
 const MIN_TRAIN = 20
 /** Moves smaller than this (in %) count as "no direction" */
 export const FLAT_PCT = 0.05
 
 export function loadHistory(asset: Asset) {
   return cached(`predict:history:${asset.id}`, 10 * 60_000, async () => {
-    const perp = await getPerpCandles(asset.perp, '1h', 0)
-    const start = perp[0]?.t ?? Date.now() - 200 * 86400_000
+    // From the Korean listings on trade.xyz (2026-02-19/20). The API only keeps the latest 5,000 bars per
+    // interval, so 1h covers ~7 months and 4h fills in the earliest weeks
+    const [perp, perp4h] = await Promise.all([getPerpHourlySince(asset.perp, HISTORY_FROM), getPerpCandles(asset.perp, '4h', HISTORY_FROM)])
+    const start = Math.min(perp[0]?.t ?? Infinity, perp4h[0]?.t ?? Infinity, Date.now() - 200 * 86400_000)
     const [sessions, fx, holidays] = await Promise.all([
       krxSessions(asset, kstDateKey(start - 5 * 86400_000)),
       asset.fx ? getUsdcKrwHourly(start) : Promise.resolve([] as FxPoint[]),
@@ -162,7 +168,7 @@ export function loadHistory(asset: Asset) {
     ])
     // Only days with both regular-session open and close (no close during today's session)
     const daily = sessions.map((s) => ({ date: s.date, o: s.open, c: s.close ?? NaN }))
-    const events = buildEvents(asset, daily, perp, fx).filter((e) => Number.isFinite(e.prevClose))
+    const events = buildEvents(asset, daily, perp, fx, perp4h).filter((e) => Number.isFinite(e.prevClose))
     const vol = closedHoursVol(perp, holidays)
 
     // walk-forward: fit only on data before that day, forecast → compare to actual

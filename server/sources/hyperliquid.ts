@@ -3,12 +3,20 @@ import { cached, fetchJson } from '../lib/cache.js'
 const MAINNET = 'https://api.hyperliquid.xyz'
 const TESTNET = 'https://api.hyperliquid-testnet.xyz'
 
-function info<T>(body: object, testnet = false) {
-  return fetchJson<T>(`${testnet ? TESTNET : MAINNET}/info`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+async function info<T>(body: object, testnet = false): Promise<T> {
+  // Retry briefly: several cold history loads at once can hit the public rate limit
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchJson<T>(`${testnet ? TESTNET : MAINNET}/info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    } catch (e) {
+      if (attempt >= 3) throw e
+      await new Promise((r) => setTimeout(r, 400 * 2 ** attempt))
+    }
+  }
 }
 
 export interface PerpCtx {
@@ -70,6 +78,26 @@ export function getPerpCandles(coin: string, interval: HlInterval, startTime = 0
       req: { coin, interval, startTime },
     })
     return raw.map((k) => ({ t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v }))
+  })
+}
+
+/**
+ * Full 1h history since `fromMs`. One candleSnapshot call returns at most 5,000 candles
+ * (about 208 days of 1h bars), so walk forward in 5,000-hour windows.
+ */
+export function getPerpHourlySince(coin: string, fromMs: number): Promise<Candle[]> {
+  const H = 3600_000
+  return cached(`hl:candles:${coin}:1h:since:${Math.floor(fromMs / 86400_000)}`, 60_000, async () => {
+    const out: Candle[] = []
+    for (let start = fromMs; start < Date.now(); start += 5000 * H) {
+      const raw = await info<{ t: number; o: string; h: string; l: string; c: string; v: string }[]>({
+        type: 'candleSnapshot',
+        req: { coin, interval: '1h', startTime: start, endTime: Math.min(Date.now(), start + 5000 * H - 1) },
+      })
+      for (const k of raw) out.push({ t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v })
+    }
+    out.sort((a, b) => a.t - b.t)
+    return out.filter((k, i) => i === 0 || k.t !== out[i - 1].t)
   })
 }
 
