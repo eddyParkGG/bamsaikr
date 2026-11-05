@@ -2465,6 +2465,19 @@ body {
   flex: 1;
   min-height: 0;
   max-height: none;
+  /* Room for the fade below the last row, so at the end of the scroll nothing stays covered */
+  padding-bottom: 36px !important;
+}
+/* Fade pinned to the bottom of the table area: shows there are more rows below while scrolling */
+.panel--fill .table-wrap::after {
+  content: '';
+  position: sticky;
+  bottom: -36px;
+  display: block;
+  height: 48px;
+  margin-top: -48px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--bg));
 }
 @media (max-width: 1100px) {
   .panel--fill {
