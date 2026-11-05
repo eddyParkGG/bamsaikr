@@ -254,7 +254,7 @@ function StockDetail({ asset }: { asset: Asset }) {
 
       {/* Question 2: arbitrage */}
       <section className="panel q-card">
-        <p className="q-card__q">지금 두 시장 차이로 얼마나 남아요?</p>
+        <p className="q-card__q">지금 시세차익 기회, 얼마나 남아요?</p>
         {arb ? (
           <>
             <div className="seg" role="group" aria-label="금액" style={{ margin: '4px 0 16px' }}>
