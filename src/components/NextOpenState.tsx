@@ -45,7 +45,7 @@ export function NextOpenWhen({ at, long = false }: { at: number; long?: boolean 
 }
 
 export const THIN_HELP =
-  '밤사이 하이퍼리퀴드 거래가 100만 달러보다 적으면 몇 건의 주문에도 가격이 흔들려요. 이런 밤에는 하이퍼리퀴드 방향대로 시작한 비율이 낮았어요.'
+  '밤사이 하이퍼리퀴드 거래가 100만 달러(약 13억 원)보다 적으면 몇 건의 주문에도 가격이 흔들려요. 이런 밤에는 하이퍼리퀴드 방향대로 시작한 비율이 낮았어요.'
 
 /** Tag on a forecast when Hyperliquid trades too little at night for its price to mean much */
 export function ThinTag({ p, help = true }: { p: Prediction; help?: boolean }) {

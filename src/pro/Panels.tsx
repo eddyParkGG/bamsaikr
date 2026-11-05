@@ -6,7 +6,7 @@ import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib
 import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
-import { useArb } from '../lib/data'
+import { useArb, useUsdcRate } from '../lib/data'
 import { InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
 
 const HELP = {
@@ -17,10 +17,12 @@ const HELP = {
   up: '기준 가격보다 높게 시작할 확률이에요.',
   dist: '내일 아침 국내 시장이 기준 가격보다 몇 % 오르거나 내려서 시작할지, 구간별 확률이에요. 막대가 길수록 그 구간일 가능성이 커요.',
   follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
-  liquid: '밤사이 하이퍼리퀴드에서 100만 달러 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
-  coverage: '예상 범위(80% 구간) 안에서 실제로 시작한 비율이에요. 80%에 가까울수록 범위를 정직하게 잡은 거예요.',
-  mae: '예상 시작 가격과 실제 시작 가격이 평균 몇 %p 차이 났는지예요.',
-  naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 했을 때의 평균 차이예요. 이보다 작아야 의미가 있어요.',
+  liquid: '밤사이 하이퍼리퀴드에서 100만 달러(약 13억 원) 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
+  big: '하이퍼리퀴드가 밤사이 1% 이상 움직인 날만 센 비율이에요. 크게 움직인 밤일수록 더 잘 맞았어요.',
+  coverage: '10번 중 8번 들어오게 잡은 범위(80% 구간) 안에서 실제로 시작한 비율이에요. 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
+  mae: '예상 시작 가격이 실제 시작 가격과 평균 몇 % 차이 났는지예요. 아래 두 줄보다 작아야 예측이 쓸모 있어요.',
+  perpRaw: '예측 없이 "지금 하이퍼리퀴드 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
+  naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
 }
 
 function Row({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
@@ -136,18 +138,28 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
                 </>
               )}
             </Row>
+            <Row label="1% 이상 움직인 밤만" help={HELP.big}>
+              {bt.bigRatePct?.toFixed(1)}% <span className="faint">({bt.bigScored}번 중 {bt.bigYes}번)</span>
+            </Row>
             <Row label="80% 구간 안에서 시작" help={HELP.coverage}>
-              {bt.coverage80Pct?.toFixed(1)}%
+              {bt.coverage80Pct?.toFixed(1)}%{' '}
+              <span className="faint">
+                ({bt.tested}번 중 ·{' '}
+                {(bt.coverage80Pct ?? 80) > 87 ? '범위가 조금 넓어요' : (bt.coverage80Pct ?? 80) < 73 ? '범위가 좁아요' : '적당해요'})
+              </span>
             </Row>
             <Row label="예상 가격과의 차이" help={HELP.mae}>
               평균 {bt.maePct}%p
+            </Row>
+            <Row label="하이퍼리퀴드 가격 그대로라면" help={HELP.perpRaw}>
+              평균 {bt.perpRawMaePct}%p
             </Row>
             <Row label="어제 마지막 가격 그대로라면" help={HELP.naive}>
               평균 {bt.naiveMaePct}%p
             </Row>
           </dl>
           <p className="faint" style={{ fontSize: 12, marginTop: 8 }}>
-            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요.
+            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요. 예상 가격은 앞 {bt.opens - bt.tested}번으로 배운 뒤 나머지 {bt.tested}번으로 채점했어요.
           </p>
         </div>
       </section>
@@ -258,10 +270,12 @@ function pass(e: OpenEvent, f: Filters) {
 }
 
 export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asset: Asset }) {
-  const q = useQuery<{ events: OpenEvent[] }>(`/api/v1/convergence?asset=${asset.id}&limit=500`, 300_000)
+  const q = useQuery<{ events: OpenEvent[]; backtest: Prediction['backtest'] }>(`/api/v1/convergence?asset=${asset.id}&limit=500`, 300_000)
   const [f, setF] = useState<Filters>(ALL)
+  const rate = useUsdcRate()
   if (!q.data) return <div className="skeleton" style={{ height: 240, margin: 16 }} />
   const rows = q.data.events.filter((e) => pass(e, f))
+  const thin = q.data.backtest.thinUsd
   const scored = rows.filter((e) => e.follow !== 'flat')
   const followPct = scored.length ? Math.round((scored.filter((e) => e.follow === 'yes').length / scored.length) * 100) : null
   return (
@@ -281,11 +295,12 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
               <th>닫혀 있던 시간</th>
               <th>하이퍼리퀴드 차이</th>
               <th>실제 시작 차이</th>
-              <th className="th-key" title="장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 정규장이 시작했는지">
+              <th title="저녁 8시~아침 8시 하이퍼리퀴드 거래대금(원화 환산). 100만 달러(약 13억 원)보다 적으면 덜 믿을 만해요">밤사이 거래</th>
+              <th className="th-key" title="밤사이 하이퍼리퀴드가 오르거나 내린 방향대로 아침 8시 국내 시장이 시작했는지">
                 하이퍼리퀴드 방향대로
               </th>
               <th title="실제 차이 ÷ 하이퍼리퀴드 차이. 100%면 하이퍼리퀴드가 보여준 그대로 시작">따라간 정도</th>
-              <th title="장 시작 후 1시간 동안 두 가격이 어디서 만났는지">만난 지점</th>
+              <th title="아침 8시~9시 동안 두 가격이 어디서 만났는지">만난 지점</th>
             </tr>
           </thead>
           <tbody>
@@ -297,6 +312,10 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                 <td className="muted">{hoursText(e.closedHours)}</td>
                 <td className={tone(e.gapPct)}>{fmtPct(e.gapPct)}</td>
                 <td className={tone(e.openGapPct)}>{fmtPct(e.openGapPct)}</td>
+                <td className={e.nightUsd < thin ? 'faint' : undefined}>
+                  {rate ? `${fmtWonUnit(e.nightUsd * rate)}원` : '-'}
+                  {e.nightUsd < thin && ' · 적음'}
+                </td>
                 <td>
                   <span
                     className={`follow follow--${e.follow}`}
@@ -305,7 +324,15 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                     {FOLLOW_TEXT[e.follow]}
                   </span>
                 </td>
-                <td>{e.absorptionPct == null ? <span className="faint">차이 작음</span> : `${Math.round(e.absorptionPct)}%`}</td>
+                <td>
+                  {e.follow === 'no' ? (
+                    <span className="faint">-</span>
+                  ) : e.absorptionPct == null ? (
+                    <span className="faint">차이 작음</span>
+                  ) : (
+                    `${Math.round(e.absorptionPct)}%`
+                  )}
+                </td>
                 <td>
                   {e.meetPoint == null ? (
                     <span className="faint">-</span>
@@ -322,7 +349,7 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="faint" style={{ textAlign: 'center', padding: 24 }}>
+                <td colSpan={8} className="faint" style={{ textAlign: 'center', padding: 24 }}>
                   조건에 맞는 개장일이 없어요
                 </td>
               </tr>

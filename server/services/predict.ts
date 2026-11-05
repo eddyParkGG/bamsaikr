@@ -216,12 +216,16 @@ export function loadHistory(asset: Asset) {
     let followNo = 0
     let liquidYes = 0
     let liquidNo = 0
+    let bigYes = 0
+    let bigNo = 0
     for (const e of events) {
       e.follow = Math.abs(e.openGapPct) < FLAT_PCT || Math.abs(e.gapPct) < FLAT_PCT ? 'flat' : Math.sign(e.gapPct) === Math.sign(e.openGapPct) ? 'yes' : 'no'
       if (e.follow === 'yes') followYes++
       if (e.follow === 'no') followNo++
       if (e.nightUsd >= THIN_USD && e.follow === 'yes') liquidYes++
       if (e.nightUsd >= THIN_USD && e.follow === 'no') liquidNo++
+      if (Math.abs(e.gapPct) >= 1 && e.follow === 'yes') bigYes++
+      if (Math.abs(e.gapPct) >= 1 && e.follow === 'no') bigNo++
     }
     const model = fit(events, vol)
     const r2 = (x: number) => Math.round(x * 100) / 100
@@ -239,6 +243,10 @@ export function loadHistory(asset: Asset) {
         liquidScored: liquidYes + liquidNo,
         liquidYes,
         thinUsd: THIN_USD,
+        /** Same, only nights Hyperliquid moved 1% or more (bigger moves follow far more often) */
+        bigRatePct: bigYes + bigNo ? r2((bigYes / (bigYes + bigNo)) * 100) : null,
+        bigScored: bigYes + bigNo,
+        bigYes,
         opens: events.length,
         since: events[0]?.date ?? null,
         tested,
