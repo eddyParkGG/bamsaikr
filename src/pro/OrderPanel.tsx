@@ -239,7 +239,7 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null;
   const tabs: [Tab, string][] =
     asset.kind === 'stock'
       ? [
-          ['krx', '정규장'],
+          ['krx', '국내 시장'],
           ['perp', '하이퍼리퀴드'],
           ['pair', '시세차익 기회'],
         ]

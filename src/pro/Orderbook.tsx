@@ -226,9 +226,9 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
           </div>
         )}
         {krxOk && (
-          <div className="seg" role="group" aria-label="호가 시장" style={{ width: 150 }}>
+          <div className="seg" role="group" aria-label="호가 시장" style={{ width: 170 }}>
             <button aria-pressed={tab === 'krx'} onClick={() => setTab('krx')}>
-              {asset.kind === 'stock' ? '정규장' : '국내'}
+              국내 시장
             </button>
             <button aria-pressed={tab === 'perp'} onClick={() => setTab('perp')}>
               하이퍼리퀴드
