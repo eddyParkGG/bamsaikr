@@ -15,7 +15,8 @@
 
 ## Method (short)
 - Opening gap = α + β × (Hyperliquid-implied gap at 08:59 KST), β shrunk toward 1; σ split into weeknight vs weekend, plus closed-hours volatility
-- Backtest uses only data before each day (walk-forward), 119 opens per stock from 2026-05-13 (the first 20 opens from 2026-04-13 are training only): direction hit ~84–90%, 80% band coverage ~75–87%
+- Main check: did the KRX open move the way Hyperliquid moved while the market was closed? 139 opens per stock since 2026-04-13 (moves within ±0.05% excluded): 89.8% / 89.9% / 82.6% (Samsung / SK hynix / Hyundai)
+- Model (walk-forward, 119 opens from 2026-05-13): direction hit 84–90%, 80% band coverage 75–87%
 
 ## API (no key for reads)
 - [OpenAPI spec](/api/openapi.json)

@@ -31,6 +31,9 @@ export interface OpenEvent {
   absorptionPct: number | null // actual gap / perp gap ×100 (100 = opened exactly as perp implied)
   meetPoint: number | null // 0 = perp moved to the stock, 1 = stock moved to the perp
   predictedPct?: number // forecast using only data before that day (walk-forward)
+  /** Did the regular-session open move the way Hyperliquid pointed while the market was closed?
+   *  flat = either move was within ±FLAT_PCT, too small to call a direction */
+  follow: 'yes' | 'no' | 'flat'
   hit?: boolean
   inBand80?: boolean
 }
@@ -113,6 +116,7 @@ function buildEvents(asset: Asset, daily: { date: string; o: number; c: number }
     const meet = P != null && Math.abs(S - P) > 0.001 ? Math.min(1, Math.max(0, S / (S - P))) : null
 
     out.push({
+      follow: 'flat', // set when the history is scored
       date: d.date,
       regime: closedHours > LONG_GAP_HOURS ? 'weekend' : 'overnight',
       closedHours: Math.round(closedHours * 10) / 10,
@@ -144,6 +148,8 @@ function closedHoursVol(perp: Candle[], holidays: ReadonlySet<string>) {
 }
 
 const MIN_TRAIN = 20
+/** Moves smaller than this (in %) count as "no direction" */
+export const FLAT_PCT = 0.05
 
 export function loadHistory(asset: Asset) {
   return cached(`predict:history:${asset.id}`, 10 * 60_000, async () => {
@@ -181,12 +187,27 @@ export function loadHistory(asset: Asset) {
       naiveAbsErr += Math.abs(e.openGapPct)
       perpRawAbsErr += Math.abs(e.openGapPct - e.gapPct)
     }
+    // Hyperliquid-direction check needs no training, so every open is scored
+    let followYes = 0
+    let followNo = 0
+    for (const e of events) {
+      e.follow = Math.abs(e.openGapPct) < FLAT_PCT || Math.abs(e.gapPct) < FLAT_PCT ? 'flat' : Math.sign(e.gapPct) === Math.sign(e.openGapPct) ? 'yes' : 'no'
+      if (e.follow === 'yes') followYes++
+      if (e.follow === 'no') followNo++
+    }
     const model = fit(events, vol)
     const r2 = (x: number) => Math.round(x * 100) / 100
     return {
       model,
       events,
       backtest: {
+        /** Share of opens that moved the way Hyperliquid pointed (flat days excluded) */
+        followRatePct: followYes + followNo ? r2((followYes / (followYes + followNo)) * 100) : null,
+        followScored: followYes + followNo,
+        followYes,
+        followFlat: events.length - followYes - followNo,
+        opens: events.length,
+        since: events[0]?.date ?? null,
         tested,
         hitRatePct: tested ? r2((hits / tested) * 100) : null,
         coverage80Pct: tested ? r2((inBand / tested) * 100) : null,

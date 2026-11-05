@@ -2270,3 +2270,30 @@ button.ob2__px:active::after {
 .stats dd {
   font-variant-numeric: tabular-nums;
 }
+
+/* Prediction record: the Hyperliquid-direction column is the headline */
+.table th.th-key {
+  color: var(--text);
+  font-weight: 700;
+}
+.follow {
+  font-weight: 700;
+}
+.follow--yes {
+  color: var(--key);
+}
+:root[data-theme='light'] .follow--yes {
+  color: #b8a100;
+}
+.follow--no {
+  color: var(--text);
+}
+.follow--flat {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.kv--key dt,
+.kv--key dd b {
+  color: var(--text);
+  font-weight: 700;
+}

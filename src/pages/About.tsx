@@ -56,7 +56,7 @@ export default function About() {
         <div className="panel__body about__body">
           <p className="about__h">H1. 해외 선물 탈중앙 거래소 가격으로 다음 날 장 시작 가격의 방향을 80% 이상 맞힐 수 있다</p>
           <p className="muted" style={{ fontSize: 13 }}>
-            그날 이전 데이터로만 학습해서 그날 장 시작 가격을 맞혀봤어요 (2026년 5월 13일~, 종목별 119번. 4월 13일부터 20번은 학습에만 썼어요).
+            장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 정규장이 시작했는지 봤어요 (2026년 4월 13일~, 종목별 139번. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요).
           </p>
           <div className="about__hits">
             {preds.data
@@ -65,11 +65,11 @@ export default function About() {
                     <StockLogo id={p.asset} size={28} />
                     <span className="strong">{p.name}</span>
                     <span className="spacer" />
-                    <b className="num up" data-fit>
-                      {p.backtest.hitRatePct}%
+                    <b className="num" data-fit>
+                      {p.backtest.followRatePct}%
                     </b>
                     <span className="faint num" style={{ fontSize: 12 }}>
-                      오차 {p.backtest.maePct}%p
+                      {p.backtest.followScored}번 중 {p.backtest.followYes}번 · 모델 예측 {p.backtest.hitRatePct}%
                     </span>
                   </div>
                 ))

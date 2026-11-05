@@ -80,14 +80,23 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
       </section>
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">이 모델, 얼마나 맞았나</span>
+          <span className="panel__title">얼마나 맞았나</span>
         </div>
         <div className="panel__body">
         <dl>
-          <div className="kv">
-            <dt>방향 적중</dt>
+          <div className="kv kv--key">
+            <dt>하이퍼리퀴드 방향대로 열림</dt>
             <dd data-fit>
-              <b>{p.backtest.hitRatePct}%</b> <span className="faint">({p.backtest.tested}회)</span>
+              <b>{p.backtest.followRatePct}%</b>{' '}
+              <span className="faint">
+                ({p.backtest.followScored}번 중 {p.backtest.followYes}번)
+              </span>
+            </dd>
+          </div>
+          <div className="kv">
+            <dt>모델 예측 방향 적중</dt>
+            <dd data-fit>
+              {p.backtest.hitRatePct}% <span className="faint">({p.backtest.tested}번)</span>
             </dd>
           </div>
           <div className="kv">
@@ -108,7 +117,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           </div>
         </dl>
         <p className="faint" style={{ fontSize: 12, marginTop: 6 }}>
-          그날 이전 데이터로만 학습해 예측한 결과예요 (walk-forward). 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
+          방향대로 열림은 {p.backtest.since ? `${+p.backtest.since.slice(4, 6)}월 ${+p.backtest.since.slice(6, 8)}일` : ''}부터 모든 개장을 봤고, 둘 중 하나라도 ±0.05% 안쪽이었던 {p.backtest.followFlat}번은 뺐어요. 모델 예측은 그날 이전 데이터로만 학습한 결과예요 (walk-forward). 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
         </p>
         </div>
       </section>
@@ -187,19 +196,23 @@ function hoursText(h: number) {
 
 const meetText = (m: number) => (m > 0.66 ? '주식이 따라감' : m < 0.34 ? '하이퍼리퀴드가 맞춤' : '가운데서 만남')
 
-type Filters = { regime: string; gap: string; open: string; absorb: string; meet: string; hit: string }
-const ALL: Filters = { regime: '', gap: '', open: '', absorb: '', meet: '', hit: '' }
+type Filters = { follow: string; regime: string; gap: string; open: string; absorb: string; meet: string; hit: string }
+const ALL: Filters = { follow: '', regime: '', gap: '', open: '', absorb: '', meet: '', hit: '' }
+
+const FOLLOW_TEXT = { yes: '따라감', no: '반대로', flat: '거의 그대로' } as const
 
 const FILTERS: { key: keyof Filters; label: string; options: [string, string][] }[] = [
+  { key: 'follow', label: '하이퍼리퀴드 방향대로', options: [['yes', '따라감'], ['no', '반대로'], ['flat', '거의 그대로']] },
   { key: 'regime', label: '닫혀 있던 시간', options: [['overnight', '평일 밤'], ['weekend', '주말 · 연휴']] },
   { key: 'gap', label: '하이퍼리퀴드 차이', options: [['up', '올라 있었음'], ['down', '내려 있었음'], ['big', '1% 넘게 벌어짐']] },
   { key: 'open', label: '실제 시작 차이', options: [['up', '올라서 시작'], ['down', '내려서 시작']] },
   { key: 'absorb', label: '따라간 정도', options: [['80', '80% 이상'], ['50', '50~80%'], ['low', '50% 미만']] },
   { key: 'meet', label: '만난 지점', options: [['stock', '주식이 따라감'], ['mid', '가운데서 만남'], ['perp', '하이퍼리퀴드가 맞춤']] },
-  { key: 'hit', label: '예측', options: [['hit', '맞음'], ['miss', '틀림']] },
+  { key: 'hit', label: '모델 예측', options: [['hit', '맞음'], ['miss', '틀림']] },
 ]
 
 function pass(e: OpenEvent, f: Filters) {
+  if (f.follow && e.follow !== f.follow) return false
   if (f.regime && e.regime !== f.regime) return false
   if (f.gap === 'up' && !(e.gapPct > 0)) return false
   if (f.gap === 'down' && !(e.gapPct < 0)) return false
@@ -229,7 +242,8 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
   const [f, setF] = useState<Filters>(ALL)
   if (!q.data) return <div className="skeleton" style={{ height: 240, margin: 16 }} />
   const rows = q.data.events.filter((e) => pass(e, f))
-  const hits = rows.filter((e) => e.hit != null)
+  const scored = rows.filter((e) => e.follow !== 'flat')
+  const followPct = scored.length ? Math.round((scored.filter((e) => e.follow === 'yes').length / scored.length) * 100) : null
   return (
     <>
       <div className="fbar">
@@ -242,14 +256,17 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
           <thead>
             <tr>
               <th>
-                개장일 · {rows.length}개{hits.length > 0 && ` · 적중 ${Math.round((hits.filter((e) => e.hit).length / hits.length) * 100)}%`}
+                개장일 · {rows.length}개{followPct != null && ` · 방향대로 ${followPct}%`}
               </th>
               <th>닫혀 있던 시간</th>
               <th>하이퍼리퀴드 차이</th>
               <th>실제 시작 차이</th>
+              <th className="th-key" title="장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 정규장이 시작했는지">
+                하이퍼리퀴드 방향대로
+              </th>
               <th title="실제 차이 ÷ 하이퍼리퀴드 차이. 100%면 하이퍼리퀴드가 보여준 그대로 시작">따라간 정도</th>
               <th title="장 시작 후 1시간 동안 두 가격이 어디서 만났는지">만난 지점</th>
-              <th>예측</th>
+              <th title="밤사이 모델이 낸 예측 방향이 맞았는지. 처음 20번은 모델 학습 기간">모델 예측</th>
             </tr>
           </thead>
           <tbody>
@@ -261,6 +278,14 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                 <td className="muted">{hoursText(e.closedHours)}</td>
                 <td className={tone(e.gapPct)}>{fmtPct(e.gapPct)}</td>
                 <td className={tone(e.openGapPct)}>{fmtPct(e.openGapPct)}</td>
+                <td>
+                  <span
+                    className={`follow follow--${e.follow}`}
+                    title={e.follow === 'flat' ? `둘 중 하나가 ±0.05% 안쪽이라 방향을 따지기 어려운 날이에요` : undefined}
+                  >
+                    {FOLLOW_TEXT[e.follow]}
+                  </span>
+                </td>
                 <td>{e.absorptionPct == null ? <span className="faint">차이 작음</span> : `${Math.round(e.absorptionPct)}%`}</td>
                 <td>
                   {e.meetPoint == null ? (
@@ -279,17 +304,15 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                     <span className="faint" title="모델을 세우는 데 처음 20번의 개장이 필요해서, 이 기간은 학습에만 썼어요">
                       학습 기간
                     </span>
-                  ) : e.hit ? (
-                    <span className="hit-yes">맞음</span>
                   ) : (
-                    <span className="faint">틀림</span>
+                    <span className="muted">{e.hit ? '맞음' : '틀림'}</span>
                   )}
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="faint" style={{ textAlign: 'center', padding: 24 }}>
+                <td colSpan={8} className="faint" style={{ textAlign: 'center', padding: 24 }}>
                   조건에 맞는 개장일이 없어요
                 </td>
               </tr>
