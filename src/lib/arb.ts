@@ -17,7 +17,7 @@ export function arbKind(s: ArbSnapshot): ArbKind {
 
 const p2 = (v: number) => fmtPct(Math.abs(v), 2, false)
 
-/** Sentence for notice bars; `short` for list rows */
+/** Full sentence for the chart note; `short` for list rows and the bottom bar */
 export function arbText(s: ArbSnapshot) {
   const k = arbKind(s)
   const won = fmtWon(Math.round(s.net.netKrwPer10m))

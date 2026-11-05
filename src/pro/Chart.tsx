@@ -4,8 +4,10 @@ import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Pr
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
 import { SESSION_LABEL, venueAt } from '../lib/market'
-import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWonUnit } from '../lib/format'
+import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit } from '../lib/format'
 import { useLive } from '../lib/live'
+import { arbKind, arbText } from '../lib/arb'
+import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
 import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
 import type { Span } from './primitives'
@@ -23,9 +25,12 @@ interface Props {
   params: IndicatorParams
   theme: string
   onNews: (n: NewsMarker) => void
+  /** Open the forecast tab / the spread order, from the notes on the chart */
+  onPredict: () => void
+  onArb: () => void
 }
 
-function ChartImpl({ asset, interval, data, news, events, prediction, arb, settings, params, theme, onNews }: Props) {
+function ChartImpl({ asset, interval, data, news, events, prediction, arb, settings, params, theme, onNews, onPredict, onArb }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const legend = useRef<HTMLDivElement>(null)
   const tip = useRef<HTMLDivElement>(null)
@@ -226,7 +231,90 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       <div ref={tip} className="chart__tip" hidden />
       {card && ctl.current && <BarCard card={card} interval={interval} lookup={ctl.current.lookup} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} isIdx={asset.kind === 'index'} />}
       {!data.krx.length && settings.showKrx && <div className="chart__empty">이 구간에는 국내 시세가 없어요.</div>}
+      {asset.kind === 'stock' && <ChartNotes ctl={ctl} ready={ready} arb={arb} prediction={settings.forecast ? prediction : null} onPredict={onPredict} onArb={onArb} />}
     </div>
+  )
+}
+
+/**
+ * Notes on the chart, pinned to a price like order lines in a brokerage chart:
+ * the spread opportunity sits on the Hyperliquid price, tomorrow's forecast on its expected price.
+ * While the domestic market trades there is no forecast yet, so a small note sits at the top instead
+ */
+function ChartNotes({ ctl, ready, arb, prediction, onPredict, onArb }: { ctl: React.RefObject<ChartController | null>; ready: number; arb: ArbSnapshot | null; prediction: Prediction | null; onPredict: () => void; onArb: () => void }) {
+  const arbEl = useRef<HTMLDivElement>(null)
+  const fcEl = useRef<HTMLDivElement>(null)
+  const arbPrice = arb && arb.mode === 'live' ? arb.perpKrw : null
+  const fc = prediction && predictionReady(prediction) ? prediction : null
+
+  useEffect(() => {
+    ctl.current?.setArbLine(arbPrice)
+  }, [ctl, ready, arbPrice])
+
+  // Follow zoom, scroll and rescale: place the notes every frame (two reads, no re-render)
+  useEffect(() => {
+    let raf = 0
+    const place = (el: HTMLDivElement | null, price: number | null) => {
+      const c = ctl.current
+      if (!el) return
+      const y = c && price != null ? c.yOf(price) : null
+      if (!c || y == null || y < 24 || y > c.mainPaneHeight - 8) {
+        el.hidden = true
+        return
+      }
+      el.hidden = false
+      el.style.top = `${Math.round(y)}px`
+      el.style.right = `${c.axisWidth + 6}px`
+    }
+    const tick = () => {
+      place(arbEl.current, arbPrice)
+      place(fcEl.current, fc?.expectedOpen ?? null)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [ctl, arbPrice, fc?.expectedOpen])
+
+  const t = arb ? arbText(arb) : null
+  return (
+    <>
+      {arb && t && arbPrice != null && (
+        <div ref={arbEl} className="cnote cnote--arb" hidden>
+          <span className="cnote__label">시세차익</span>
+          {arbKind(arb) === 'go' ? (
+            <>
+              <span>
+                평소보다 {fmtPct(Math.abs(arb.deviationPct), 2, false)} 더 벌어졌어요 · 1천만원이면 약 <b>{fmtWon(Math.round(arb.net.netKrwPer10m))}원</b> 남아요
+              </span>
+              <button className="cnote__btn cnote__btn--key" onClick={onArb}>
+                시세차익 내기
+              </button>
+            </>
+          ) : (
+            <span className="faint">{t.text}</span>
+          )}
+        </div>
+      )}
+      {fc && (
+        <div ref={fcEl} className="cnote" hidden>
+          <span className="cnote__label">내일 아침 예상</span>
+          <span>
+            {fmtPrice(fc.expectedOpen)}원 · 오를 확률 <b>{Math.round(fc.probUp * 100)}%</b>
+          </span>
+          <button className="cnote__btn" onClick={onPredict}>
+            자세히
+          </button>
+        </div>
+      )}
+      {prediction && !predictionReady(prediction) && (
+        <div className="cnote cnote--top">
+          <span className="cnote__label">내일 예측</span>
+          <span className="faint">
+            장 마감 후 예측해요 · <NextOpenWhen at={prediction.targetOpenAt} />
+          </span>
+        </div>
+      )}
+    </>
   )
 }
 

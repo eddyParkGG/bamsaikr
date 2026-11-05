@@ -1,9 +1,8 @@
 import { Chevron } from '../components/Icon'
 import { Help } from '../components/Help'
-import { arbKind, arbText } from '../lib/arb'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
-import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
+import { predictionReady } from '../components/NextOpenState'
+import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent } from '../../shared/api'
 import { canPredict, hasKrx, type Asset } from '../../shared/assets'
 import { openSearch } from '../components/AssetSearch'
 import { useArb, usePerps, usePrediction, useStatus, useUsdcRate } from '../lib/data'
@@ -13,8 +12,7 @@ import { NewsSheet } from '../components/NewsSheet'
 import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
-import { fmtKrw, fmtPct, fmtPrice, fmtWon, fmtWonUnit, tone } from '../lib/format'
-import { probLabel } from '../lib/copy'
+import { fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
@@ -261,7 +259,7 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-/** Live numbers shared by the stock head and the compact bar: domestic price from live trades, perp in KRW */
+/** Live numbers for the stock head: domestic price from live trades, perp in KRW */
 function useStockLive(asset: Asset, arb: ArbSnapshot | null) {
   const ctx = useLive((s) => s.ctx[asset.perp])
   const usdcRate = useUsdcRate()
@@ -305,13 +303,13 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-/** The stock stats strip. In the compact bar the groups are reordered by importance and the ones that do not fit drop out */
-function StockStats({ asset, arb, live, compact = false }: { asset: Asset; arb: ArbSnapshot; live: NonNullable<ReturnType<typeof useStockLive>>; compact?: boolean }) {
+/** The stock stats strip */
+function StockStats({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot; live: NonNullable<ReturnType<typeof useStockLive>> }) {
   const isIdx = asset.kind === 'index'
   const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium } = live
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
   return (
-    <dl className={compact ? 'stats stats--compact' : 'stats'}>
+    <dl className="stats">
       <div className="stats__group">
         <dt>1일 범위</dt>
         <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
@@ -353,103 +351,6 @@ function StockStats({ asset, arb, live, compact = false }: { asset: Asset; arb: 
   )
 }
 
-/** Bar pinned under the top menu once the stock head has scrolled away.
- *  Row 1: name and price (as in the head) with the most important stats that fit; row 2: the tabs, left-aligned as above */
-function CompactBar({ asset, arb, tabs, tab, onTab, show }: { asset: Asset; arb: ArbSnapshot | null; tabs: [Tab, string][]; tab: Tab; onTab: (t: Tab) => void; show: boolean }) {
-  const live = useStockLive(asset, arb)
-  const perp = usePerps(asset.id).item
-  const usdc = useUsdcRate()
-  const isIdx = asset.kind === 'index'
-  let price: number | null = null
-  let diff = 0
-  let pct = 0
-  if (asset.kind === 'stock' && live) {
-    price = live.krxPrice
-    diff = live.diff
-    pct = live.changePct
-  } else if (perp) {
-    const rate = asset.fx ? (usdc ?? 0) : 1
-    price = perp.mid * rate
-    diff = (perp.mid - perp.prevDay) * rate
-    pct = (perp.mid / perp.prevDay - 1) * 100
-  }
-  return (
-    <div className={`pcompact ${show ? 'is-on' : ''}`} aria-hidden={!show}>
-      <div className="pcompact__row">
-        <div className="pcompact__id">
-          <AssetName asset={asset} />
-          {price != null && (
-            <span className="pcompact__price num">
-              <b>{fmtKrw(price, isIdx)}</b>
-              <span className={tone(diff)}>{fmtPct(pct)}</span>
-            </span>
-          )}
-        </div>
-        {asset.kind === 'stock' && live && arb && <StockStats asset={asset} arb={arb} live={live} compact />}
-      </div>
-      <div className="ptabs" role="tablist">
-        {tabs.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={tab === k} tabIndex={show ? 0 : -1} onClick={() => onTab(k)}>
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** Beginner answers on top of the stock screen, in the brokerage app's notice-bar style */
-function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnapshot | null; onPredict: () => void }) {
-  const net = arb ? Math.round(arb.net.netKrwPer10m) : 0
-  const pl = p ? probLabel(p.probUp) : null
-  const chevron = (
-    <Chevron dir="right" size={24} className="nbar__chev" />
-  )
-  return (
-    <div className="quick">
-      <button className="nbar" onClick={onPredict}>
-        <span className="nbar__label">내일 예측</span>
-        <i className="nbar__sep" />
-        <span className="nbar__text num" data-fit>
-          {!p ? (
-            '불러오는 중'
-          ) : !predictionReady(p) ? (
-            <>
-              장 마감 후 예측해요 · <NextOpenWhen at={p.targetOpenAt} />
-            </>
-          ) : (
-            <>
-              <b className={pl!.tone}>
-                {pl!.label} {pl!.value}%
-              </b>{' '}
-              · 예상 {fmtPrice(p.expectedOpen)}원 <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
-              {p.thin && <span className="faint"> · 거래 적어 덜 정확</span>}
-            </>
-          )}
-        </span>
-        {chevron}
-      </button>
-      <button className="nbar" onClick={() => window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}>
-        <span className="nbar__label">시세차익 기회</span>
-        <i className="nbar__sep" />
-        <span className="nbar__text num" data-fit>
-          {!arb ? (
-            '불러오는 중'
-          ) : arb.mode === 'gap' ? (
-            '장 열리면 확인할 수 있어요'
-          ) : arbKind(arb) === 'go' ? (
-            <>
-              평소보다 {fmtPct(Math.abs(arb.deviationPct), 2, false)} 더 벌어졌어요 · 1천만원 기준 <b className="up">약 {fmtWon(net)}원</b> 남아요 · 실행하기
-            </>
-          ) : (
-            arbText(arb).text
-          )}
-        </span>
-        {chevron}
-      </button>
-    </div>
-  )
-}
 
 type Tab = 'chart' | 'predict' | 'conv' | 'flows'
 
@@ -503,44 +404,40 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     if (k === 'predict' || k === 'conv') track('model_explain_open', { asset: asset.id, tab: k })
   }
 
-  // Compact bar shows once the tabs reach its bottom edge: that is exactly when the chart starts to pin under it,
-  // so no empty band opens up between the tabs and the pinned chart
-  const tabsRef = useRef<HTMLDivElement>(null)
-  const [compact, setCompact] = useState(false)
+  // Chart and order book fill the screen below the stock head: no page scroll on the chart tab.
+  // 60px = the page's bottom padding (bottom bar + margin)
+  const gridRef = useRef<HTMLDivElement>(null)
+  const [chartH, setChartH] = useState(600)
   useEffect(() => {
-    const el = tabsRef.current
-    if (!el) return
-    const root = getComputedStyle(document.documentElement)
-    const edge = (parseFloat(root.getPropertyValue('--header-h')) || 60) + (parseFloat(root.getPropertyValue('--compact-h')) || 0)
-    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting && e.boundingClientRect.top < edge), { rootMargin: `-${edge}px 0px 0px 0px` })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
+    const measure = () => {
+      const el = gridRef.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top + window.scrollY
+      setChartH(Math.max(480, Math.round(window.innerHeight - top - 60)))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(document.body)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [tab])
 
   return (
     <>
       {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
-      {asset.kind === 'stock' && (
-        <QuickAnswer
-          p={pred.data ?? null}
-          arb={arb}
-          onPredict={() => {
-            setTab('predict')
-            track('model_explain_open', { asset: asset.id, tab: 'predict', from: 'notice_bar' })
-          }}
-        />
-      )}
-      <div className="ptabs" role="tablist" ref={tabsRef}>
+      <div className="ptabs" role="tablist">
         {tabs.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
             {label}
           </button>
         ))}
       </div>
-      <CompactBar asset={asset} arb={arb} tabs={tabs} tab={tab} onTab={selectTab} show={compact} />
 
       {tab === 'chart' && (
-        <div className="pro-grid" style={{ '--side-w': `${sideW}px` } as React.CSSProperties}>
+        <div className="pro-grid" ref={gridRef} style={{ '--side-w': `${sideW}px`, '--chart-h': `${chartH}px` } as React.CSSProperties}>
           <section className="panel pro-chart">
             <div className="panel__head">
               <span className="panel__title">차트</span>
@@ -623,6 +520,11 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                     params={params}
                     theme={theme}
                     onNews={onNews}
+                    onPredict={() => {
+                      selectTab('predict')
+                      track('model_explain_open', { asset: asset.id, tab: 'predict', from: 'chart' })
+                    }}
+                    onArb={() => void window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}
                   />
                 </Suspense>
               ) : series.error ? (

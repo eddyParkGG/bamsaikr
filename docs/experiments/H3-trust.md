@@ -7,7 +7,7 @@ and they check that evidence before acting.
 
 | Place | What it shows | Event fired |
 |---|---|---|
-| Stock detail → top bar "내일 예측" | Opens the 개장 예측 tab | `model_explain_open` (`tab=predict`, `from=notice_bar`) |
+| Stock detail → "자세히" on the chart's 내일 아침 예상 note | Opens the 개장 예측 tab | `model_explain_open` (`tab=predict`, `from=chart`) |
 | Stock detail → 개장 예측 tab | "얼마나 맞았나": Hyperliquid-direction rate, band coverage, error | `model_explain_open` (`tab=predict`) |
 | Stock detail → 예측 기록 tab | Per-open record with filters | `model_explain_open` (`tab=conv`) and `convergence_view` |
 

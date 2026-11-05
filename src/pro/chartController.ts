@@ -354,6 +354,7 @@ export class ChartController {
         }
       }
       this.priceLines = []
+      this.arbLine = null
       this.host = host
       if (host) {
         host.attachPrimitive(this.bands)
@@ -460,12 +461,35 @@ export class ChartController {
       this.priceLines = []
       if (s.forecast && prediction && prediction.status === 'pre-open') {
         this.priceLines = [
-          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '내일 아침 예상' }),
+          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '' }),
           host.createPriceLine({ price: prediction.band80.high, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '범위' }),
           host.createPriceLine({ price: prediction.band80.low, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '범위' }),
         ]
       }
     }
+  }
+
+  // ───────── on-chart notes (HTML overlays placed by price) ─────────
+
+  /** Y of a price on the main pane, or null while the chart has no scale yet */
+  yOf(price: number) {
+    return this.host?.priceToCoordinate(price) ?? null
+  }
+  get mainPaneHeight() {
+    return this.chart.panes()[0]?.getHeight() ?? 0
+  }
+  get axisWidth() {
+    return this.chart.priceScale('right').width()
+  }
+
+  private arbLine: IPriceLine | null = null
+  /** Dashed Hyperliquid price line for the spread note; skipped when the Hyperliquid series already shows its own */
+  setArbLine(price: number | null) {
+    const host = this.host
+    if (this.arbLine && host) host.removePriceLine(this.arbLine)
+    this.arbLine = null
+    if (!host || price == null || this.settings.showPerp) return
+    this.arbLine = host.createPriceLine({ price, color: this.c.perp, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '' })
   }
 
   get krxSeries() {

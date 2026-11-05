@@ -247,26 +247,17 @@
 
 /* ───── Pro mode body ───── */
 .pro-grid {
-  /* Fills the screen under the top menu and the compact bar: 8px gap above, the page's 60px bottom padding (bottom bar + margin) below.
-     At the end of the scroll the boxes then sit exactly under the compact bar instead of sliding beneath it */
-  --chart-h: max(480px, calc(100vh - var(--header-h) - var(--compact-h) - 8px - 60px));
+  /* --chart-h is set from the page: the screen height left under the stock head (no page scroll) */
   display: grid;
   grid-template-columns: minmax(0, 1fr) 8px var(--side-w, 340px);
   align-items: start;
   margin-top: 8px;
-  /* Room for the pinned chart and order book to slide down under the compact bar.
-     Sticky boxes only move within their container's content box; without this they had none and slid beneath the bar */
-  min-height: calc(var(--chart-h) + var(--compact-h));
 }
 .pro-chart {
-  position: sticky;
-  top: calc(var(--header-h) + var(--compact-h) + 8px);
   height: var(--chart-h);
 }
-/* Order book + order form: same top and height as the chart while scrolling */
+/* Order book + order form: same height as the chart */
 .pro-trade {
-  position: sticky;
-  top: calc(var(--header-h) + var(--compact-h) + 8px);
   height: var(--chart-h);
   display: flex;
   flex-direction: column;
@@ -292,8 +283,6 @@
 
 /* Chart ↔ right column resize handle: hidden until hover, 4px key-color bar */
 .split {
-  position: sticky;
-  top: calc(var(--header-h) + var(--compact-h) + 8px);
   height: var(--chart-h);
   width: 10px;
   margin-left: -1px;
@@ -335,8 +324,17 @@ body.is-resizing * {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  /* Full row height, so the pinned order book has room to slide down like the chart */
-  align-self: stretch;
+  /* The right column scrolls on its own (the chart stays put): scrolling down slides today's issue away
+     and leaves the order book and order form at the chart's height */
+  height: var(--chart-h);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.pro-col::-webkit-scrollbar {
+  display: none;
+}
+.pro-col > * {
+  flex-shrink: 0;
 }
 .chart-tools {
   display: flex;
@@ -985,16 +983,18 @@ body.is-resizing * {
     display: none;
   }
   .pro-trade {
-    position: static;
     height: auto;
+  }
+  .pro-col {
+    height: auto;
+    overflow: visible;
   }
   .pro-trade .ob2-scroll {
     height: 360px;
     flex: none;
   }
-  /* One column: nothing sticks, so the chart and the order book never slide over each other */
+  /* One column: the page scrolls normally */
   .pro-chart {
-    position: static;
     --chart-h: clamp(420px, 70vh, 640px);
     height: var(--chart-h);
   }
@@ -2142,57 +2142,6 @@ button.ob2__px:active::after {
   flex-shrink: 0;
 }
 
-/* Stock screen top: two notice bars (brokerage notice-bar values: 38px, radius 8, blue label, divider) */
-.quick {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 0 0 10px;
-}
-.nbar {
-  display: flex;
-  align-items: center;
-  height: 38px;
-  padding: 6px 4px 6px 12px;
-  border-radius: 8px;
-  background: rgba(217, 217, 255, 0.11);
-  text-align: left;
-  min-width: 0;
-}
-:root[data-theme='light'] .nbar {
-  background: var(--fill);
-}
-.nbar__label {
-  flex-shrink: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-2);
-}
-.nbar__sep {
-  flex-shrink: 0;
-  width: 1px;
-  height: 16px;
-  margin: 0 10px;
-  background: var(--line-strong);
-}
-.nbar__text {
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
-  color: var(--text);
-}
-.nbar__text b {
-  font-weight: 700;
-}
-.nbar__chev {
-  flex-shrink: 0;
-  color: #62626d;
-}
-@media (max-width: 720px) {
-  .quick {
-    grid-template-columns: 1fr;
-  }
-}
 
 
 /* Stock header: fixed-width name/price block so the stat strip never shifts as digits change */
@@ -2233,7 +2182,7 @@ button.ob2__px:active::after {
 }
 
 
-/* Narrow screens: header search collapses, stat strip and notice bars stack */
+/* Narrow screens: header search collapses, stat strip stacks */
 @media (max-width: 720px) {
   .stock-head__id {
     flex: 1 1 100%;
@@ -2420,111 +2369,6 @@ button.ob2__px:active::after {
   grid-template-columns: 164px 1fr;
 }
 
-/* Compact stock bar: pinned under the top menu once the stock head scrolls away */
-:root {
-  --compact-h: 108px;
-}
-.pcompact {
-  position: fixed;
-  top: var(--header-h);
-  left: 0;
-  right: 0;
-  z-index: 19;
-  height: var(--compact-h);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 24px;
-  background: var(--bg-screen);
-  border-bottom: 1px solid var(--line);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-6px);
-  transition: opacity 0.15s, transform 0.15s, visibility 0s 0.15s;
-}
-/* Fill the 8px gap down to the pinned chart so scrolled content never shows through it */
-.pcompact::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 8px;
-  background: var(--bg-screen);
-}
-.pcompact.is-on {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  transition: opacity 0.15s, transform 0.15s;
-}
-.pcompact__price {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.pcompact__price b {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-}
-.pcompact__row {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  min-width: 0;
-}
-.pcompact__id {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex-shrink: 0;
-}
-/* Stats in the compact bar: most important first, groups that do not fit wrap out of sight */
-.stats--compact {
-  flex: 1;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  height: 40px;
-  overflow: hidden;
-}
-.stats--compact .stats__group,
-.stats--compact .stats__group:first-child {
-  border-left: 1px solid var(--line);
-  padding: 0 18px;
-}
-.stats--compact .stats__group:nth-child(2) {
-  order: 1;
-}
-.stats--compact .stats__group:nth-child(3) {
-  order: 2;
-}
-.stats--compact .stats__group:nth-child(1) {
-  order: 3;
-}
-.stats--compact .stats__group:nth-child(4) {
-  order: 4;
-}
-.stats--compact .stats__group:nth-child(5) {
-  order: 5;
-}
-@media (max-width: 720px) {
-  :root {
-    --compact-h: 60px;
-  }
-  .pcompact {
-    padding: 0 12px;
-  }
-  .stats--compact,
-  .pcompact .ptabs {
-    display: none;
-  }
-}
-
 /* No rubber-band bounce: pinned bars stay put on hard scrolls */
 html,
 body {
@@ -2540,4 +2384,58 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Notes on the chart, pinned to a price (spread opportunity on the Hyperliquid price, forecast on its expected price) */
+.cnote {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  background: var(--bg-float);
+  box-shadow: 0 0 0 1px var(--line), 0 4px 14px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+.cnote[hidden] {
+  display: none;
+}
+.cnote--arb .cnote__label {
+  color: var(--perp);
+}
+.cnote--top {
+  top: 52px;
+  right: 100px;
+  transform: none;
+  padding-right: 10px;
+}
+.cnote__label {
+  color: var(--text-3);
+}
+.cnote__btn {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--fill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.cnote__btn:hover {
+  background: var(--fill-hover);
+}
+.cnote__btn--key {
+  background: var(--key);
+  color: var(--on-key);
+}
+.cnote__btn--key:hover {
+  background: var(--key-press);
 }
