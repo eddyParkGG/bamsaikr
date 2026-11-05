@@ -36,13 +36,13 @@ function Row({ label, help, children }: { label: string; help: string; children:
   )
 }
 
-/** 'M/D (요일)' from a KST 'YYYYMMDD' key; Saturday and Sunday in red, brackets included */
+/** 'M/D (요일)' from a KST 'YYYYMMDD' key; the whole date in red on Saturday and Sunday */
 function DateDow({ date }: { date: string }) {
   const p = dateKeyParts(date)
   return (
-    <>
-      {p.md} <span className={p.weekend ? 'dow--weekend' : undefined}>({p.dow})</span>
-    </>
+    <span className={p.weekend ? 'dow--weekend' : undefined}>
+      {p.md} ({p.dow})
+    </span>
   )
 }
 
