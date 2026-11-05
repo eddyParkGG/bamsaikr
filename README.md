@@ -327,7 +327,7 @@ npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 국내 
    - 사용자 범위: `first_source`, `first_content`
    - 주요 이벤트(전환): `launch_notify_signup`, `order_submit`, `model_explain_open`
 4. 탐색 → 코호트 탐색: 코호트 = `first_source`, 재방문 조건 = `page_view` 중 `kst_window = preopen`
-5. 커뮤니티 글 링크 예시: `https://<도메인>/?utm_source=naver_jongto&utm_medium=community&utm_campaign=bamsai_test1&utm_content=smsn_thu_A`
+5. 커뮤니티 글 링크 예시: `https://bamsai.kr/?utm_source=naver_jongto&utm_medium=community&utm_campaign=bamsai_test1&utm_content=smsn_thu_A`
 
 ## 사용한 외부 API
 
