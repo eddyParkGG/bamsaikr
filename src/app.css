@@ -2207,3 +2207,57 @@ button.ob2__px:active::after {
   color: var(--text-3);
   flex-shrink: 0;
 }
+
+/* Stock screen top: the two beginner answers */
+.quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.quick__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: var(--r-item);
+  background: var(--bg);
+  box-shadow: var(--shadow-panel);
+  min-width: 0;
+}
+.quick__q {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.quick__a {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 14px;
+}
+.quick__a b {
+  font-size: 18px;
+  font-weight: 700;
+}
+.quick__a .faint {
+  font-size: 13px;
+}
+.quick__link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.quick__link:hover {
+  color: var(--text);
+}
+@media (max-width: 720px) {
+  .quick {
+    grid-template-columns: 1fr;
+  }
+}

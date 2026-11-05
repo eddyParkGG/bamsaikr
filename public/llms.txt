@@ -27,7 +27,8 @@
 - MCP server: /api/mcp (Streamable HTTP)
 
 ## Pages
-- [요약 (summary)](/): one-line answers for each stock
+- [홈 (home)](/): next-open probability and spread opportunity for each stock
+- [종목 화면 (stock)](/s/SKHX): summary answers, overlaid chart, order books, open-convergence history
 - [소개 (about)](/about): problem, target users, hypotheses and live hit rates
 - [API](/developers): REST, OpenAPI and MCP usage
 

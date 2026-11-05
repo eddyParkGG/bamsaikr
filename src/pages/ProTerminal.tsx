@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { InSessionNotice, NextOpenWhen, predictionReady } from '../components/NextOpenState'
+import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction, Status } from '../../shared/api'
 import { canPredict, hasKrx, type Asset } from '../../shared/assets'
 import { openSearch, type PerpQuote } from '../components/AssetSearch'
@@ -9,7 +9,8 @@ import { NewsSheet } from '../components/NewsSheet'
 import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
+import { fmtPct, fmtPrice, fmtWon, fmtWonUnit, tone } from '../lib/format'
+import { probLabel } from '../easy/copy'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
@@ -358,46 +359,63 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
-  if (!p) return <div className="panel skeleton" style={{ height: 150 }} />
-  const isIdx = asset.kind === 'index'
-  const up = p.probUp >= 0.5
+/** Beginner answers on top of the stock screen: "will it open higher?" and "what does the gap pay?" */
+function QuickAnswer({ p, arb }: { p: Prediction | null; arb: ArbSnapshot | null }) {
+  const net = arb ? Math.round(arb.net.netKrwPer10m) : 0
+  const pl = p ? probLabel(p.probUp) : null
   return (
-    <section className="panel">
-      <div className="panel__head">
-        <span className="panel__title">다음 장 시작 가격</span>
-        <span className="spacer" />
-        <span className="faint" style={{ fontSize: 12 }}>
-          <NextOpenWhen at={p.targetOpenAt} />
-        </span>
-      </div>
-      <div className="panel__body">
-        {!predictionReady(p) ? (
-          <InSessionNotice />
+    <div className="quick">
+      <div className="quick__cell">
+        <span className="quick__q">내일 아침 가격, 오를까요?</span>
+        {!p ? (
+          <div className="skeleton" style={{ height: 24, width: 200 }} />
+        ) : !predictionReady(p) ? (
+          <p className="quick__a">
+            <b className="muted">장 마감 후 예측해요</b>
+            <span className="faint">
+              <NextOpenWhen at={p.targetOpenAt} />
+            </span>
+          </p>
         ) : (
-        <>
-        <div className="row" style={{ alignItems: 'baseline', marginBottom: 8 }}>
-          <span className={`num ${up ? 'up' : 'down'}`} style={{ fontSize: 18, fontWeight: 700 }}>
-            {Math.round((up ? p.probUp : 1 - p.probUp) * 100)}%
-          </span>
-          <span className="muted" style={{ fontSize: 13, fontWeight: 600 }}>
-            {up ? '오를 확률' : '내릴 확률'}
-          </span>
-          <span className="spacer" />
-          <span className="num strong" style={{ fontWeight: 700, minWidth: 0 }} data-fit>
-            {fmtPrice(p.expectedOpen, isIdx)} <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
-          </span>
-        </div>
-        <div className="prob__bar" style={{ height: 6 }}>
-          <i className="prob__up" style={{ width: `${p.probUp * 100}%` }} />
-        </div>
-        <p className="faint num" style={{ fontSize: 12, marginTop: 8 }} data-fit>
-          80% 구간 {fmtPrice(p.band80.low, isIdx)} ~ {fmtPrice(p.band80.high, isIdx)} · 과거 적중 {p.backtest.hitRatePct}%
-        </p>
-        </>
+          <p className="quick__a num">
+            <b className={pl!.tone}>
+              {pl!.label} {pl!.value}%
+            </b>
+            <span className="muted">
+              예상 {fmtPrice(p.expectedOpen)}원 <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
+            </span>
+            <span className="faint">
+              지난 {p.backtest.tested}번 중 {Math.round(((p.backtest.hitRatePct ?? 0) * p.backtest.tested) / 100)}번 맞힘
+            </span>
+          </p>
         )}
       </div>
-    </section>
+      <div className="quick__cell">
+        <span className="quick__q">지금 시세차익 기회 · 1천만원 기준</span>
+        {!arb ? (
+          <div className="skeleton" style={{ height: 24, width: 200 }} />
+        ) : (
+          <p className="quick__a num">
+            {arb.mode === 'gap' ? (
+              <b className="muted">장 열리면 확인할 수 있어요</b>
+            ) : net > 0 && arb.net.executable ? (
+              <b className="up">약 {fmtWon(net)}원 남아요</b>
+            ) : (
+              <b className="muted">지금은 비용이 더 커요</b>
+            )}
+            <span className="faint">
+              차이 {fmtPct(arb.premiumPct)} · 비용 뺀 {fmtPct(arb.net.netPct)}
+            </span>
+            <button className="quick__link" onClick={() => window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}>
+              시세차익 실행
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -443,6 +461,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   return (
     <>
       {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
+      {asset.kind === 'stock' && <QuickAnswer p={pred.data ?? null} arb={arb} />}
       <div className="ptabs" role="tablist">
         {tabs.map(([k, label]) => (
           <button
@@ -567,7 +586,6 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
 
           <div className="pro-col">
             <TodayIssue asset={asset.id} limit={1} onOpen={onNews} />
-            {predictable && <NextOpenMini p={pred.data ?? null} asset={asset} />}
             {/* Order book + order form stick to the chart's top edge and fill its height */}
             <div className="pro-trade">
               <Orderbook asset={asset} arb={arb} />

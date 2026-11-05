@@ -34,11 +34,11 @@ export default function About() {
         <div className="panel__body about__body">
           <dl className="about__targets">
             <div>
-              <dt>요약 탭</dt>
+              <dt>홈</dt>
               <dd>삼성전자·SK하이닉스를 가진 직장인. 출근길 08~09시에 "오늘 장 시작하면 어떨까"가 궁금한 사람</dd>
             </div>
             <div>
-              <dt>상세 탭</dt>
+              <dt>종목 화면</dt>
               <dd>주식과 코인을 같이 하는 트레이더. 두 시장 차이와 개장 갭을 매매에 쓰는 사람</dd>
             </div>
             <div>

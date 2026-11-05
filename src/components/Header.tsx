@@ -1,13 +1,13 @@
 import { track } from '../lib/ga'
 import { usePrefs } from '../lib/prefs'
-import { Link, navigate, usePath } from '../lib/router'
+import { Link, usePath } from '../lib/router'
 import { BrandMark } from './Brand'
 import { SearchTrigger } from './AssetSearch'
 
 export function Header() {
-  const { mode, setMode, theme, setTheme } = usePrefs()
+  const { theme, setTheme } = usePrefs()
   const path = usePath()
-  const onMarket = path === '/' || path.startsWith('/s/')
+  const onMarket = path.startsWith('/s/') || path === '/market'
   return (
     <header className="header">
       <div className="header__inner">
@@ -16,7 +16,7 @@ export function Header() {
           밤사이
         </Link>
         <nav className="nav">
-          <Link href="/" aria-current={onMarket ? 'page' : undefined}>
+          <Link href="/s/SKHX" aria-current={onMarket ? 'page' : undefined}>
             시세
           </Link>
           <Link href="/about" aria-current={path === '/about' ? 'page' : undefined}>
@@ -28,28 +28,6 @@ export function Header() {
         </nav>
         <span className="spacer" />
         <SearchTrigger />
-        <div className="seg" role="group" aria-label="화면 모드" style={{ width: 120 }}>
-          <button
-            aria-pressed={onMarket && mode === 'easy'}
-            onClick={() => {
-              setMode('easy')
-              track('mode_switch', { mode: 'easy' })
-              if (!onMarket) navigate('/')
-            }}
-          >
-            요약
-          </button>
-          <button
-            aria-pressed={onMarket && mode === 'pro'}
-            onClick={() => {
-              setMode('pro')
-              track('mode_switch', { mode: 'pro' })
-              if (!onMarket) navigate('/')
-            }}
-          >
-            상세
-          </button>
-        </div>
         <button className="icon-btn" aria-label={theme === 'dark' ? '밝은 화면으로' : '어두운 화면으로'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>

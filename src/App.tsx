@@ -11,7 +11,6 @@ import { usePrefs } from './lib/prefs'
 import { useQuery } from './lib/query'
 import { usePath } from './lib/router'
 import EasyHome from './pages/EasyHome'
-import EasyDetail from './pages/EasyDetail'
 
 // Pro mode and API docs are loaded lazily on first visit
 const ProTerminal = lazy(() => import('./pages/ProTerminal'))
@@ -32,7 +31,6 @@ function DocSkeleton() {
 
 export default function App() {
   const path = usePath()
-  const mode = usePrefs((s) => s.mode)
   const theme = usePrefs((s) => s.theme)
   const arb = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 3000)
   const status = useQuery<Status>('/api/v1/status', 60_000)
@@ -68,20 +66,20 @@ export default function App() {
   let page
   if (path === '/developers') page = <Developers />
   else if (path === '/about') page = <About />
-  else if (mode === 'pro') page = <ProTerminal asset={asset ?? ASSET_BY_ID.SKHX} />
-  else if (asset) page = <EasyDetail asset={asset} />
+  else if (path.startsWith('/s/') || path === '/market') page = <ProTerminal asset={asset ?? ASSET_BY_ID.SKHX} />
   else page = <EasyHome />
+  const isMarket = !isDocs && path !== '/'
 
   return (
     <>
       <Header />
-      <main className={`shell ${mode === 'pro' && !isDocs ? 'shell--pro' : ''}`}>
-        {mode === 'pro' && !isDocs && (
+      <main className={`shell ${isMarket ? 'shell--pro' : ''}`}>
+        {isMarket && (
           <Boundary fallback={null}>
             <IndicatorStrip />
           </Boundary>
         )}
-        <Boundary key={path + mode}>
+        <Boundary key={path}>
           <Suspense fallback={isDocs ? <DocSkeleton /> : <div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
         </Boundary>
       </main>

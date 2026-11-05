@@ -59,7 +59,6 @@ export function initGa() {
 }
 
 export type GaEvent =
-  | 'mode_switch' // mode: easy|pro
   | 'asset_switch' // asset, query
   | 'prediction_view' // asset, session, hours_to_open
   | 'prediction_detail_open'

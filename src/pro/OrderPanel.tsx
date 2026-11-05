@@ -245,6 +245,18 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null;
         ]
       : [['perp', '하이퍼리퀴드']]
   useEffect(() => setTab(asset.kind === 'stock' ? 'krx' : 'perp'), [asset.id, asset.kind])
+  // "시세차익 실행" on the top summary opens the pair tab and brings the panel into view
+  const panelRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const on = (e: Event) => {
+      const t = (e as CustomEvent<Tab>).detail
+      if (t === 'pair' && asset.kind !== 'stock') return
+      setTab(t)
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+    window.addEventListener('bamsai:order-tab', on)
+    return () => window.removeEventListener('bamsai:order-tab', on)
+  }, [asset.kind])
   // A price picked in the order book opens the matching order tab
   const pick = useTicket((s) => s.pick)
   useEffect(() => {
@@ -253,7 +265,7 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null;
     else if (asset.kind === 'stock') setTab('krx')
   }, [pick]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <section className="panel">
+    <section className="panel" ref={panelRef}>
       <div className="panel__head">
         <span className="panel__title">주문</span>
         <span className="spacer" />
