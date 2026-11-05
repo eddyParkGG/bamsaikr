@@ -32,6 +32,11 @@ export const TodayIssue = memo(function TodayIssue({ asset, limit = 3, onOpen }:
                   {n.asset && <StockLogo id={n.asset} size={20} />}
                   <span className="issue__title">{n.title}</span>
                   <span className="issue__date faint">{kstDay(n.t).replace(/ \(.\)/, '')}</span>
+                  {!onOpen && n.url && (
+                    <svg className="issue__ext" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="새 탭에서 열기">
+                      <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+                    </svg>
+                  )}
                 </button>
               </li>
             ))

@@ -90,6 +90,7 @@
   color: var(--text);
 }
 .ind__value {
+  white-space: nowrap;
   margin-top: 2px;
   font-size: 15px;
   font-weight: 600;
@@ -947,3 +948,28 @@
   color: var(--down);
 }
 
+.issue__ext {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.issue__row:hover .issue__ext {
+  color: var(--text);
+}
+/* Easy mode: the strip shares the content column and sits under the title */
+.easy .ind-strip,
+.easy-detail .ind-strip {
+  margin: 0 0 8px;
+}
+.easy .ind-strip__cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.easy .ind {
+  padding: 0 14px;
+  gap: 10px;
+}
+.easy .ind:first-child {
+  padding-left: 0;
+}
+.easy-hero {
+  padding: 12px 0 20px !important;
+}

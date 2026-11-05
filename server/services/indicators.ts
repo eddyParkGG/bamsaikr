@@ -1,5 +1,5 @@
 // 상단 지표 띠: 코스피·코스닥(토스증권) + 원/USDC(업비트). 토스 홈의 지표 카드처럼 미니 차트 포함
-import { kstDateKey } from '../../shared/session.js'
+import { kstDateKey, kstToMs } from '../../shared/session.js'
 import { cached, fetchJson } from '../lib/cache.js'
 import { tossCandles, tossIndicatorPrices } from '../sources/toss.js'
 import { getUsdcKrwCandles } from '../sources/upbit.js'
@@ -11,13 +11,15 @@ export interface Indicator {
   prevClose: number
   change: number
   changePct: number
-  spark: number[] // 오늘(또는 마지막 거래일) 흐름, 최대 80점
+  spark: [number, number][] // [epoch ms, value], max ~80 points
+  window: { from: number; to: number } // x-axis span: index = regular session of that day, USDC = last 24h
 }
 
-function downsample(xs: number[], n = 80) {
+function downsample<T>(xs: T[], n = 80): T[] {
   if (xs.length <= n) return xs
   const step = xs.length / n
-  return Array.from({ length: n }, (_, i) => xs[Math.min(xs.length - 1, Math.round(i * step))]).concat(xs[xs.length - 1])
+  // Spread rather than concat: concat would flatten a [t, v] tuple into two numbers
+  return [...Array.from({ length: n }, (_, i) => xs[Math.min(xs.length - 1, Math.round(i * step))]), xs[xs.length - 1]]
 }
 
 async function indexIndicator(id: 'KOSPI' | 'KOSDAQ', name: string, last: number): Promise<Indicator> {
@@ -25,9 +27,11 @@ async function indexIndicator(id: 'KOSPI' | 'KOSDAQ', name: string, last: number
   const lastDay = minutes.length ? kstDateKey(minutes[minutes.length - 1].t) : kstDateKey(Date.now())
   const isToday = daily.length && kstDateKey(daily[daily.length - 1].t) === lastDay
   const prevClose = (isToday ? daily.at(-2) : daily.at(-1))?.c ?? last
-  const spark = downsample(minutes.filter((k) => kstDateKey(k.t) === lastDay).map((k) => k.c))
+  // Toss minute candles are stamped at bar end
+  const spark = downsample(minutes.filter((k) => kstDateKey(k.t) === lastDay).map((k) => [k.t - 60_000, k.c] as [number, number]))
   const change = last - prevClose
-  return { id, name, price: last, prevClose, change, changePct: (change / prevClose) * 100, spark }
+  const window = { from: kstToMs(lastDay, '0900'), to: kstToMs(lastDay, '1530') }
+  return { id, name, price: last, prevClose, change, changePct: (change / prevClose) * 100, spark, window }
 }
 
 async function usdcIndicator(): Promise<Indicator> {
@@ -43,7 +47,8 @@ async function usdcIndicator(): Promise<Indicator> {
     prevClose: t.prev_closing_price,
     change,
     changePct: (change / t.prev_closing_price) * 100,
-    spark: downsample(candles.map((p) => p.rate)),
+    spark: downsample(candles.map((p) => [p.t, p.rate] as [number, number])),
+    window: { from: Date.now() - 86400_000, to: Date.now() },
   }
 }
 

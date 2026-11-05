@@ -8,6 +8,7 @@ import { useQuery } from '../lib/query'
 import { Link } from '../lib/router'
 import { StockLogo } from '../components/Brand'
 import { TodayIssue } from '../components/TodayIssue'
+import { IndicatorStrip } from '../components/IndicatorStrip'
 
 function StatusLine({ s }: { s?: Status }) {
   if (!s) return <div className="skeleton" style={{ width: 280, height: 18 }} />
@@ -113,6 +114,7 @@ export default function EasyHome() {
         <StatusLine s={status.data} />
       </section>
 
+      <IndicatorStrip />
       <TodayIssue limit={3} />
       <div style={{ height: 8 }} />
 

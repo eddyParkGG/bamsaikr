@@ -9,6 +9,7 @@ import { useQuery } from '../lib/query'
 import { SessionBadge } from '../components/SessionBadge'
 import { StockLogo } from '../components/Brand'
 import { TodayIssue } from '../components/TodayIssue'
+import { IndicatorStrip } from '../components/IndicatorStrip'
 
 function Spark({ data, isIdx }: { data: ChartSeries; isIdx: boolean }) {
   // 최근 이틀 15분봉. 국내 시세는 장 열린 시간만 있어서 선이 끊겨 보임
@@ -94,6 +95,8 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
           )}
         </div>
       </header>
+
+      <IndicatorStrip />
 
       {/* 질문 1: 오를까 내릴까 */}
       <section className="panel q-card">

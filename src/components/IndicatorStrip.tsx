@@ -1,4 +1,4 @@
-import { memo, useEffect, useId } from 'react'
+import { memo, useEffect, useId, useState } from 'react'
 import type { Status } from '../../shared/api'
 import { subscribeUsdc, useLive } from '../lib/live'
 import { useQuery } from '../lib/query'
@@ -10,19 +10,23 @@ interface Indicator {
   prevClose: number
   change: number
   changePct: number
-  spark: number[]
+  spark: [number, number][]
+  window: { from: number; to: number }
 }
 
-/** 토스증권 홈 지표 카드: 미니 차트(전일 기준 점선) + 이름 + 값 + 등락 */
-function Spark({ data, base, up }: { data: number[]; base: number; up: boolean }) {
+/** Toss home style mini chart: dashed previous-close baseline, line drawn only up to now within the session */
+function Spark({ data, base, up, window: win }: { data: [number, number][]; base: number; up: boolean; window: { from: number; to: number } }) {
   const id = useId()
   if (data.length < 2) return <svg width="56" height="40" />
-  const all = [...data, base]
+  const all = [...data.map((p) => p[1]), base]
   const min = Math.min(...all)
   const max = Math.max(...all)
-  const x = (i: number) => (i / (data.length - 1)) * 56
+  const span = Math.max(1, win.to - win.from)
+  const x = (t: number) => Math.min(56, Math.max(0, ((t - win.from) / span) * 56))
   const y = (v: number) => 36 - ((v - min) / (max - min || 1)) * 32
-  const line = data.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('')
+  const pts = data.map(([t, v]) => [x(t), y(v)] as const)
+  const line = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('')
+  const lastX = pts[pts.length - 1][0]
   const color = up ? 'var(--up)' : 'var(--down)'
   return (
     <svg width="56" height="40" viewBox="0 0 56 40" aria-hidden className="spark-mini">
@@ -33,7 +37,7 @@ function Spark({ data, base, up }: { data: number[]; base: number; up: boolean }
         </linearGradient>
       </defs>
       <line x1="0" x2="56" y1={y(base)} y2={y(base)} stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="3" />
-      <path d={`${line}L56,40L0,40Z`} fill={`url(#${id})`} />
+      <path d={`${line}L${lastX.toFixed(1)},40L${pts[0][0].toFixed(1)},40Z`} fill={`url(#${id})`} />
       <path d={line} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   )
@@ -48,7 +52,7 @@ function Card({ it }: { it: Indicator }) {
   const digits = it.id === 'USDC' ? 0 : 2
   return (
     <div className="ind">
-      <Spark data={live ? [...it.spark, live] : it.spark} base={it.prevClose} up={up} />
+      <Spark data={live ? [...it.spark, [Date.now(), live]] : it.spark} base={it.prevClose} up={up} window={it.id === 'USDC' ? { from: it.window.from, to: Date.now() } : it.window} />
       <div>
         <p className="ind__name">{it.name}</p>
         <p className="ind__value num">
@@ -63,19 +67,42 @@ function Card({ it }: { it: Indicator }) {
   )
 }
 
-export const IndicatorStrip = memo(function IndicatorStrip({ status }: { status?: Status }) {
+/** KST minutes since midnight */
+const kstMinutes = (ms: number) => {
+  const d = new Date(ms + 9 * 3600_000)
+  return d.getUTCHours() * 60 + d.getUTCMinutes() + d.getUTCSeconds() / 60
+}
+
+/** Which venues are trading right now (NXT: 08:00–08:50, 09:00:30–15:20, 15:30–20:00) */
+function venues(status: Status | undefined, now: number) {
+  const m = kstMinutes(now)
+  // `closed` during 08:00–20:00 means a weekend or holiday
+  const tradingDay = !!status && (status.session !== 'closed' || m < 480 || m >= 1200)
+  const isWeekend = [0, 6].includes(new Date(now + 9 * 3600_000).getUTCDay())
+  const day = tradingDay && !isWeekend
+  return {
+    regular: status?.session === 'regular',
+    nxt: day && ((m >= 480 && m < 530) || (m >= 540.5 && m < 920) || (m >= 930 && m < 1200)),
+  }
+}
+
+export const IndicatorStrip = memo(function IndicatorStrip() {
   useEffect(() => subscribeUsdc(), [])
+  const status = useQuery<Status>('/api/v1/status', 60_000).data
   const q = useQuery<{ items: Indicator[] }>('/api/v1/indicators', 10_000)
-  const open = status?.session === 'regular'
-  // 넥스트레이드는 정규장 시간에도 같이 열려 있음
-  const nxt = status?.session === 'nxt' || status?.session === 'regular'
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 15_000)
+    return () => clearInterval(id)
+  }, [])
+  const v = venues(status, now)
   return (
     <section className="ind-strip">
       <div className="ind-strip__head">
-        <span className={`dot ${open ? 'dot--on' : ''}`} />
+        <span className={`dot ${v.regular ? 'dot--on' : ''}`} />
         <b>국내 정규장</b>
         <span className="faint">09:00 ~ 15:30</span>
-        <span className={`dot ${nxt ? 'dot--on' : ''}`} style={{ marginLeft: 12 }} />
+        <span className={`dot ${v.nxt ? 'dot--on' : ''}`} style={{ marginLeft: 12 }} />
         <b>넥스트레이드</b>
         <span className="faint">08:00 ~ 20:00</span>
         <span className="dot dot--on" style={{ marginLeft: 12 }} />

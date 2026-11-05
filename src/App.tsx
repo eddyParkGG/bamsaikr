@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import type { ArbSnapshot, Status } from '../shared/api'
 import { ASSET_BY_ID, isAssetId } from '../shared/assets'
+import { Boundary } from './components/Boundary'
 import { Header } from './components/Header'
 import { IndicatorStrip } from './components/IndicatorStrip'
 import { Ticker } from './components/Ticker'
@@ -40,8 +41,14 @@ export default function App() {
     <>
       <Header />
       <main className={`shell ${mode === 'pro' && !isDocs ? 'shell--pro' : ''}`}>
-        {!isDocs && <IndicatorStrip status={status.data} />}
-        <Suspense fallback={<div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
+        {mode === 'pro' && !isDocs && (
+          <Boundary fallback={null}>
+            <IndicatorStrip />
+          </Boundary>
+        )}
+        <Boundary key={path + mode}>
+          <Suspense fallback={<div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
+        </Boundary>
       </main>
       <Ticker items={arb.data?.items} status={status.data} />
     </>

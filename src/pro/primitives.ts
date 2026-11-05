@@ -93,8 +93,9 @@ export class NewsPins extends Base {
     this.request?.()
   }
 
-  hit(x: number, y: number): string | null {
-    for (const h of this.hitboxes) if (Math.abs(h.x - x) <= 12 && y >= h.y - 2 && y <= h.y + 22) return h.id
+  /** Bubble under the pointer, with its top-centre position (for placing the tooltip) */
+  hitBox(x: number, y: number): { id: string; x: number; y: number } | null {
+    for (const h of this.hitboxes) if (Math.abs(h.x - x) <= 12 && y >= h.y - 2 && y <= h.y + 22) return h
     return null
   }
 
