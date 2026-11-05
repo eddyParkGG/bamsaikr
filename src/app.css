@@ -283,7 +283,6 @@
 .chart-full {
   width: 28px;
   height: 28px;
-  margin-left: 6px;
 }
 /* Order book / order form columns: same height as the chart, the panel fills it */
 .pro-trade {

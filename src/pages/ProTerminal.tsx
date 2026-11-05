@@ -540,6 +540,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                     국장 휴장
                   </span>
                 </span>
+                <span className="chart-tools__sep" />
                 <button className="icon-btn chart-full" aria-label={full ? '차트 작게 보기' : '차트 크게 보기'} title={full ? '작게 보기 (Esc)' : '크게 보기'} onClick={() => setFull(!full)}>
                   {full ? (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
