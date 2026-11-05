@@ -513,11 +513,11 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                 <span className="band-legend" aria-label="차트 배경색">
                   <span>
                     <i style={{ background: 'var(--band-open-solid)' }} />
-                    국내 시장
+                    국내 시장 개장
                   </span>
                   <span>
                     <i style={{ background: 'var(--band-closed-solid)' }} />
-                    휴장
+                    국내 시장 휴장
                   </span>
                 </span>
               </div>
