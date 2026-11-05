@@ -453,7 +453,7 @@ body.is-resizing * {
 .chart__card {
   position: absolute;
   z-index: 5;
-  width: 248px;
+  width: 300px;
   padding: 12px 14px;
   border-radius: 14px;
   background: var(--bg-float);
@@ -471,6 +471,7 @@ body.is-resizing * {
 .chart__card .kv {
   padding: 4px 0;
   font-size: 12px;
+  white-space: nowrap;
 }
 .chart__card-news {
   margin-top: 8px;

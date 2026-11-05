@@ -4,7 +4,6 @@
 import {
   CandlestickSeries,
   createChart,
-  createSeriesMarkers,
   CrosshairMode,
   HistogramSeries,
   LineSeries,
@@ -12,10 +11,7 @@ import {
   type IChartApi,
   type IPriceLine,
   type ISeriesApi,
-  type ISeriesMarkersPluginApi,
-  type SeriesMarker,
   type SeriesType,
-  type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
 import type { ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
@@ -73,12 +69,12 @@ type AnySeries = ISeriesApi<SeriesType>
 
 interface Spec {
   key: string
-  pane: 'main' | 'volume' | 'premium' | 'funding' | 'rsi' | 'macd'
+  pane: 'main' | 'volume' | 'premium' | 'follow' | 'funding' | 'rsi' | 'macd'
   create: (chart: IChartApi, pane: number) => AnySeries
   feed: (d: ChartSeries, base: Bar[]) => unknown[]
 }
 
-const SUB_PANES = ['volume', 'premium', 'funding', 'rsi', 'macd'] as const
+const SUB_PANES = ['volume', 'premium', 'follow', 'funding', 'rsi', 'macd'] as const
 
 export class ChartController {
   readonly chart: IChartApi
@@ -90,7 +86,6 @@ export class ChartController {
   private params: IndicatorParams
   private input: Input | null = null
   private host: AnySeries | null = null
-  private markers: ISeriesMarkersPluginApi<Time> | null = null
   private priceLines: IPriceLine[] = []
   private c: Record<string, string>
 
@@ -102,7 +97,7 @@ export class ChartController {
   ) {
     this.settings = settings
     this.params = params
-    this.c = { text3: css('--text-3'), text2: css('--text-2'), text: css('--text'), line: css('--line'), up: css('--up'), down: css('--down'), perp: css('--perp'), float: css('--bg-float'), bg: css('--bg'), fill: css('--fill-strong') }
+    this.c = { text3: css('--text-3'), text2: css('--text-2'), text: css('--text'), line: css('--line'), up: css('--up'), down: css('--down'), perp: css('--perp'), float: css('--bg-float'), bg: css('--bg'), fill: css('--fill-strong'), key: css('--key') }
     const c = this.c
     this.chart = createChart(el, {
       autoSize: true,
@@ -217,6 +212,44 @@ export class ChartController {
         // Strong colour while KRX is open (actionable), faded for closed-hours gaps
         feed: (d) => d.premium.map((p) => ({ time: ct(p.t), value: p.v, color: (p.v >= 0 ? c.up : c.down) + (p.live ? 'cc' : '44') })),
       })
+    // How much of the closed-hours Hyperliquid move the 08:00 re-open followed, as bars on its own pane
+    // (on the price chart as labels it buried the candles). Only re-opens after a 1%+ move: smaller ones make the ratio noise
+    if (s.convergence)
+      out.push({
+        key: 'follow',
+        pane: 'follow',
+        create: (ch, p) => {
+          const se = ch.addSeries(
+            HistogramSeries,
+            {
+              priceFormat: { type: 'custom', formatter: (v: number) => `${Math.round(v)}%` },
+              priceLineVisible: false,
+              lastValueVisible: false,
+              title: '따라간 정도',
+              // Fixed range so a single 300% day does not flatten the rest; 100% (followed exactly) sits mid-pane
+              autoscaleInfoProvider: () => ({ priceRange: { minValue: -100, maxValue: 200 } }),
+            },
+            p,
+          )
+          se.createPriceLine({ price: 100, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '그대로' })
+          se.createPriceLine({ price: 0, color: c.line, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: false })
+          return se
+        },
+        feed: (d) => {
+          const step = STEP_MS[interval]
+          const firstT = d.krx[0]?.t ?? d.perpKrw[0]?.t ?? 0
+          const out: { time: UTCTimestamp; value: number; color: string }[] = []
+          for (const e of this.input?.events ?? []) {
+            if (e.absorptionPct == null || Math.abs(e.gapPct) < 1) continue
+            const reopen = Date.UTC(+e.date.slice(0, 4), +e.date.slice(4, 6) - 1, +e.date.slice(6, 8)) - 3600_000 // 08:00 KST
+            // Daily bars are keyed by date; intraday bars by their start time
+            const t = interval === '1d' ? reopen + 3600_000 : Math.floor(reopen / step) * step
+            if (t < firstT) continue
+            out.push({ time: ct(t), value: e.absorptionPct, color: e.follow === 'yes' ? c.key : c.text3 + '88' })
+          }
+          return out.sort((a, b) => a.time - b.time)
+        },
+      })
     if (s.funding)
       out.push({
         key: 'fund',
@@ -305,8 +338,8 @@ export class ChartController {
     after[0]?.setStretchFactor(3.2)
     for (let i = 1; i < after.length; i++) after[i].setStretchFactor(0.8)
 
-    // Primitives (session bands, news pins) and markers live on whichever main series is visible
-    // KRX series is permanent, so it hosts the primitives and markers
+    // Primitives (session bands, news pins) live on whichever main series is visible
+    // KRX series is permanent, so it hosts the primitives
     const host = this.series.get('krx') ?? null
     if (host !== this.host) {
       if (this.host) {
@@ -317,14 +350,11 @@ export class ChartController {
           // host already removed with its primitives
         }
       }
-      this.markers?.detach()
-      this.markers = null
       this.priceLines = []
       this.host = host
       if (host) {
         host.attachPrimitive(this.bands)
         host.attachPrimitive(this.pins)
-        this.markers = createSeriesMarkers(host, [])
       }
     }
     if (this.input) {
@@ -386,10 +416,10 @@ export class ChartController {
     for (const spec of this.specs(this.settings)) this.series.get(spec.key)?.setData(spec.feed(d, base) as never)
   }
 
-  /** Session bands, news pins, open-convergence markers and the next-open forecast lines */
+  /** Session bands, news pins and the next-open forecast lines */
   private decorate() {
     if (!this.input) return
-    const { data: d, spans, news, events, prediction } = this.input
+    const { data: d, spans, news, prediction } = this.input
     const s = this.settings
     const c = this.c
     const interval = this.interval
@@ -413,24 +443,6 @@ export class ChartController {
         : [],
       { fill: '#FFEB00', ink: '#060B11' },
     )
-
-    // How much of the closed-hours Hyperliquid move the domestic re-open (08:00) followed.
-    // Shown on every re-open where Hyperliquid moved 1% or more (smaller moves make the ratio noise)
-    if (this.markers) {
-      const marks: SeriesMarker<Time>[] = []
-      if (s.convergence) {
-        const firstT = (s.showKrx ? d.krx : d.perpKrw)[0]?.t ?? 0
-        for (const e of events) {
-          if (e.absorptionPct == null || Math.abs(e.gapPct) < 1) continue
-          const reopen = Date.UTC(+e.date.slice(0, 4), +e.date.slice(4, 6) - 1, +e.date.slice(6, 8)) - 3600_000 // 08:00 KST
-          // Daily bars are keyed by date; intraday bars by their start time
-          const t = interval === '1d' ? reopen + 3600_000 : Math.floor(reopen / step) * step
-          if (t < firstT) continue
-          marks.push({ time: ct(t), position: e.gapPct >= 0 ? 'aboveBar' : 'belowBar', shape: 'circle', color: c.text3, text: `따라감 ${Math.round(e.absorptionPct)}%`, size: 0.4 })
-        }
-      }
-      this.markers.setMarkers(marks.sort((p, q) => (p.time as number) - (q.time as number)))
-    }
 
     const host = this.host
     if (host) {

@@ -259,7 +259,7 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
   const pr = lookup.prem.get(card.t)
   const dayKey = cardTitle(card.t, '1d').replace(/\./g, '')
   const n = news.find((x) => x.date === dayKey)
-  const left = card.x + 16 + 248 > boxW ? card.x - 264 : card.x + 16
+  const left = card.x + 16 + 300 > boxW ? card.x - 316 : card.x + 16
   return (
     <div className="chart__card num" style={{ left: Math.max(8, left), top: Math.max(8, card.y - 60) }} role="dialog" aria-label="봉 정보">
       <h4>
