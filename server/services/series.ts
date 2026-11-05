@@ -2,7 +2,7 @@
 import type { Asset } from '../../shared/assets.js'
 import { kstDateKey, kstToMs, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
-import { getFundingHistory, getPerpCandles, getPerpListedAt, type Candle, type HlInterval } from '../sources/hyperliquid.js'
+import { getFundingHistory, getPerpCandles, getPerpHourlySince, getPerpListedAt, type Candle, type HlInterval } from '../sources/hyperliquid.js'
 import { krxDaily, krxHolidays, krxMinutes, krxSource } from '../sources/krx.js'
 import { getUsdcKrwCandles, rateAt, type UpbitUnit } from '../sources/upbit.js'
 
@@ -55,6 +55,37 @@ function bucketize(minutes: Candle[], step: number): Candle[] {
   return out
 }
 
+/**
+ * Hyperliquid daily bars on the domestic trading day: (previous day 20:00, this day 20:00] KST.
+ * Hyperliquid's own 1d bars are UTC days (09:00 → 09:00 KST), so their close sat 13 hours after the
+ * domestic close and the daily premium mixed in the overnight move. Built from 1h bars where kept
+ * (~7 months), 4h bars before that (their edges fall at 21:00 KST, an hour off)
+ */
+async function perpDaily(coin: string, since: number): Promise<Candle[]> {
+  const H = 3600_000
+  const h1 = await getPerpHourlySince(coin, since)
+  const firstH = h1[0]?.t ?? Infinity
+  const h4 = firstH > since ? (await getPerpCandles(coin, '4h', since)).filter((k) => k.t + 4 * H <= firstH) : []
+  const bars = [...h4.map((k) => ({ ...k, end: k.t + 4 * H })), ...h1.map((k) => ({ ...k, end: k.t + H }))]
+  const out: Candle[] = []
+  let cur: Candle | null = null
+  for (const k of bars) {
+    // A bar ending in (D-1 20:00, D 20:00] KST belongs to day D; shifting the end by +4h maps that window onto D's calendar day
+    const t = kstToMs(kstDateKey(k.end + 4 * H - 1), '0900')
+    if (!cur || cur.t !== t) {
+      if (cur) out.push(cur)
+      cur = { t, o: k.o, h: k.h, l: k.l, c: k.c, v: k.v }
+    } else {
+      cur.h = Math.max(cur.h, k.h)
+      cur.l = Math.min(cur.l, k.l)
+      cur.c = k.c
+      cur.v += k.v
+    }
+  }
+  if (cur) out.push(cur)
+  return out
+}
+
 async function krxCandles(asset: Asset, interval: ChartInterval, since: number): Promise<Candle[]> {
   if (interval === '1d') {
     const daily = await krxDaily(asset, kstDateKey(since), kstDateKey(Date.now()))
@@ -69,13 +100,15 @@ export function chartSeries(asset: Asset, interval: ChartInterval): Promise<Char
     const holidays = await krxHolidays()
     const since = Date.now() - RANGE_DAYS[interval] * 86400_000
     const [perpRaw, krx, fx, funding] = await Promise.all([
-      getPerpCandles(asset.perp, interval as HlInterval, Math.floor(since / STEP[interval]) * STEP[interval]),
+      interval === '1d' ? perpDaily(asset.perp, since) : getPerpCandles(asset.perp, interval as HlInterval, Math.floor(since / STEP[interval]) * STEP[interval]),
       krxCandles(asset, interval, since),
       asset.fx ? getUsdcKrwCandles(UPBIT_UNIT[interval], since) : Promise.resolve([]),
       getFundingHistory(asset.perp, Math.max(since, Date.now() - 30 * 86400_000)).catch(() => []),
     ])
 
-    const conv = (t: number) => (asset.fx ? (rateAt(fx, t + STEP[interval] - 1) ?? fx[0]?.rate ?? NaN) : 1)
+    // USDC rate at the bar's close; daily bars close at 20:00 KST (t is 09:00 KST of that day)
+    const closeAt = (t: number) => (interval === '1d' ? t + 11 * 3600_000 : t + STEP[interval] - 1)
+    const conv = (t: number) => (asset.fx ? (rateAt(fx, closeAt(t)) ?? fx[0]?.rate ?? NaN) : 1)
     const perp = perpRaw.map((k) => ({ ...k, krw: k.c * conv(k.t) }))
     const perpKrw = perpRaw.map((k) => {
       const r = conv(k.t)
