@@ -103,7 +103,7 @@ function OrderButton({ side, label, onClick }: { side?: Side; label: string; onC
 
 function PerpForm({ asset }: { asset: Asset }) {
   const [side, setSide] = useState<Side>('buy')
-  const [kind, setKind] = useState<'limit' | 'market'>('market')
+  const [kind, setKind] = useState<'limit' | 'market'>('limit')
   const [size, setSize] = useState('1')
   const [price, setPrice] = useState('')
   const [lev, setLev] = useState(2)
