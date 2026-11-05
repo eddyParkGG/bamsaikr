@@ -2028,7 +2028,9 @@ button.ob2__px:active::after {
 
 /* Order panel: same height whichever order type is selected; the action button sits at the bottom */
 .order-form {
-  height: 276px;
+  /* Tallest of the three order tabs (domestic / Hyperliquid / spread) is 249px: fixed so switching tabs never
+     shifts the order book, with the CTA right under the inputs; the order book above takes the rest */
+  height: 250px;
   display: flex;
   flex-direction: column;
 }
