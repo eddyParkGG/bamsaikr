@@ -184,6 +184,18 @@
   flex-wrap: wrap;
   font-size: 12px;
 }
+/* Desktop and tablet: one line of stats, beside the name when it all fits, otherwise on its own full-width line.
+   Groups that still do not fit wrap out of sight from the end, so the strip never turns into ragged rows
+   (funding / open interest, Hyperliquid volume / leverage are also in the order book's Hyperliquid tab) */
+@media (min-width: 721px) {
+  .stats {
+    flex: 1 1 max-content;
+    min-width: 0;
+    align-content: flex-start;
+    height: 37px;
+    overflow: hidden;
+  }
+}
 .stats__group {
   display: grid;
   grid-template-columns: auto auto;
@@ -191,7 +203,8 @@
   padding: 0 18px;
   border-left: 1px solid var(--line);
 }
-.stats__group:first-child {
+.stats__group:first-child,
+.stats__group.is-line-start {
   border-left: none;
   padding-left: 0;
 }
