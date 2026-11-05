@@ -12,6 +12,7 @@ import {
   type IPriceLine,
   type ISeriesApi,
   type SeriesType,
+  type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
 import type { ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
@@ -120,7 +121,17 @@ export class ChartController {
       // Fixed axis width: price tags stay flush right even when the number of digits changes
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.16, bottom: 0.12 }, textColor: c.text2, minimumWidth: 92 },
       timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffset: 6, minBarSpacing: 1 },
-      localization: { locale: 'ko-KR', priceFormatter: (p: number) => Math.round(p).toLocaleString('ko-KR') },
+      localization: {
+        locale: 'ko-KR',
+        priceFormatter: (p: number) => Math.round(p).toLocaleString('ko-KR'),
+        // Crosshair time label in Korean order: '2026.10.18 (일) 04:00' (chart times are already shifted to KST)
+        timeFormatter: (t: Time) => {
+          const d = new Date((t as number) * 1000)
+          const p2 = (n: number) => String(n).padStart(2, '0')
+          const day = `${d.getUTCFullYear()}.${p2(d.getUTCMonth() + 1)}.${p2(d.getUTCDate())} (${'일월화수목금토'[d.getUTCDay()]})`
+          return interval === '1d' ? day : `${day} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`
+        },
+      },
     })
     // Invisible whitespace series holding every timestamp the chart can ever show (both markets
     // plus Ichimoku's forward projection). Because the set of time points never changes, toggling
