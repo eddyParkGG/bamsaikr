@@ -13,6 +13,8 @@ export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnaps
   useEffect(() => subscribeUsdc(), [])
   const now = useNow(15_000)
   const on = venuesNow(status?.session, now)
+  const shown = items?.filter((s) => SHOWN.includes(s.asset)) ?? []
+  const closed = shown.length > 0 && shown.every((s) => arbKind(s) === 'gap')
   const venue = (lit: boolean, name: string, hours: string) => (
     <span className={`ticker__venue ${lit ? 'is-on' : ''}`}>
       <span className={`dot ${lit ? 'dot--on' : ''}`} />
@@ -33,15 +35,22 @@ export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnaps
         </>
       )}
       <span className="spacer" />
-      {items
-        ?.filter((s) => SHOWN.includes(s.asset))
-        .map((s) => (
-          <span key={s.asset}>
-            <span className="strong">{s.name}</span> <span className="faint">하이퍼리퀴드</span>{' '}
-            <span className={tone(s.premiumPct)}>{fmtPct(s.premiumPct)}</span> <span className="faint">· 시세차익</span>{' '}
-            {arbKind(s) === 'go' ? <span className="up">{fmtPct(s.net.netPct)}</span> : <span className="faint">{arbText(s).short}</span>}
-          </span>
-        ))}
+      {shown.map((s) => (
+        <span key={s.asset}>
+          <span className="strong">{s.name}</span> <span className="faint">하이퍼리퀴드</span>{' '}
+          <span className={tone(s.premiumPct)}>{fmtPct(s.premiumPct)}</span>
+          {arbKind(s) === 'go' ? (
+            <>
+              {' '}
+              <span className="faint">· 시세차익</span> <span className="up">{fmtPct(s.net.netPct)}</span>
+            </>
+          ) : (
+            !closed && <span className="faint"> · {arbText(s).short}</span>
+          )}
+        </span>
+      ))}
+      {/* While the domestic market is closed the reason is the same for every stock: say it once */}
+      {closed && <span className="faint">{arbText(shown[0]).short}</span>}
     </footer>
   )
 })
