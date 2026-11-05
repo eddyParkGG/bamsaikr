@@ -33,7 +33,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
       { k: 'bands', label: '장 시간대 배경', help: '정규장·넥스트레이드·휴장 시간을 배경색으로 나눠 보여줘요' },
       { k: 'news', label: '뉴스 말풍선', help: '가격이 크게 움직인 날의 주요 뉴스를 차트 위에 표시해요' },
       { k: 'convergence', label: '장 시작 반영 %', help: '하이퍼리퀴드가 미리 보여준 차이를 실제 장 시작 가격이 몇 % 따라갔는지 보여줘요' },
-      { k: 'forecast', label: '예상 시작 가격 · 80% 구간', help: '다음 장 시작 가격 예측값과, 10번 중 8번은 들어올 범위를 그려요' },
+      { k: 'forecast', label: '정규장 예상 시작 가격 · 80% 구간', help: '다음 정규장(09:00) 시작 가격 예측값과, 10번 중 8번은 들어올 범위를 그려요. 넥스트레이드 가격이 아니에요' },
     ],
   },
   {

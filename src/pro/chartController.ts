@@ -439,7 +439,7 @@ export class ChartController {
       this.priceLines = []
       if (s.forecast && prediction && prediction.status === 'pre-open') {
         this.priceLines = [
-          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '예상 시작가' }),
+          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '정규장 예상' }),
           host.createPriceLine({ price: prediction.band80.high, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '80%' }),
           host.createPriceLine({ price: prediction.band80.low, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '80%' }),
         ]

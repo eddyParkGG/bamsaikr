@@ -84,3 +84,12 @@ export function fmtWonUnit(v: number) {
   if (a >= 1e4) return `${Math.round(v / 1e4).toLocaleString('ko-KR')}만`
   return Math.round(v).toLocaleString('ko-KR')
 }
+
+/** End of the trading window we are in: regular 15:30, NXT pre-market 08:50 or after-market 20:00 (KST) */
+export function sessionCloseAt(session: 'regular' | 'nxt' | 'closed', now = Date.now()) {
+  if (session === 'regular') return regularCloseAt(now)
+  const d = new Date(now + KST)
+  const m = d.getUTCHours() * 60 + d.getUTCMinutes()
+  const [h, mm] = m < 530 ? [8, 50] : [20, 0]
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, mm) - KST
+}
