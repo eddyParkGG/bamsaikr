@@ -268,8 +268,8 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                   ) : (
                     <span className="meet" title="왼쪽 = 하이퍼리퀴드가 주식 쪽으로, 오른쪽 = 주식이 하이퍼리퀴드 쪽으로">
                       <span className="meet__label">{meetText(e.meetPoint)}</span>
-                      <span className="meet__track">
-                        <i style={{ left: `${e.meetPoint * 100}%` }} />
+                      <span className="range__bar">
+                        <i style={{ left: `calc(${e.meetPoint} * (100% - 4px))` }} />
                       </span>
                     </span>
                   )}

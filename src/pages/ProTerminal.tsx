@@ -174,7 +174,7 @@ function Range({ low, high, value, isIdx }: { low: number; high: number; value: 
     <span className="range num">
       {fmtPrice(low, isIdx)}
       <span className="range__bar">
-        <i style={{ left: `${Math.min(100, Math.max(0, pos))}%` }} />
+        <i style={{ left: `calc(${Math.min(100, Math.max(0, pos)) / 100} * (100% - 4px))` }} />
       </span>
       {fmtPrice(high, isIdx)}
     </span>
