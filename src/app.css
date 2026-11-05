@@ -1736,7 +1736,8 @@ body.is-resizing * {
 .fpop__list {
   display: flex;
   flex-direction: column;
-  margin: 8px 0 16px;
+  margin: 10px 0 12px;
+  padding: 0 4px;
 }
 .fpop__opt {
   display: flex;
@@ -1754,7 +1755,10 @@ body.is-resizing * {
   background: var(--fill);
 }
 .fpop__opt[aria-checked='true'] {
-  color: var(--text);
+  color: var(--key);
+}
+:root[data-theme='light'] .fpop__opt[aria-checked='true'] {
+  color: #b8a100;
 }
 .fpop__foot {
   display: flex;
