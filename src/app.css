@@ -860,6 +860,24 @@ body.is-resizing * {
   background: var(--up);
   box-shadow: 2px 0 0 var(--bg);
 }
+.updown {
+  margin-top: 16px;
+}
+.updown__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+.updown__up {
+  display: block;
+  height: 100%;
+  margin-left: auto;
+  background: var(--up);
+  box-shadow: -2px 0 0 var(--bg);
+}
 .prob__bar {
   height: 10px;
   border-radius: 5px;
