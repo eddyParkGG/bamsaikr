@@ -7,6 +7,7 @@ import { fmtPct, fmtPrice, fmtWon, kstDay, openDayText, tone, untilText } from '
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
 import { SessionBadge } from '../components/SessionBadge'
+import { StockLogo } from '../components/Brand'
 
 function Spark({ data, isIdx }: { data: ChartSeries; isIdx: boolean }) {
   // 최근 이틀 15분봉. 국내 시세는 장 열린 시간만 있어서 선이 끊겨 보임
@@ -74,24 +75,27 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
   const net = useMemo(() => (arb ? Math.round((amount * arb.net.netPct) / 100) : 0), [arb, amount])
 
   return (
-    <div className="page easy easy-detail">
+    <div className="easy-detail">
       <header className="easy-head">
-        <div className="row" style={{ gap: 8 }}>
-          <h1 style={{ fontSize: 22, margin: 0 }}>{asset.name}</h1>
-          {arb && <SessionBadge session={arb.session} />}
+        <StockLogo id={asset.id} size={44} />
+        <div>
+          <div className="row" style={{ gap: 6 }}>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{asset.name}</h1>
+            {arb && <SessionBadge session={arb.session} />}
+          </div>
+          {arb ? (
+            <p className="num" style={{ marginTop: 2, fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>
+              {fmtPrice(arb.krx.price, isIdx)}
+              {unit} <span className={tone(arb.krx.changePct)} style={{ fontSize: 14, fontWeight: 600 }}>{fmtPct(arb.krx.changePct)}</span>
+            </p>
+          ) : (
+            <div className="skeleton" style={{ width: 180, height: 30, marginTop: 4 }} />
+          )}
         </div>
-        {arb ? (
-          <p className="num" style={{ margin: '6px 0 0', fontSize: 28, fontWeight: 700 }}>
-            {fmtPrice(arb.krx.price, isIdx)}
-            {unit} <span className={tone(arb.krx.changePct)} style={{ fontSize: 16, fontWeight: 500 }}>{fmtPct(arb.krx.changePct)}</span>
-          </p>
-        ) : (
-          <div className="skeleton" style={{ width: 200, height: 34, marginTop: 6 }} />
-        )}
       </header>
 
       {/* 질문 1: 오를까 내릴까 */}
-      <section className="card q-card">
+      <section className="panel q-card">
         <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 시가, 오를까요?` : '다음 시가, 오를까요?'}</p>
         {p ? (
           <>
@@ -154,7 +158,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
       </section>
 
       {/* 질문 2: 차익 */}
-      <section className="card q-card">
+      <section className="panel q-card">
         <p className="q-card__q">지금 두 시장 차이로 얼마나 남아요?</p>
         {arb ? (
           <>
@@ -200,10 +204,10 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
         )}
       </section>
 
-      <section className="card">{series.data && series.data.asset === asset.id ? <Spark data={series.data} isIdx={isIdx} /> : <div className="skeleton" style={{ height: 170 }} />}</section>
+      <section className="panel" style={{ padding: 20 }}>{series.data && series.data.asset === asset.id ? <Spark data={series.data} isIdx={isIdx} /> : <div className="skeleton" style={{ height: 170 }} />}</section>
 
       <button
-        className="btn btn--lg btn--support btn--block"
+        className="btn btn--lg btn--fill btn--block"
         onClick={() => {
           setMode('pro')
           track('mode_switch', { mode: 'pro', from: 'easy_detail' })

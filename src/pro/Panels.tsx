@@ -4,14 +4,21 @@ import type { Asset } from '../../shared/assets'
 import { fmtPct, fmtPrice, kstDay, tone, untilText } from '../lib/format'
 import { useQuery } from '../lib/query'
 
-export const PredictPanel = memo(function PredictPanel({ p, asset }: { p: Prediction | null; asset: Asset }) {
-  if (!p) return <div className="skeleton" style={{ height: 220 }} />
+export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Prediction | null; asset: Asset }) {
+  if (!p) return <div className="skeleton" style={{ height: 260, marginTop: 8 }} />
   const isIdx = asset.kind === 'index'
   const maxP = Math.max(...p.distribution.map((d) => d.p))
   return (
-    <div className="pro-grid">
-      <div>
-        <h4 className="mini-title">다음 시가 · {kstDay(p.targetOpenAt)} 09:00 ({untilText(p.targetOpenAt)})</h4>
+    <div className="cols3">
+      <section className="panel">
+        <div className="panel__head">
+          <span className="panel__title">다음 시가</span>
+          <span className="spacer" />
+          <span className="faint" style={{ fontSize: 12 }}>
+            {kstDay(p.targetOpenAt)} 09:00 · {untilText(p.targetOpenAt)}
+          </span>
+        </div>
+        <div className="panel__body">
         <dl>
           <div className="kv">
             <dt>{p.status === 'in-session' ? '기준가 (장중 현재가, 잠정)' : '기준 종가'}</dt>
@@ -50,9 +57,13 @@ export const PredictPanel = memo(function PredictPanel({ p, asset }: { p: Predic
             </div>
           )}
         </dl>
-      </div>
-      <div>
-        <h4 className="mini-title">시가 갭 분포</h4>
+        </div>
+      </section>
+      <section className="panel">
+        <div className="panel__head">
+          <span className="panel__title">시가 갭 분포</span>
+        </div>
+        <div className="panel__body">
         <div className="dist">
           {p.distribution.map((d, i) => (
             <div className="dist__row" key={d.label}>
@@ -67,9 +78,13 @@ export const PredictPanel = memo(function PredictPanel({ p, asset }: { p: Predic
         <p className="faint" style={{ fontSize: 12, marginTop: 10 }}>
           {p.regime === 'weekend' ? '주말·연휴 구간' : '평일 밤 구간'} · 남은 시간 {p.hoursToOpen}시간만큼 불확실성을 더했어요
         </p>
-      </div>
-      <div>
-        <h4 className="mini-title">이 모델, 얼마나 맞았나</h4>
+        </div>
+      </section>
+      <section className="panel">
+        <div className="panel__head">
+          <span className="panel__title">이 모델, 얼마나 맞았나</span>
+        </div>
+        <div className="panel__body">
         <dl>
           <div className="kv">
             <dt>방향 적중</dt>
@@ -97,16 +112,17 @@ export const PredictPanel = memo(function PredictPanel({ p, asset }: { p: Predic
         <p className="faint" style={{ fontSize: 12, marginTop: 6 }}>
           그날 이전 데이터로만 학습해 예측한 결과예요 (walk-forward). 시가 = α + β·perp갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
         </p>
-      </div>
+        </div>
+      </section>
     </div>
   )
 })
 
 export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asset: Asset }) {
   const q = useQuery<{ events: OpenEvent[] }>(`/api/v1/convergence?asset=${asset.id}&limit=60`, 300_000)
-  if (!q.data) return <div className="skeleton" style={{ height: 240 }} />
+  if (!q.data) return <div className="skeleton" style={{ height: 240, margin: 16 }} />
   return (
-    <div className="table-wrap">
+    <div className="table-wrap" style={{ padding: '0 4px 8px' }}>
       <table className="table num">
         <thead>
           <tr>
@@ -157,8 +173,13 @@ interface Flows {
 
 export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) {
   const q = useQuery<Flows>(`/api/v1/flows?asset=${asset.id}`, 60_000)
-  if (!q.data) return <div className="skeleton" style={{ height: 160 }} />
-  if (!q.data.available) return <p className="notice">투자자별 매매동향은 한국투자증권 API를 연결하면 보여드려요.</p>
+  if (!q.data) return <div className="skeleton" style={{ height: 160, margin: 16 }} />
+  if (!q.data.available)
+    return (
+      <p className="notice" style={{ margin: 16 }}>
+        투자자별 매매동향은 한국투자증권 API를 연결하면 보여드려요.
+      </p>
+    )
   return (
     <div className="table-wrap">
       <table className="table num">

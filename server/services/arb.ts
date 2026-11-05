@@ -25,7 +25,7 @@ export interface ArbSnapshot {
   session: Session
   /** live: 국내 시장이 열려 있어 바로 비교 가능. gap: 국내 휴장이라 직전 종가와 비교 */
   mode: 'live' | 'gap'
-  krx: { price: number; prevClose: number; changePct: number; source: string }
+  krx: { price: number; prevClose: number; changePct: number; high: number; low: number; open: number; tradeValue: number; source: string }
   perp: { coin: string; mid: number; mark: number; oracle: number; changePct: number; fundingHourly: number; openInterest: number; volume24hUsd: number; maxLeverage: number }
   fx: { rate: number; bid: number; ask: number; source: 'upbit:KRW-USDC' } | null
   perpKrw: number
@@ -83,7 +83,7 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
     name: asset.name,
     session,
     mode,
-    krx: { price: base, prevClose: quote.prevClose, changePct: quote.changePct, source: quote.source },
+    krx: { price: base, prevClose: quote.prevClose, changePct: quote.changePct, high: quote.high, low: quote.low, open: quote.open, tradeValue: quote.tradeValue, source: quote.source },
     perp: {
       coin: asset.perp,
       mid,

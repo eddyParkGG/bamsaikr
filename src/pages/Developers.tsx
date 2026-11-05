@@ -23,7 +23,7 @@ function Copy({ text, label, onCopy }: { text: string; label: string; onCopy?: (
   const [done, setDone] = useState(false)
   return (
     <button
-      className="chip chip--sm"
+      className="chip chip--fill"
       onClick={async () => {
         await navigator.clipboard.writeText(text)
         onCopy?.()
@@ -40,30 +40,30 @@ export default function Developers() {
   const mcpJson = JSON.stringify({ mcpServers: { bamsai: { type: 'http', url: `${origin}/api/mcp` } } }, null, 2)
   const curl = `curl "${origin}/api/v1/predict?asset=SKHX"`
   return (
-    <div className="page">
-      <h1 style={{ fontSize: 28, margin: '8px 0 8px' }}>에이전트에 붙여 쓰는 API</h1>
+    <div style={{ maxWidth: 960, padding: '20px 0 40px' }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: '8px 0 8px' }}>에이전트에 붙여 쓰는 API</h1>
       <p className="muted" style={{ margin: '0 0 32px', fontSize: 16 }}>
         화면에서 보는 숫자는 전부 같은 API에서 나와요. 키 없이 조회할 수 있고, 주문은 기본이 미리보기예요.
       </p>
 
-      <section className="card stack">
+      <section className="panel panel__body stack">
         <div className="row">
-          <h2 className="card__title">MCP로 연결하기</h2>
+          <h2 className="strong" style={{ fontSize: 15, fontWeight: 700 }}>MCP로 연결하기</h2>
           <span className="spacer" />
           <Copy text={mcpJson} label="설정 복사" onCopy={() => track('mcp_copy')} />
         </div>
-        <p className="card__sub">Claude, Cursor 같은 에이전트 설정에 넣으면 아래 도구를 바로 쓸 수 있어요.</p>
+        <p className="muted" style={{ fontSize: 13 }}>Claude, Cursor 같은 에이전트 설정에 넣으면 아래 도구를 바로 쓸 수 있어요.</p>
         <pre className="code">{mcpJson}</pre>
         <p className="faint" style={{ fontSize: 13, margin: 0 }}>
           도구: get_arbitrage · predict_open · get_convergence_history · get_news · preview_pair_order
         </p>
       </section>
 
-      <section className="card stack" style={{ marginTop: 16 }}>
+      <section className="panel panel__body stack" style={{ marginTop: 16 }}>
         <div className="row">
-          <h2 className="card__title">REST</h2>
+          <h2 className="strong" style={{ fontSize: 15, fontWeight: 700 }}>REST</h2>
           <span className="spacer" />
-          <a className="chip chip--sm" href="/api/openapi.json" target="_blank" rel="noreferrer">
+          <a className="chip chip--fill" href="/api/openapi.json" target="_blank" rel="noreferrer">
             OpenAPI 문서
           </a>
           <Copy text={curl} label="예시 복사" />
@@ -88,8 +88,8 @@ export default function Developers() {
         </div>
       </section>
 
-      <section className="card stack" style={{ marginTop: 16 }}>
-        <h2 className="card__title">주문 안전장치</h2>
+      <section className="panel panel__body stack" style={{ marginTop: 16 }}>
+        <h2 className="strong" style={{ fontSize: 15, fontWeight: 700 }}>주문 안전장치</h2>
         <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.9, fontSize: 14 }}>
           <li>모든 주문 API는 기본이 dryRun이에요. 보낼 내용만 돌려주고 실제로는 보내지 않아요.</li>
           <li>실주문은 서버에 API_TOKEN을 설정하고 Authorization: Bearer 헤더를 넣어야 해요.</li>

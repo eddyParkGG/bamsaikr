@@ -11,36 +11,47 @@ interface KrxBook {
   expected: { price: number; volume: number; changePct: number } | null
 }
 
-const ROWS = 10
+const ROWS = 8
 
 function Book({ asks, bids, fmt, sizeFmt }: { asks: Level[]; bids: Level[]; fmt: (v: number) => string; sizeFmt: (v: number) => string }) {
   const a = asks.slice(0, ROWS).reverse()
   const b = bids.slice(0, ROWS)
   const max = Math.max(1, ...a.map((l) => l.sz), ...b.map((l) => l.sz))
+  const sum = (ls: Level[]) => ls.reduce((s, l) => s + l.sz, 0)
   return (
-    <div className="ob num">
-      {a.map((l, i) => (
-        <div className="ob__row ob__row--ask" key={`a${i}`}>
-          <span className="ob__size">
-            <i style={{ width: `${(l.sz / max) * 100}%` }} />
-            {sizeFmt(l.sz)}
-          </span>
-          <span className="ob__px down">{fmt(l.px)}</span>
-          <span />
-        </div>
-      ))}
-      <div className="ob__mid" />
-      {b.map((l, i) => (
-        <div className="ob__row ob__row--bid" key={`b${i}`}>
-          <span />
-          <span className="ob__px up">{fmt(l.px)}</span>
-          <span className="ob__size ob__size--bid">
-            <i style={{ width: `${(l.sz / max) * 100}%` }} />
-            {sizeFmt(l.sz)}
-          </span>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="ob num">
+        {a.map((l, i) => (
+          <div className="ob__row ob__row--ask" key={`a${i}`}>
+            <span className="ob__size">
+              <i style={{ width: `${(l.sz / max) * 100}%` }} />
+              <span>{sizeFmt(l.sz)}</span>
+            </span>
+            <span className="ob__px down">{fmt(l.px)}</span>
+            <span />
+          </div>
+        ))}
+        <div className="ob__mid" />
+        {b.map((l, i) => (
+          <div className="ob__row ob__row--bid" key={`b${i}`}>
+            <span />
+            <span className="ob__px up">{fmt(l.px)}</span>
+            <span className="ob__size ob__size--bid">
+              <i style={{ width: `${(l.sz / max) * 100}%` }} />
+              <span>{sizeFmt(l.sz)}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="ob__foot num">
+        <span>
+          판매대기 <b className="strong">{sizeFmt(sum(a))}</b>
+        </span>
+        <span>
+          구매대기 <b className="strong">{sizeFmt(sum(b))}</b>
+        </span>
+      </div>
+    </>
   )
 }
 
@@ -57,51 +68,51 @@ function OrderbookImpl({ asset, krxAvailable }: { asset: Asset; krxAvailable: bo
   const kb = tab === 'krx' ? krx.data?.krx : tab === 'nxt' ? krx.data?.nxt : null
 
   return (
-    <section className="card card--tight panel">
+    <section className="panel" style={{ flex: 1 }}>
       <div className="panel__head">
-        <div className="seg" role="group" aria-label="호가 시장">
-          <button aria-pressed={tab === 'perp'} onClick={() => setTab('perp')}>
-            perp
-          </button>
-          <button aria-pressed={tab === 'krx'} onClick={() => setTab('krx')}>
-            KRX
-          </button>
-          <button aria-pressed={tab === 'nxt'} onClick={() => setTab('nxt')}>
-            NXT
-          </button>
-        </div>
+        <span className="panel__title">호가</span>
+        <span className="spacer" />
         {tab === 'perp' && asset.fx && (
-          <button className="chip chip--sm" onClick={() => setUnit(unit === 'krw' ? 'usd' : 'krw')}>
-            {unit === 'krw' ? '원화 환산' : 'USDC'}
+          <button className="chip" onClick={() => setUnit(unit === 'krw' ? 'usd' : 'krw')} title="표시 단위">
+            {unit === 'krw' ? '원' : '$'}
           </button>
         )}
+        <div className="seg" role="group" aria-label="호가 시장" style={{ width: 150 }}>
+          {(['perp', 'krx', 'nxt'] as const).map((t) => (
+            <button key={t} aria-pressed={tab === t} onClick={() => setTab(t)}>
+              {t === 'perp' ? 'perp' : t.toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
-      {tab === 'perp' ? (
-        book ? (
-          <Book asks={book.asks} bids={book.bids} fmt={perpFmt} sizeFmt={(v) => v.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} />
+      <div className="panel__body" style={{ padding: '8px 12px 12px' }}>
+        {tab === 'perp' ? (
+          book ? (
+            <Book asks={book.asks} bids={book.bids} fmt={perpFmt} sizeFmt={(v) => v.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} />
+          ) : (
+            <div className="skeleton" style={{ height: 440 }} />
+          )
+        ) : !krxAvailable ? (
+          <p className="notice">국내 호가는 한국투자증권 API를 연결하면 볼 수 있어요.</p>
+        ) : kb ? (
+          <>
+            <Book asks={kb.asks} bids={kb.bids} fmt={(v) => fmtPrice(v)} sizeFmt={(v) => v.toLocaleString('ko-KR')} />
+            {kb.expected && kb.expected.price > 0 && (
+              <dl className="kv">
+                <dt>예상 체결가</dt>
+                <dd>
+                  {fmtPrice(kb.expected.price)}원 ({kb.expected.changePct > 0 ? '+' : ''}
+                  {kb.expected.changePct}%)
+                </dd>
+              </dl>
+            )}
+          </>
+        ) : krx.error ? (
+          <p className="notice">{krx.error.message}</p>
         ) : (
-          <div className="skeleton" style={{ height: 420 }} />
-        )
-      ) : !krxAvailable ? (
-        <p className="notice">국내 호가는 한국투자증권 API를 연결하면 볼 수 있어요.</p>
-      ) : kb ? (
-        <>
-          <Book asks={kb.asks} bids={kb.bids} fmt={(v) => fmtPrice(v)} sizeFmt={(v) => v.toLocaleString('ko-KR')} />
-          {kb.expected && kb.expected.price > 0 && (
-            <dl className="kv">
-              <dt>예상 체결가</dt>
-              <dd>
-                {fmtPrice(kb.expected.price)}원 ({kb.expected.changePct > 0 ? '+' : ''}
-                {kb.expected.changePct}%)
-              </dd>
-            </dl>
-          )}
-        </>
-      ) : krx.error ? (
-        <p className="notice">{krx.error.message}</p>
-      ) : (
-        <div className="skeleton" style={{ height: 420 }} />
-      )}
+          <div className="skeleton" style={{ height: 440 }} />
+        )}
+      </div>
     </section>
   )
 }

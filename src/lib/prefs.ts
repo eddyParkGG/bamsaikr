@@ -10,6 +10,8 @@ interface Prefs {
   mode: Mode
   theme: Theme
   interval: ChartInterval
+  sideOpen: boolean
+  setSideOpen: (v: boolean) => void
   chart: ChartSettings
   setMode: (m: Mode) => void
   setTheme: (t: Theme) => void
@@ -21,17 +23,22 @@ export const usePrefs = create<Prefs>()(
   persist(
     (set) => ({
       mode: 'easy',
-      theme: 'light',
-      interval: '5m',
+      theme: 'dark',
+      interval: '1d',
+      sideOpen: true,
+      setSideOpen: (sideOpen) => set({ sideOpen }),
       chart: DEFAULT_SETTINGS,
-      setMode: (mode) => set({ mode }),
+      // 프로 모드는 차트를 넓게 쓰도록 관심 패널을 접어서 시작
+      setMode: (mode) => set({ mode, sideOpen: mode === 'easy' }),
       setTheme: (theme) => set({ theme }),
       setInterval: (interval) => set({ interval }),
       toggle: (k) => set((s) => ({ chart: { ...s.chart, [k]: !s.chart[k] } })),
     }),
     {
       name: 'bamsai-prefs',
-      version: 1,
+      version: 2,
+      // v2: 토스 PC 기준으로 다크 기본, 차트는 일봉 1년 기본
+      migrate: (p) => ({ ...(p as object), theme: 'dark', interval: '1d' }) as Prefs,
       merge: (persisted, current) => {
         const p = persisted as Partial<Prefs>
         return { ...current, ...p, chart: { ...DEFAULT_SETTINGS, ...(p?.chart ?? {}) } }

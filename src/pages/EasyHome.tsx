@@ -6,6 +6,7 @@ import { track } from '../lib/ga'
 import { fmtPct, fmtPrice, fmtWon, kstDay, openDayText, untilText } from '../lib/format'
 import { useQuery } from '../lib/query'
 import { Link } from '../lib/router'
+import { StockLogo } from '../components/Brand'
 
 function StatusLine({ s }: { s?: Status }) {
   if (!s) return <div className="skeleton" style={{ width: 280, height: 18 }} />
@@ -16,39 +17,32 @@ function StatusLine({ s }: { s?: Status }) {
         ? '지금은 넥스트레이드에서만 거래되고 있어요'
         : `국내 주식시장은 닫혀 있어요. ${PERP_PLAIN}은 지금도 거래 중이에요`
   return (
-    <p className="muted" style={{ margin: 0, fontSize: 15 }}>
+    <p>
       {msg} · 다음 개장 {kstDay(s.nextOpen)} 오전 9시 ({untilText(s.nextOpen)})
     </p>
   )
 }
 
-function PredictCard({ p }: { p: Prediction }) {
+function PredictRow({ p }: { p: Prediction }) {
   const a = ASSET_BY_ID[p.asset]
   const pl = probLabel(p.probUp)
   const v = verdict(p.probUp)
   return (
-    <Link href={`/s/${p.asset}`} className="card easy-card" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
-      <div className="row">
-        <span className="easy-card__name">{a.name}</span>
-        <span className="spacer" />
-        <span className="faint" style={{ fontSize: 13 }}>
-          자세히
-        </span>
+    <Link href={`/s/${p.asset}`} className="easy-row" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
+      <StockLogo id={p.asset} size={36} />
+      <div>
+        <p className="easy-row__name">{a.name}</p>
+        <p className="easy-row__sub num">
+          예상 시가 {fmtPrice(p.expectedOpen, a.kind === 'index')}
+          {a.kind === 'stock' ? '원' : ''} <span className={p.expectedGapPct >= 0 ? 'up' : 'down'}>{fmtPct(p.expectedGapPct, 1)}</span>
+        </p>
       </div>
-      <p className={`easy-card__verdict ${v.tone}`}>{v.text}</p>
-      <div className="prob">
-        <div className="prob__bar">
-          <i className="prob__up" style={{ width: `${p.probUp * 100}%` }} />
-        </div>
-        <div className="row num" style={{ fontSize: 13 }}>
-          <span className={pl.tone}>
-            {pl.label} <b>{pl.value}%</b>
-          </span>
-          <span className="spacer" />
-          <span className="muted">
-            예상 시가 {fmtPrice(p.expectedOpen, a.kind === 'index')}
-            {a.kind === 'stock' ? '원' : ''} ({fmtPct(p.expectedGapPct, 1)})
-          </span>
+      <div className="easy-row__right">
+        <p className={`easy-row__big num ${v.tone}`}>
+          {pl.label} {pl.value}%
+        </p>
+        <div className="prob-mini">
+          <i style={{ width: `${p.probUp * 100}%` }} />
         </div>
       </div>
     </Link>
@@ -58,22 +52,27 @@ function PredictCard({ p }: { p: Prediction }) {
 function ArbRow({ s }: { s: ArbSnapshot }) {
   const a = ASSET_BY_ID[s.asset]
   const net = s.net.netKrwPer10m
-  const pricier = s.premiumPct >= 0 ? `${PERP_PLAIN}이 ${fmtPct(Math.abs(s.premiumPct), 2, false)} 비싸요` : `${PERP_PLAIN}이 ${fmtPct(Math.abs(s.premiumPct), 2, false)} 싸요`
+  const diff = `${fmtPct(Math.abs(s.premiumPct), 2, false)} ${s.premiumPct >= 0 ? '비싸요' : '싸요'}`
   return (
-    <Link href={`/s/${s.asset}`} className="arb-row">
+    <Link href={`/s/${s.asset}`} className="easy-row">
+      <StockLogo id={s.asset} size={36} />
       <div>
-        <p className="arb-row__name">{a.name}</p>
-        <p className="faint arb-row__sub">{s.mode === 'gap' ? `종가보다 ${pricier.replace(`${PERP_PLAIN}이 `, '')}` : pricier}</p>
+        <p className="easy-row__name">{a.name}</p>
+        <p className="easy-row__sub">{s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff}`}</p>
       </div>
-      <div style={{ textAlign: 'right' }}>
+      <div className="easy-row__right">
         {s.mode === 'gap' ? (
-          <p className="muted arb-row__value">장 열리면 확인할 수 있어요</p>
+          <p className="easy-row__big faint" style={{ fontSize: 14 }}>
+            장 열리면 확인
+          </p>
         ) : net > 0 && s.net.executable ? (
-          <p className="arb-row__value up num">+{fmtWon(net)}원</p>
+          <p className="easy-row__big up num">+{fmtWon(net)}원</p>
         ) : (
-          <p className="muted arb-row__value">지금은 비용이 더 커요</p>
+          <p className="easy-row__big faint" style={{ fontSize: 14 }}>
+            비용이 더 커요
+          </p>
         )}
-        <p className="faint arb-row__sub">1천만원 기준, 비용 빼고</p>
+        <p className="easy-row__sub">1천만원 기준</p>
       </div>
     </Link>
   )
@@ -91,35 +90,45 @@ export default function EasyHome() {
   const day = status.data ? openDayText(status.data.nextOpen) : '다음'
 
   return (
-    <div className="page easy">
+    <div className="easy">
       <section className="easy-hero">
-        <h1 className="easy-hero__title">{day} 아침 시가, 오를까요?</h1>
+        <h1>{day} 아침 시가, 오를까요?</h1>
         <StatusLine s={status.data} />
       </section>
 
-      <div className="easy-grid">
-        {preds.data
-          ? preds.data.items.map((p) => <PredictCard key={p.asset} p={p} />)
-          : [0, 1, 2, 3].map((i) => <div key={i} className="card skeleton" style={{ height: 156 }} />)}
-      </div>
+      <section className="panel easy-list">
+        <div className="panel__head">
+          <span className="panel__title">다음 시가 예측</span>
+          <span className="spacer" />
+          <span className="faint" style={{ fontSize: 12 }}>
+            {PERP_PLAIN} 가격 기준
+          </span>
+        </div>
+        <div className="panel__body">
+          {preds.data ? preds.data.items.map((p) => <PredictRow key={p.asset} p={p} />) : <div className="skeleton" style={{ height: 260, margin: 8 }} />}
+        </div>
+      </section>
 
-      <h2 className="section-title" style={{ marginTop: 40 }}>
-        지금 두 시장 차이로 남는 돈
-      </h2>
-      <section className="card" style={{ padding: '8px 24px' }}>
-        {arb.data ? arb.data.items.map((s) => <ArbRow key={s.asset} s={s} />) : <div className="skeleton" style={{ height: 240, margin: '16px 0' }} />}
+      <div className="easy-section-title">
+        <h2>지금 두 시장 차이로 남는 돈</h2>
+        <span className="faint" style={{ fontSize: 12 }}>
+          수수료·세금·환전 비용 뺀 금액
+        </span>
+      </div>
+      <section className="panel easy-list">
+        <div className="panel__body">{arb.data ? arb.data.items.map((s) => <ArbRow key={s.asset} s={s} />) : <div className="skeleton" style={{ height: 260, margin: 8 }} />}</div>
       </section>
 
       <section className="explain">
-        <h3>어떻게 미리 알 수 있나요?</h3>
+        <div className="easy-section-title" style={{ marginLeft: 0 }}>
+          <h2>어떻게 미리 알 수 있나요?</h2>
+        </div>
         <p>
-          국내 주식시장은 오후 3시 30분에 닫히지만, 하이퍼리퀴드 같은 해외 거래소에서는 삼성전자·SK하이닉스 가격을 밤에도 주말에도 사고팔아요. 이 가격을
-          원화로 바꿔서 다음 날 시가가 어디서 시작할지 계산해요.
+          국내 주식시장은 오후 3시 30분에 닫히지만, 하이퍼리퀴드 같은 해외 거래소에서는 삼성전자·SK하이닉스 가격을 밤에도 주말에도 사고팔아요. 이 가격을 원화로
+          바꿔서 다음 날 시가가 어디서 시작할지 계산해요.
         </p>
-        <p>
-          지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 화면에서 볼 수 있어요.
-        </p>
-        <p className="faint" style={{ fontSize: 13 }}>
+        <p>지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 화면에서 볼 수 있어요.</p>
+        <p className="faint" style={{ fontSize: 12 }}>
           투자 판단을 돕는 참고 정보예요. 예측이 틀릴 수 있고, 투자 결과는 본인에게 돌아가요. 해외 perp는 국내 투자자 보호 대상이 아니에요.
         </p>
       </section>
