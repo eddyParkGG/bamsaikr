@@ -11,7 +11,7 @@ to check it again. That return is the habit the product needs.
 | Timing | Post after the 20:00 close on Thu, Fri, Sun evening → measure Fri and Mon pre-open returns (weekend gap included) |
 | Duration | 4 days (Thu 20:00 → Mon 08:00) |
 | Message A/B | A forecast: "내일 장 시작 가격, 오를 확률 56%" / B fact: "지금 해외에선 삼성전자 -2.6%" |
-| Links | `https://<domain>/?utm_source={naver_jongto|dc_stock}&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
+| Links | `https://bamsai.kr/?utm_source={naver_jongto|dc_stock}&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
 | Minimum sample | 200 visitors; below that, no conclusion and one more post |
 | Rules | Information-sharing format, one link per post, no buy/sell wording (avoid unregistered-advisory misreading) |
 

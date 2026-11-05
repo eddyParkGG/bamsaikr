@@ -151,7 +151,7 @@
 |---|---|
 | 목적 | H2(개장 전에 다시 오나)를 가장 싸게, 가장 빨리 확인 |
 | 채널 | 네이버 종목토론방(삼성전자·SK하이닉스), 디시 주식 갤러리 |
-| 시점 | **국장 마감 후(15:30 이후)** 게시. 목·금·일 저녁 3회 → 금·월 개장 전 재방문 측정 (주말 갭 포함) |
+| 시점 | **저녁 8시 넥스트레이드 마감 후(21~22시)** 게시. 목·금·일 저녁 3회 → 금·월 개장 전 재방문 측정 (주말 갭 포함) |
 | 기간 | 4일 (목 마감 ~ 월 09:00) |
 | 메시지 A/B | A 예측형 "내일 장 시작 가격, 오를 확률 56%" / B 사실형 "지금 해외에선 삼성전자 -2.6%" |
 | 추적 | 글마다 `utm_source`(naver_jongto, dc_stock) + `utm_content`(종목_요일_A/B). 첫 유입 채널을 사용자 속성으로 저장 |
@@ -327,7 +327,7 @@ npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 국내 
    - 사용자 범위: `first_source`, `first_content`
    - 주요 이벤트(전환): `launch_notify_signup`, `order_submit`, `model_explain_open`
 4. 탐색 → 코호트 탐색: 코호트 = `first_source`, 재방문 조건 = `page_view` 중 `kst_window = preopen`
-5. 커뮤니티 글 링크 예시: `https://<도메인>/?utm_source=naver_jongto&utm_medium=community&utm_campaign=bamsai_test1&utm_content=smsn_thu_A`
+5. 커뮤니티 글 링크 예시: `https://bamsai.kr/?utm_source=naver_jongto&utm_medium=community&utm_campaign=bamsai_test1&utm_content=smsn_thu_A`
 
 ## 사용한 외부 API
 

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://bamsai.vercel.app/</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/about</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/developers</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/SMSN</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/SKHX</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/HYUNDAI</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/SKHY</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/KR200</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/EWY</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://bamsai.vercel.app/s/KORU</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/about</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://bamsai.kr/developers</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/SMSN</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/SKHX</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/HYUNDAI</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/SKHY</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/KR200</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/EWY</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://bamsai.kr/s/KORU</loc><changefreq>hourly</changefreq></url>
 </urlset>
