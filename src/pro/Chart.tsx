@@ -74,7 +74,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const rows: string[] = []
       if (k)
         rows.push(
-          `<div class="row"><i class="lg-dot" style="background:${krxC}"></i><span>정규장</span><span class="k">시작</span><b class="${cls(k.o, k.o)}">${f(k.o)}</b><span class="k">고가</span><b class="${cls(k.h, k.o)}">${f(k.h)}</b><span class="k">저가</span><b class="${cls(k.l, k.o)}">${f(k.l)}</b><span class="k">종가</span><b class="${cls(k.c, k.o)}">${f(k.c)}</b></div>`,
+          `<div class="row"><i class="lg-dot" style="background:${krxC}"></i><span>국내 시장</span><span class="k">시작</span><b class="${cls(k.o, k.o)}">${f(k.o)}</b><span class="k">고가</span><b class="${cls(k.h, k.o)}">${f(k.h)}</b><span class="k">저가</span><b class="${cls(k.l, k.o)}">${f(k.l)}</b><span class="k">종가</span><b class="${cls(k.c, k.o)}">${f(k.c)}</b></div>`,
         )
       if (p)
         rows.push(
@@ -266,19 +266,19 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
       {k && (
         <>
           <div className="kv">
-            <dt>정규장 시작 · 종가</dt>
+            <dt>국내 시작 · 종가</dt>
             <dd>
               {fmtPrice(k.o)} → {fmtPrice(k.c)}
             </dd>
           </div>
           <div className="kv">
-            <dt>정규장 고가 · 저가</dt>
+            <dt>국내 고가 · 저가</dt>
             <dd>
               {fmtPrice(k.h)} / {fmtPrice(k.l)}
             </dd>
           </div>
           <div className="kv">
-            <dt>정규장 거래량</dt>
+            <dt>국내 거래량</dt>
             <dd>{fmtKoreanUnit(k.v)}주</dd>
           </div>
         </>

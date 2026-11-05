@@ -49,7 +49,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
   {
     group: '아래 패널',
     items: [
-      { k: 'volume', label: '거래량 (시장별)', help: '정규장과 하이퍼리퀴드 거래량을 따로 보여줘요' },
+      { k: 'volume', label: '거래량 (시장별)', help: '국내 시장과 하이퍼리퀴드 거래량을 따로 보여줘요' },
       { k: 'premium', label: '괴리율', help: '하이퍼리퀴드 가격이 국내 가격보다 몇 % 비싸거나 싼지 보여줘요' },
       { k: 'funding', label: '펀딩비', help: '하이퍼리퀴드에서 1시간마다 롱·숏이 주고받는 비용이에요. 플러스면 사려는 사람이 많아요' },
       { k: 'rsi', label: 'RSI', param: 'rsi', help: '최근 오른 힘과 내린 힘을 0~100으로 나타내요. 70 위는 과열, 30 아래는 침체로 봐요' },
@@ -105,7 +105,7 @@ function IndicatorMenu({ krxAvailable }: { krxAvailable: boolean }) {
         <div className="menu__pop" role="menu">
           <p className="menu__note">
             {krxAvailable
-              ? '가격 지표는 정규장이 켜져 있으면 정규장 기준, 꺼져 있으면 하이퍼리퀴드 기준으로 그려요.'
+              ? '가격 지표는 국내 시장이 켜져 있으면 국내 시장 기준, 꺼져 있으면 하이퍼리퀴드 기준으로 그려요.'
               : '이 종목은 국내 가격이 없어서 하이퍼리퀴드 기준으로 그려요.'}
           </p>
           {MENU.map((g) => (
@@ -503,7 +503,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                   }}
                 >
                   <span className="chip__dot" style={{ background: settings.showKrx ? 'var(--krx)' : 'var(--text-3)' }} />
-                  {asset.kind === 'stock' ? '정규장' : '국내 보통주'}
+                  {asset.kind === 'stock' ? '국내 시장' : '국내 보통주'}
                 </button>
                 ) : (
                   <button
@@ -512,7 +512,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                     onClick={() => toast(asset.kind === 'index' ? '코스피200은 국내 지수 실시간 시세가 없어서 하이퍼리퀴드 가격만 보여드려요' : `${asset.name}은 국내에 상장되지 않아서 하이퍼리퀴드 가격만 있어요`)}
                   >
                     <span className="chip__dot" style={{ background: 'var(--text-3)' }} />
-                    정규장
+                    국내 시장
                   </button>
                 )}
                 <button
