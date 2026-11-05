@@ -34,7 +34,7 @@ export default function About() {
           <dl className="about__targets">
             <div>
               <dt>홈</dt>
-              <dd>삼성전자·SK하이닉스를 가진 직장인. 출근길 08~09시에 "오늘 장 시작하면 어떨까"가 궁금한 사람</dd>
+              <dd>삼성전자·SK하이닉스를 가진 직장인. 아침 8시 국내 시장이 열리기 전에 "오늘 장 시작하면 어떨까"가 궁금한 사람</dd>
             </div>
             <div>
               <dt>종목 상세</dt>
@@ -90,7 +90,7 @@ export default function About() {
             <span className="about__status">검증 예정</span>
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            장 마감 후 종목토론방·주식 갤러리에 링크를 올리고 4일 동안 봐요. 처음 온 사람 중 다음 날 장 시작 전(08~09시)에 다시 온 사람이 <b className="strong">15% 이상</b>이면 통과예요.
+            저녁 8시 국내 시장이 닫힌 뒤 종목토론방·주식 갤러리에 링크를 올리고 4일 동안 봐요. 처음 온 사람 중 다음 날 아침 8시 장 시작 전(6~8시)에 다시 온 사람이 <b className="strong">15% 이상</b>이면 통과예요.
           </p>
           <p className="about__h" style={{ marginTop: 20 }}>
             H3·H4. 지난 예측 기록을 보여주면 믿고, 비용 뺀 시세차익 기회를 보여주면 주문 버튼까지 누른다

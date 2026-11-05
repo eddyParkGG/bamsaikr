@@ -7,7 +7,7 @@ Nothing is sent without `VITE_GA_ID` (local dev logs events to the console inste
 
 | Name | Type | Values | Set in |
 |---|---|---|---|
-| `kst_window` | event param (all events and `page_view`) | `preopen` 08–09, `regular` 09–15:30, `after` 15:30–20, `night`, `weekend` | `kstWindow()` |
+| `kst_window` | event param (all events and `page_view`) | `preopen` 06–08 (before the 08:00 re-open), `premarket` 08–09 (Nextrade only), `regular` 09–15:30, `after` 15:30–20, `night` 20–06, `weekend` | `kstWindow()` |
 | `first_source` | user property | first `utm_source` seen, else `(direct)` | `initGa()` → `firstTouch()` |
 | `first_content` | user property | first `utm_content` (asset_day_variant) | same |
 

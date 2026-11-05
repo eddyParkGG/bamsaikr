@@ -16,7 +16,8 @@ export function kstWindow(now = Date.now()) {
   const v = venueAt(now)
   const m = kstMinutes(now)
   if (v === 'weekend') return 'weekend'
-  if (m >= 480 && m < 540) return 'preopen' // 08:00~09:00
+  if (m >= 360 && m < 480) return 'preopen' // 06:00~08:00, before the domestic market re-opens
+  if (m >= 480 && m < 540) return 'premarket' // 08:00~09:00, Nextrade only
   if (v === 'regular') return 'regular'
   if (m >= 930 && m < 1200) return 'after'
   return 'night'
