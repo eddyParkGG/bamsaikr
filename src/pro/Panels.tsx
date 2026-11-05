@@ -6,7 +6,7 @@ import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib
 import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
-import { useArb, useUsdcRate } from '../lib/data'
+import { useArb } from '../lib/data'
 import { InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
 
 const HELP = {
@@ -272,7 +272,6 @@ function pass(e: OpenEvent, f: Filters) {
 export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asset: Asset }) {
   const q = useQuery<{ events: OpenEvent[]; backtest: Prediction['backtest'] }>(`/api/v1/convergence?asset=${asset.id}&limit=500`, 300_000)
   const [f, setF] = useState<Filters>(ALL)
-  const rate = useUsdcRate()
   if (!q.data) return <div className="skeleton" style={{ height: 240, margin: 16 }} />
   const rows = q.data.events.filter((e) => pass(e, f))
   const thin = q.data.backtest.thinUsd
@@ -313,7 +312,7 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                 <td className={tone(e.gapPct)}>{fmtPct(e.gapPct)}</td>
                 <td className={tone(e.openGapPct)}>{fmtPct(e.openGapPct)}</td>
                 <td className={e.nightUsd < thin ? 'faint' : undefined}>
-                  {rate ? `${fmtWonUnit(e.nightUsd * rate)}원` : '-'}
+                  {Number.isFinite(e.nightKrw) ? `${fmtWonUnit(e.nightKrw)}원` : '-'}
                   {e.nightUsd < thin && ' · 적음'}
                 </td>
                 <td>

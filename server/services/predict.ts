@@ -32,6 +32,7 @@ export interface OpenEvent {
   regime: 'overnight' | 'weekend'
   closedHours: number // 20:00 close → 08:00 re-open
   nightUsd: number // Hyperliquid notional traded while closed (USD)
+  nightKrw: number // the same in KRW at that night's USDC rate (08:00)
   prevClose: number // domestic close at 20:00 (NXT)
   perpRefKrw: number // Hyperliquid price at 08:00 in KRW
   open: number // 08:00–08:10 average domestic price
@@ -142,6 +143,7 @@ function buildEvents(asset: Asset, days: DomesticDay[], perp: Candle[], fx: FxPo
       regime: closedHours > LONG_GAP_HOURS ? 'weekend' : 'overnight',
       closedHours: Math.round(closedHours * 10) / 10,
       nightUsd: Math.round(nightUsd),
+      nightKrw: Math.round(asset.fx ? nightUsd * (rateAt(fx, tOpen - H) ?? NaN) : nightUsd),
       prevClose: prev.close,
       perpRefKrw: Math.round(perpRefKrw * 100) / 100,
       open: Math.round(d.reopen * 100) / 100,
