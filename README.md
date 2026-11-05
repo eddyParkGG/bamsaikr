@@ -300,7 +300,8 @@ Claude Code(Opus 5.5)와 대화하며 기획부터 배포까지 진행
 ```bash
 npm install
 cp .env.example .env.local   # TOSS_CLIENT_ID / TOSS_CLIENT_SECRET 입력 (토스증권 WTS > 설정 > Open API)
-npm run dev                  # 웹 http://localhost:5173, API http://localhost:8787/api
+npm run dev                  # 웹 http://localhost:5173 (API는 배포 서버 bamsai-api.fly.dev 사용)
+npm run dev:local            # 서버 코드 수정 시: 로컬 API http://localhost:8787/api 도 실행. 켜는 동안 배포 서버의 토스 토큰이 끊김 (토스 키는 하나뿐이고 새 토큰이 이전 토큰을 무효화)
 npx tsx --env-file=.env.local server/scripts/backtest.ts        # 백테스트 결과 출력 (서버를 끄고 실행: 토스 토큰이 서로를 무효화함. 서버가 켜져 있으면 /api/v1/convergence로 확인)
 npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 국내 시장 하루 가격(20:00 마지막 가격·08:00~08:10 평균·정규장 시작·종가) 저장 (배포 전, 서버를 끄고 실행)
 ```
