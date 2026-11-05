@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 
-const MIN = 260
-const MAX = 640
 const DEFAULT = 340
+/** Columns never get narrower than their default width */
+const MIN = DEFAULT
+const MAX = 640
 
 /** Saved width of a column (order book, order form), else 340px */
 export function readWidth(key: string) {
