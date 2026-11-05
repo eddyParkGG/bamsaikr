@@ -371,6 +371,9 @@ body.is-resizing * {
   background: var(--bg-float);
   border-radius: 14px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), var(--shadow-panel);
+  /* The chart box clips its contents: stay inside it (toolbar above + a small margin) and scroll the rest */
+  max-height: calc(var(--chart-h, 600px) - 72px);
+  overflow-y: auto;
 }
 .menu__group {
   padding: 6px 8px 4px;
@@ -992,7 +995,8 @@ body.is-resizing * {
   /* One column: nothing sticks, so the chart and the order book never slide over each other */
   .pro-chart {
     position: static;
-    height: clamp(420px, 70vh, 640px);
+    --chart-h: clamp(420px, 70vh, 640px);
+    height: var(--chart-h);
   }
   .cols3 {
     grid-template-columns: 1fr;
@@ -1006,7 +1010,8 @@ body.is-resizing * {
     grid-template-columns: 1fr;
   }
   .pro-chart {
-    height: 520px;
+    --chart-h: 520px;
+    height: var(--chart-h);
     min-height: 0;
   }
   .ticker > span:nth-child(n + 5) {
