@@ -35,14 +35,8 @@ export function BrandMark({ size = 30, loop = false }: { size?: number; loop?: b
       </defs>
       {/* Crescent moon */}
       <circle cx="24" cy="14" r="12" fill="url(#bm-moon)" mask="url(#bm-cut)" />
-      {/* Cloud, with a thin background-coloured outline so it stays separate from the moon at small sizes */}
-      <path
-        d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z"
-        fill="url(#bm-cloud)"
-        stroke="var(--bg-screen, #101013)"
-        strokeWidth="1.6"
-        paintOrder="stroke"
-      />
+      {/* Cloud */}
+      <path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" fill="url(#bm-cloud)" />
       {/* Hover: light sweep */}
       <g mask="url(#bm-shape)">
         <rect className="brand__shine" x="-30" y="0" width="18" height="40" fill="url(#bm-shine)" transform="skewX(-20)" />
