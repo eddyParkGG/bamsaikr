@@ -1620,6 +1620,9 @@ body.is-resizing * {
   white-space: nowrap;
 }
 .ob2__info dd {
+  /* Narrow column: the value shrinks to fit (data-fit) before it would ever be cut */
+  flex: 1;
+  text-align: right;
   margin: 0;
   min-width: 0;
   overflow: hidden;
@@ -2523,11 +2526,13 @@ body {
   min-width: 0;
   max-width: 60%;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 16px;
   border-radius: 999px;
+  background: var(--fill);
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
+  transition: background 0.15s;
 }
 .issue-inline:hover {
   background: var(--fill-strong);

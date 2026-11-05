@@ -123,7 +123,9 @@ function Book({
             {info.rows.map(([k, v, c]) => (
               <div key={k}>
                 <dt>{k}</dt>
-                <dd className={c}>{v}</dd>
+                <dd className={c} data-fit>
+                  {v}
+                </dd>
               </div>
             ))}
           </dl>
