@@ -2371,3 +2371,8 @@ button.ob2__px:active::after {
   font-weight: 500;
   font-size: 12px;
 }
+
+/* Weekend day name in date cells */
+.dow--weekend {
+  color: var(--up);
+}

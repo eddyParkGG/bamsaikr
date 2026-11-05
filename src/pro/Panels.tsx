@@ -33,6 +33,21 @@ function Row({ label, help, children }: { label: string; help: string; children:
   )
 }
 
+const DOW = ['일', '월', '화', '수', '목', '금', '토']
+
+/** 'M/D (요일)' from a KST 'YYYYMMDD' key; Saturday and Sunday in red */
+function DateDow({ date }: { date: string }) {
+  const y = +date.slice(0, 4)
+  const m = +date.slice(4, 6)
+  const d = +date.slice(6, 8)
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay()
+  return (
+    <>
+      {m}/{d} (<span className={dow === 0 || dow === 6 ? 'dow--weekend' : undefined}>{DOW[dow]}</span>)
+    </>
+  )
+}
+
 export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Prediction | null; asset: Asset }) {
   if (!p) return <div className="skeleton" style={{ height: 260, marginTop: 8 }} />
   const isIdx = asset.kind === 'index'
@@ -276,7 +291,7 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
             {rows.map((e) => (
               <tr key={e.date}>
                 <td>
-                  {+e.date.slice(4, 6)}/{+e.date.slice(6, 8)}
+                  <DateDow date={e.date} />
                 </td>
                 <td className="muted">{hoursText(e.closedHours)}</td>
                 <td className={tone(e.gapPct)}>{fmtPct(e.gapPct)}</td>
