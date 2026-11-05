@@ -1,5 +1,17 @@
 // Upbit KRW-market USDC price. Hyperliquid perps settle in USDC, so convert with KRW/USDC rather than KRW/USD
-import { cached, fetchJson } from '../lib/cache.js'
+import { cached, fetchJson as rawFetchJson } from '../lib/cache.js'
+
+/** Upbit allows ~10 req/sec per IP; several history loads at once can hit it, so back off and retry */
+async function fetchJson<T>(url: string): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await rawFetchJson<T>(url)
+    } catch (e) {
+      if (attempt >= 4 || !String((e as Error).message).includes('429')) throw e
+      await new Promise((r) => setTimeout(r, 500 * 2 ** attempt))
+    }
+  }
+}
 
 const BASE = 'https://api.upbit.com/v1'
 const MARKET = 'KRW-USDC'
