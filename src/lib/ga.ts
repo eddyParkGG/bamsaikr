@@ -28,6 +28,7 @@ export type GaEvent =
   | 'mode_switch' // mode: easy|pro
   | 'prediction_view' // asset, session, hours_to_open
   | 'prediction_detail_open'
+  | 'model_explain_open' // 적중 이력·계산 방법 펼침 (신뢰 가설)
   | 'arb_view'
   | 'arb_calc_change'
   | 'chart_market_toggle' // market, on

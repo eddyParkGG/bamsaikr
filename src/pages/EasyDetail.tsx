@@ -50,7 +50,7 @@ function Spark({ data, isIdx }: { data: ChartSeries; isIdx: boolean }) {
 }
 
 const AMOUNTS = [1_000_000, 10_000_000, 100_000_000]
-const amountLabel = (v: number) => (v >= 1e8 ? `${v / 1e8}억원` : `${(v / 1e4).toLocaleString("ko-KR")}만원`)
+const amountLabel = (v: number) => (v >= 1e8 ? `${v / 1e8}억원` : `${(v / 1e4).toLocaleString('ko-KR')}만원`)
 
 export default function EasyDetail({ asset }: { asset: Asset }) {
   const { setMode } = usePrefs()
@@ -125,7 +125,14 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
                 : `${PERP_PLAIN}에서 ${asset.short} 가격이 ${p.regime === 'weekend' ? '지난 종가' : '오늘 종가'}보다 ${fmtPct(p.perpGapPct, 1)} ${p.perpGapPct >= 0 ? '높게' : '낮게'} 거래되고 있어요.`}
               {p.auction && ` 지금 동시호가 예상 체결가는 ${fmtPrice(p.auction.price)}원이에요.`}
             </p>
-            <button className="trust" onClick={() => setWhy(!why)} aria-expanded={why}>
+            <button
+              className="trust"
+              onClick={() => {
+                if (!why) track('model_explain_open', { asset: asset.id, hit_rate: p.backtest.hitRatePct ?? 0 })
+                setWhy(!why)
+              }}
+              aria-expanded={why}
+            >
               <span>
                 지난 {p.backtest.tested}번 개장 중 <b>{Math.round(((p.backtest.hitRatePct ?? 0) * p.backtest.tested) / 100)}번</b> 방향을 맞혔어요
               </span>

@@ -27,6 +27,13 @@ export const app = new Hono().basePath('/api')
 
 app.use('*', cors())
 
+// 에이전트 가설(H5) 측정용: 화면 밖 호출을 구분해서 로그로 남김 (Vercel 로그에서 집계)
+app.use('*', async (c, next) => {
+  await next()
+  if (c.req.header('sec-fetch-site') === 'same-origin') return
+  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua: c.req.header('user-agent')?.slice(0, 80) }))
+})
+
 app.onError((err, c) => {
   if (err instanceof OrderError) return c.json({ error: err.message }, err.status)
   if (err instanceof KisError) return c.json({ error: err.message, code: err.code, source: 'kis' }, 502)
