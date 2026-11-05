@@ -6,7 +6,7 @@ window.addEventListener('popstate', () => listeners.forEach((l) => l()))
 
 export function navigate(to: string) {
   if (to === location.pathname + location.search) return
-  history.pushState(null, '', to)
+  history.pushState({ fromApp: true }, '', to)
   window.scrollTo(0, 0)
   listeners.forEach((l) => l())
   trackPage(to)

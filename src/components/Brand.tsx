@@ -54,35 +54,44 @@ export function BrandMark({ size = 30 }: { size?: number }) {
   )
 }
 
-const LOGOS: Record<string, { bg: string; fg: string; label: string; size: number; weight?: number; italic?: boolean }> = {
-  SMSN: { bg: '#1428a0', fg: '#fff', label: 'SAMSUNG', size: 5.2, weight: 800 },
-  SKHX: { bg: '#ea002c', fg: '#fff', label: 'SK', size: 11, weight: 800 },
-  HYUNDAI: { bg: '#002c5f', fg: '#fff', label: 'H', size: 15, weight: 800, italic: true },
-  SKHY: { bg: '#ea002c', fg: '#fff', label: 'ADR', size: 8.5, weight: 800 },
-  KR200: { bg: '#3c3c47', fg: '#fff', label: '200', size: 9.5, weight: 700 },
-  EWY: { bg: '#0f7b5f', fg: '#fff', label: 'EWY', size: 8.5, weight: 800 },
-  KORU: { bg: '#f08c00', fg: '#fff', label: '3x', size: 12, weight: 800 },
+// Stock icons: the same images the brokerage app uses for listed products (US-listed ones get a flag badge).
+// KOSPI 200 has no listed product image, so it keeps a drawn badge.
+const CDN = 'https://static.toss.im'
+const IMAGES: Record<string, { src: string; us?: boolean }> = {
+  SMSN: { src: `${CDN}/png-icons/securities/icn-sec-fill-005930.png` },
+  SKHX: { src: `${CDN}/png-icons/securities/icn-sec-fill-000660.png` },
+  HYUNDAI: { src: `${CDN}/png-icons/securities/icn-sec-fill-005380.png` },
+  SKHY: { src: `${CDN}/logos/securities/icn-sec-fill-SKHYV.png`, us: true },
+  EWY: { src: `${CDN}/png-icons/securities/icn-sec-fill-EWY.png`, us: true },
+  KORU: { src: `${CDN}/png-icons/securities/icn-sec-fill-KORU.png`, us: true },
 }
+const US_FLAG = `${CDN}/icons/png/3x/icon-flag-usd.png`
 
-/** Asset icon: brand-color circle + short wordmark (brokerage list icon style) */
+/** Asset icon: listed-product image, or a drawn badge for Hyperliquid-only products */
 export function StockLogo({ id, size = 30 }: { id: string; size?: number }) {
-  const l = LOGOS[id] ?? LOGOS.KR200
+  const img = IMAGES[id]
+  if (img)
+    return (
+      <span className="logo-mark logo-img" style={{ width: size, height: size }} aria-hidden>
+        <img src={img.src} alt="" width={size} height={size} loading="lazy" decoding="async" />
+        {img.us && <img className="logo-img__flag" src={US_FLAG} alt="" width={Math.round(size * 0.42)} height={Math.round(size * 0.42)} />}
+      </span>
+    )
   return (
     <svg className="logo-mark" width={size} height={size} viewBox="0 0 30 30" aria-hidden>
-      <circle cx="15" cy="15" r="15" fill={l.bg} />
+      <circle cx="15" cy="15" r="15" fill="#3c3c47" />
       <text
         x="15"
         y="15.5"
         textAnchor="middle"
         dominantBaseline="middle"
-        fill={l.fg}
-        fontSize={l.size}
-        fontWeight={l.weight ?? 700}
-        fontStyle={l.italic ? 'italic' : 'normal'}
+        fill="#fff"
+        fontSize={9.5}
+        fontWeight={700}
         fontFamily="Pretendard Variable, Pretendard, sans-serif"
-        letterSpacing={l.label.length > 4 ? 0.2 : -0.3}
+        letterSpacing={-0.3}
       >
-        {l.label}
+        200
       </text>
     </svg>
   )

@@ -9,6 +9,8 @@ import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
 import { SessionBadge } from '../components/SessionBadge'
 import { StockLogo } from '../components/Brand'
+import { openSearch, useAssetQuotes } from '../components/AssetSearch'
+import { navigate } from '../lib/router'
 import { TodayIssue } from '../components/TodayIssue'
 import { IndicatorStrip } from '../components/IndicatorStrip'
 
@@ -56,7 +58,73 @@ function Spark({ data, isIdx }: { data: ChartSeries; isIdx: boolean }) {
 const AMOUNTS = [1_000_000, 10_000_000, 100_000_000]
 const amountLabel = (v: number) => (v >= 1e8 ? `${v / 1e8}억원` : `${(v / 1e4).toLocaleString('ko-KR')}만원`)
 
+function BackButton() {
+  return (
+    <button
+      className="back-btn"
+      onClick={() => (history.state?.fromApp ? history.back() : navigate('/'))}
+      aria-label="시세 요약으로 돌아가기"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M15 5l-7 7 7 7" />
+      </svg>
+      시세 요약
+    </button>
+  )
+}
+
+function AssetTitle({ asset }: { asset: Asset }) {
+  return (
+    <button className="asset-switch" onClick={openSearch} aria-label={`${asset.name}, 다른 종목 보기`}>
+      <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{asset.name}</h1>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </button>
+  )
+}
+
+/** Products without a next-open forecast (ADR, index, US ETFs): price + a pointer to the detail tab */
+function PerpOnlyDetail({ asset }: { asset: Asset }) {
+  const { setMode } = usePrefs()
+  const q = useAssetQuotes()[asset.id]
+  const isIdx = asset.kind === 'index'
+  return (
+    <div className="easy-detail">
+      <BackButton />
+      <header className="easy-head">
+        <StockLogo id={asset.id} size={44} />
+        <div>
+          <AssetTitle asset={asset} />
+          {q ? (
+            <p className="num" style={{ marginTop: 2, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+              {fmtPrice(q.price, isIdx)}
+              {isIdx ? '' : '원'} <span className={tone(q.changePct)} style={{ fontSize: 14, fontWeight: 600 }}>{fmtPct(q.changePct)}</span>
+            </p>
+          ) : (
+            <div className="skeleton" style={{ width: 180, height: 30, marginTop: 4 }} />
+          )}
+        </div>
+      </header>
+      <section className="panel q-card">
+        <p className="q-card__q">{asset.note ?? '하이퍼리퀴드 가격만 제공해요'}</p>
+        <p className="q-card__reason">
+          이 상품은 국내 주식과 1:1로 맞물리지 않아서 내일 가격 예측과 시세차익은 계산하지 않아요. 차트와 호가는 상세 탭에서 볼 수 있어요.
+        </p>
+        <button className="btn btn--lg btn--key btn--block" style={{ marginTop: 16 }} onClick={() => setMode('pro')}>
+          상세 탭에서 보기
+        </button>
+      </section>
+    </div>
+  )
+}
+
 export default function EasyDetail({ asset }: { asset: Asset }) {
+  if (asset.kind !== 'stock') return <PerpOnlyDetail asset={asset} />
+  return <StockDetail asset={asset} />
+}
+
+function StockDetail({ asset }: { asset: Asset }) {
   const { setMode } = usePrefs()
   const pred = useQuery<Prediction>(`/api/v1/predict?asset=${asset.id}`, 15_000)
   const arbQ = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 3000)
@@ -79,11 +147,12 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
 
   return (
     <div className="easy-detail">
+      <BackButton />
       <header className="easy-head">
         <StockLogo id={asset.id} size={44} />
         <div>
           <div className="row" style={{ gap: 6 }}>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{asset.name}</h1>
+            <AssetTitle asset={asset} />
             {arb && <SessionBadge session={arb.session} />}
           </div>
           {arb ? (
