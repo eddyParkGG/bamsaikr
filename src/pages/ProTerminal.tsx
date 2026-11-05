@@ -18,6 +18,7 @@ import { OrderPanel } from '../pro/OrderPanel'
 import { ConvergenceTable, FlowsPanel, PredictPanels } from '../pro/Panels'
 import type { ChartSettings } from '../pro/settings'
 import { ParamsSheet, type ParamKey } from '../pro/ParamsSheet'
+import { readSideWidth, SplitHandle } from '../pro/SplitHandle'
 
 const Chart = lazy(() => import('../pro/Chart').then((m) => ({ default: m.Chart })))
 
@@ -398,6 +399,7 @@ type Tab = 'chart' | 'predict' | 'conv' | 'flows'
 export default function ProTerminal({ asset }: { asset: Asset }) {
   const { interval, setInterval, chart: settings, toggle, theme, params } = usePrefs()
   const [tab, setTab] = useState<Tab>('chart')
+  const [sideW, setSideW] = useState(readSideWidth)
   const [openNews, setOpenNews] = useState<NewsMarker | null>(null)
 
   const arbAll = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 3000)
@@ -451,7 +453,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       </div>
 
       {tab === 'chart' && (
-        <div className="pro-grid">
+        <div className="pro-grid" style={{ '--side-w': `${sideW}px` } as React.CSSProperties}>
           <section className="panel pro-chart">
             <div className="panel__head">
               <span className="panel__title">차트</span>
@@ -554,11 +556,16 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
             </div>
           </section>
 
+          <SplitHandle width={sideW} onChange={setSideW} />
+
           <div className="pro-col">
             <TodayIssue asset={asset.id} limit={1} onOpen={onNews} />
             {predictable && <NextOpenMini p={pred.data ?? null} asset={asset} />}
-            <Orderbook asset={asset} arb={arb} />
-            <OrderPanel asset={asset} arb={arb} liveKrx={!!status.data?.liveKrxOrders} />
+            {/* Order book + order form stick to the chart's top edge and fill its height */}
+            <div className="pro-trade">
+              <Orderbook asset={asset} arb={arb} />
+              <OrderPanel asset={asset} arb={arb} liveKrx={!!status.data?.liveKrxOrders} />
+            </div>
           </div>
         </div>
       )}

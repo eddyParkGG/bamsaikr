@@ -260,17 +260,83 @@
 
 /* ───── Pro mode body ───── */
 .pro-grid {
+  --chart-h: max(600px, calc(100vh - var(--header-h) - 60px));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 8px var(--side-w, 340px);
   align-items: start;
-  gap: 8px;
   margin-top: 8px;
 }
 .pro-chart {
   position: sticky;
   top: calc(var(--header-h) + 8px);
-  height: calc(100vh - var(--header-h) - 36px - 24px);
-  min-height: 600px;
+  height: var(--chart-h);
+}
+/* Order book + order form: same top and height as the chart while scrolling */
+.pro-trade {
+  position: sticky;
+  top: calc(var(--header-h) + 8px);
+  height: var(--chart-h);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pro-trade > .panel:first-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pro-trade > .panel:first-child > .panel__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pro-trade .ob2-scroll {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+/* Chart ↔ right column resize handle: hidden until hover, 4px key-color bar */
+.split {
+  position: sticky;
+  top: calc(var(--header-h) + 8px);
+  height: var(--chart-h);
+  width: 10px;
+  margin-left: -1px;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  z-index: 2;
+  outline: none;
+}
+.split__bar {
+  width: 100%;
+  height: 100%;
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.split:hover .split__bar,
+.split:focus-visible .split__bar,
+.split--drag .split__bar {
+  opacity: 1;
+}
+.split__bar i {
+  width: 4px;
+  --split-c: 228, 230, 235;
+  background: linear-gradient(0deg, rgba(var(--split-c), 0) 0%, rgb(var(--split-c)) 50%, rgba(var(--split-c), 0) 100%);
+}
+:root[data-theme='light'] .split__bar i {
+  --split-c: 139, 149, 161;
+}
+body.is-resizing,
+body.is-resizing * {
+  cursor: ew-resize !important;
+  user-select: none !important;
 }
 .pro-col {
   display: flex;
@@ -920,6 +986,18 @@
 @media (max-width: 1100px) {
   .pro-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .split {
+    display: none;
+  }
+  .pro-trade {
+    position: static;
+    height: auto;
+  }
+  .pro-trade .ob2-scroll {
+    height: 360px;
+    flex: none;
   }
   .cols3 {
     grid-template-columns: 1fr;
