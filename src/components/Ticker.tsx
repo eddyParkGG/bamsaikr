@@ -2,24 +2,34 @@ import { memo, useEffect } from 'react'
 import type { ArbSnapshot, Status } from '../../shared/api'
 import { fmtPct, tone } from '../lib/format'
 import { subscribeUsdc } from '../lib/live'
-import { SESSION_LABEL, SessionLine } from '../lib/market'
+import { SessionLine, useNow, venuesNow } from '../lib/market'
 
-/** Bottom strip (where brokerage apps show indices): market status, then for the two main stocks how far
- *  Hyperliquid sits from the domestic price and what the spread leaves after costs */
+/** Bottom strip: the three venues with their hours (trading ones lit), time to close or next open,
+ *  then for the two main stocks how far Hyperliquid sits from the domestic price and what the spread leaves after costs */
 const SHOWN = ['SMSN', 'SKHX']
 
 export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnapshot[]; status?: Status }) {
   useEffect(() => subscribeUsdc(), [])
+  const now = useNow(15_000)
+  const on = venuesNow(status?.session, now)
+  const venue = (lit: boolean, name: string, hours: string) => (
+    <span className={`ticker__venue ${lit ? 'is-on' : ''}`}>
+      <span className={`dot ${lit ? 'dot--on' : ''}`} />
+      {name} <span className="faint">{hours}</span>
+    </span>
+  )
   return (
     <footer className="ticker num">
+      {venue(on.regular, '국내 정규장', '09:00~15:30')}
+      {venue(on.nxt, '넥스트레이드', '08:00~20:00')}
+      {venue(on.perp, '하이퍼리퀴드', '24시간')}
       {status && (
-        <span>
-          {SESSION_LABEL[status.session]}
-          <span className="faint">
-            {' '}
-            · <SessionLine status={status} style="clock" />
+        <>
+          <span className="ticker__sep" />
+          <span>
+            <SessionLine status={status} style="clock" />
           </span>
-        </span>
+        </>
       )}
       <span className="spacer" />
       {items

@@ -1,12 +1,10 @@
 import { memo, useEffect, useId } from 'react'
-import type { Status } from '../../shared/api'
 import { useStatus } from '../lib/data'
 import { subscribeUsdc, useLive } from '../lib/live'
-import { kstMinutes, nxtOpenAt, useNow, venueAt } from '../lib/market'
 import { useQuery } from '../lib/query'
 
 interface Indicator {
-  id: 'KOSPI' | 'KOSDAQ' | 'USDC'
+  id: 'KOSPI' | 'KOSDAQ' | 'NDX' | 'SPX' | 'USDC'
   name: string
   price: number
   prevClose: number
@@ -19,28 +17,28 @@ interface Indicator {
 /** Toss home style mini chart: dashed previous-close baseline, line drawn only up to now within the session */
 function Spark({ data, base, up, window: win }: { data: [number, number][]; base: number; up: boolean; window: { from: number; to: number } }) {
   const id = useId()
-  if (data.length < 2) return <svg width="56" height="40" />
+  if (data.length < 2) return <svg width="48" height="28" />
   const all = [...data.map((p) => p[1]), base]
   const min = Math.min(...all)
   const max = Math.max(...all)
   const span = Math.max(1, win.to - win.from)
-  const x = (t: number) => Math.min(56, Math.max(0, ((t - win.from) / span) * 56))
-  const y = (v: number) => 36 - ((v - min) / (max - min || 1)) * 32
+  const x = (t: number) => Math.min(48, Math.max(0, ((t - win.from) / span) * 48))
+  const y = (v: number) => 25 - ((v - min) / (max - min || 1)) * 22
   const pts = data.map(([t, v]) => [x(t), y(v)] as const)
   const line = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('')
   const lastX = pts[pts.length - 1][0]
   const color = up ? 'var(--up)' : 'var(--down)'
   return (
-    <svg width="56" height="40" viewBox="0 0 56 40" aria-hidden className="spark-mini">
+    <svg width="48" height="28" viewBox="0 0 48 28" aria-hidden className="spark-mini">
       <defs>
         <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor={color} stopOpacity="0.28" />
           <stop offset="1" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <line x1="0" x2="56" y1={y(base)} y2={y(base)} stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="3" />
-      <path d={`${line}L${lastX.toFixed(1)},40L${pts[0][0].toFixed(1)},40Z`} fill={`url(#${id})`} />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
+      <line x1="0" x2="48" y1={y(base)} y2={y(base)} stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="3" />
+      <path d={`${line}L${lastX.toFixed(1)},28L${pts[0][0].toFixed(1)},28Z`} fill={`url(#${id})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.4" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -56,7 +54,10 @@ function Card({ it }: { it: Indicator }) {
     <div className="ind">
       <Spark data={live ? [...it.spark, [Date.now(), live]] : it.spark} base={it.prevClose} up={up} window={it.id === 'USDC' ? { from: it.window.from, to: Date.now() } : it.window} />
       <div className="ind__text">
-        <p className="ind__name" data-fit>{it.name}</p>
+        <p className="ind__name" data-fit>
+          {it.name}
+          {(it.id === 'NDX' || it.id === 'SPX') && <span className="faint"> · 하이퍼리퀴드</span>}
+        </p>
         <p className="ind__value num" data-fit>
           {price.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}
           {it.id === 'USDC' ? '원' : ''}{' '}
@@ -70,47 +71,23 @@ function Card({ it }: { it: Indicator }) {
   )
 }
 
-/** Which venues are trading right now (NXT: 08:00–08:50, 09:00:30–15:20, 15:30–20:00) */
-function venues(status: Status | undefined, now: number) {
-  const m = kstMinutes(now)
-  // `closed` during 08:00–20:00 means a weekend or holiday
-  const tradingDay = !!status && (status.session !== 'closed' || m < 480 || m >= 1200)
-  const day = tradingDay && venueAt(now) !== 'weekend'
-  return { regular: status?.session === 'regular', nxt: day && nxtOpenAt(m) }
-}
+/** Korean indices only move in the regular session; the rest of the day the US indices (Hyperliquid, 24h) are the live ones */
+const KR = ['KOSPI', 'KOSDAQ', 'USDC']
+const US = ['NDX', 'SPX', 'USDC']
 
-export const IndicatorStrip = memo(function IndicatorStrip() {
+/** Header indicators (Toss home cards, compact): index pair + USDC with mini charts */
+export const NavIndicators = memo(function NavIndicators() {
   useEffect(() => subscribeUsdc(), [])
   const status = useStatus().data
   const q = useQuery<{ items: Indicator[] }>('/api/v1/indicators', 10_000)
-  const now = useNow(15_000)
-  const v = venues(status, now)
+  if (!q.data || !status) return <div className="nav-ind" aria-hidden />
+  const ids = status.session === 'regular' ? KR : US
   return (
-    <section className="ind-strip">
-      <div className="ind-strip__head">
-        <span className={`dot ${v.regular ? 'dot--on' : ''}`} />
-        <b>국내 정규장</b>
-        <span className="faint">09:00 ~ 15:30</span>
-        <span className={`dot ${v.nxt ? 'dot--on' : ''}`} style={{ marginLeft: 12 }} />
-        <b>넥스트레이드</b>
-        <span className="faint">08:00 ~ 20:00</span>
-        <span className="dot dot--on" style={{ marginLeft: 12 }} />
-        <b>하이퍼리퀴드</b>
-        <span className="faint">24시간</span>
-      </div>
-      {q.data ? (
-        <div className="ind-strip__cards">
-          {q.data.items.map((it) => (
-            <Card key={it.id} it={it} />
-          ))}
-        </div>
-      ) : (
-        <div className="ind-strip__cards ind-strip__cards--loading">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="skeleton" />
-          ))}
-        </div>
-      )}
-    </section>
+    <div className="nav-ind">
+      {ids.map((id) => {
+        const it = q.data!.items.find((x) => x.id === id)
+        return it ? <Card key={id} it={it} /> : null
+      })}
+    </div>
   )
 })

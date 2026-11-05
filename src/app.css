@@ -36,28 +36,6 @@
 }
 
 /* Top indicators (Toss home: market status line + mini chart cards) */
-.ind-strip {
-  background: var(--bg);
-  border-radius: var(--r-panel);
-  box-shadow: var(--shadow-panel);
-  padding: 14px 20px 16px;
-  margin: 8px 0 4px;
-}
-.ind-strip__head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  flex-wrap: wrap;
-}
-.ind-strip__head b {
-  color: var(--text);
-  font-weight: 600;
-}
-.ind-strip__head .faint {
-  font-size: 12px;
-  font-weight: 500;
-}
 .dot {
   width: 6px;
   height: 6px;
@@ -66,12 +44,6 @@
 }
 .dot--on {
   background: #00b37e;
-}
-.ind-strip__cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  margin-top: 14px;
 }
 .ind {
   display: flex;
@@ -1001,14 +973,6 @@ body.is-resizing * {
   .shell {
     padding: 4px 12px 60px;
   }
-  .ind-strip__cards {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .ind {
-    border-left: none;
-    padding: 0;
-  }
   .q-facts {
     grid-template-columns: 1fr;
   }
@@ -1041,21 +1005,6 @@ body.is-resizing * {
 }
 .issue__row:hover .issue__ext {
   color: var(--text);
-}
-/* Easy mode: the strip shares the content column and sits under the title */
-.easy .ind-strip,
-.easy-detail .ind-strip {
-  margin: 0 0 8px;
-}
-.easy .ind-strip__cards {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.easy .ind {
-  padding: 0 14px;
-  gap: 10px;
-}
-.easy .ind:first-child {
-  padding-left: 0;
 }
 .easy-hero {
   padding: 12px 0 20px !important;
@@ -1506,13 +1455,6 @@ body.is-resizing * {
 }
 
 /* Indicator strip loading state: spaced placeholders instead of touching blocks */
-.ind-strip__cards--loading {
-  gap: 20px;
-}
-.ind-strip__cards--loading .skeleton {
-  height: 40px;
-  border-radius: 8px;
-}
 
 /* Orderbook v2 (brokerage PC layout; values measured from a brokerage PC web app) */
 /* Sized so the book and the order panel below fit in one screen (header 60 + ticker 52 + panel chrome + order panel 336) */
@@ -2119,14 +2061,6 @@ button.ob2__px:active::after {
   color: var(--text);
 }
 
-/* Narrow column (summary detail): change drops below the value instead of being cut off */
-.easy-detail .ind__value {
-  white-space: normal;
-}
-.easy-detail .ind__value span {
-  display: block;
-  margin-left: 0;
-}
 .back-btn {
   align-self: flex-start;
   width: fit-content;
@@ -2389,4 +2323,51 @@ button.ob2__px:active::after {
 }
 .dist {
   margin-top: 2px;
+}
+
+/* Header indicators: index pair (KR in the regular session, US otherwise) + USDC, Toss home cards made compact */
+.nav-ind {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.nav-ind .ind {
+  gap: 8px;
+  padding: 0 14px;
+  border-left: 1px solid var(--line);
+}
+.nav-ind .ind:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+.nav-ind .ind__name {
+  font-size: 11px;
+  color: var(--text-2);
+}
+.nav-ind .ind__value {
+  margin-top: 0;
+  font-size: 13px;
+}
+.nav-ind .ind__value span {
+  font-size: 11px;
+}
+@media (max-width: 1180px) {
+  .nav-ind {
+    display: none;
+  }
+}
+
+/* Bottom strip venues: trading ones lit, others dimmed */
+.ticker__venue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+}
+.ticker__venue.is-on {
+  color: var(--text);
+}
+.ticker__venue .faint {
+  font-weight: 500;
+  font-size: 12px;
 }

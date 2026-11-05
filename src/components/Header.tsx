@@ -3,6 +3,8 @@ import { usePrefs } from '../lib/prefs'
 import { Link, usePath } from '../lib/router'
 import { BrandMark } from './Brand'
 import { SearchTrigger } from './AssetSearch'
+import { Boundary } from './Boundary'
+import { NavIndicators } from './IndicatorStrip'
 
 export function Header() {
   const { theme, setTheme } = usePrefs()
@@ -26,6 +28,9 @@ export function Header() {
             API
           </Link>
         </nav>
+        <Boundary fallback={null}>
+          <NavIndicators />
+        </Boundary>
         <span className="spacer" />
         <SearchTrigger />
         <button className="icon-btn" aria-label={theme === 'dark' ? '밝은 화면으로' : '어두운 화면으로'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>

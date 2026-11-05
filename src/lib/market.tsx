@@ -48,6 +48,13 @@ export function sessionCloseAt(session: Session, now = Date.now()) {
   return kstMinutes(now) < 530 ? kstToday(now, 8, 50) : kstToday(now, 20, 0)
 }
 
+/** Which venues are trading right now. `closed` during 08:00–20:00 means a weekend or holiday */
+export function venuesNow(session: Session | undefined, now = Date.now()) {
+  const m = kstMinutes(now)
+  const tradingDay = !!session && (session !== 'closed' || m < 480 || m >= 1200) && !isWeekend(now)
+  return { regular: session === 'regular', nxt: tradingDay && nxtOpenAt(m), perp: true }
+}
+
 /** Re-render every `ms` (default 1s) */
 export function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now())

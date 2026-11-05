@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { ASSET_BY_ID, isAssetId } from '../shared/assets'
 import { Boundary } from './components/Boundary'
 import { Header } from './components/Header'
-import { IndicatorStrip } from './components/IndicatorStrip'
 import { Ticker } from './components/Ticker'
 import { Toaster } from './components/Toast'
 import { LaunchNotify } from './components/LaunchNotify'
@@ -81,11 +80,6 @@ export default function App() {
     <>
       <Header />
       <main className={`shell ${isMarket ? 'shell--pro' : ''}`}>
-        {isMarket && (
-          <Boundary fallback={null}>
-            <IndicatorStrip />
-          </Boundary>
-        )}
         <Boundary key={path}>
           <Suspense fallback={isDocs ? <DocSkeleton /> : <div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
         </Boundary>

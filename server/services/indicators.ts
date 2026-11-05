@@ -1,11 +1,13 @@
-// Top indicator strip: KOSPI/KOSDAQ (Toss Securities) + KRW/USDC (Upbit). Includes mini charts like the Toss home indicator cards
+// Header indicators: KOSPI/KOSDAQ (Toss Securities), Nasdaq 100 / S&P 500 (Hyperliquid 24h perps) and KRW/USDC (Upbit), each with a mini chart.
+// The client shows the Korean indices during the regular session and the US ones otherwise
 import { kstDateKey, kstToMs } from '../../shared/session.js'
 import { cached, fetchJson } from '../lib/cache.js'
+import { getPerpCandles, getPerpCtxs } from '../sources/hyperliquid.js'
 import { tossCandles, tossIndicatorPrices } from '../sources/toss.js'
 import { getUsdcKrwCandles } from '../sources/upbit.js'
 
 export interface Indicator {
-  id: 'KOSPI' | 'KOSDAQ' | 'USDC'
+  id: 'KOSPI' | 'KOSDAQ' | 'NDX' | 'SPX' | 'USDC'
   name: string
   price: number
   prevClose: number
@@ -52,10 +54,35 @@ async function usdcIndicator(): Promise<Indicator> {
   }
 }
 
+/** US index from its Hyperliquid perp: change vs 24h ago, last 24h of 15m closes */
+async function usIndicator(id: 'NDX' | 'SPX', name: string, coin: string): Promise<Indicator> {
+  const [ctxs, candles] = await Promise.all([getPerpCtxs(), getPerpCandles(coin, '15m', Math.floor((Date.now() - 86400_000) / 900_000) * 900_000)])
+  const ctx = ctxs.get(coin)
+  const price = ctx?.markPx ?? candles.at(-1)?.c ?? 0
+  const prevClose = ctx?.prevDayPx || price
+  const change = price - prevClose
+  return {
+    id,
+    name,
+    price,
+    prevClose,
+    change,
+    changePct: (change / prevClose) * 100,
+    spark: downsample(candles.map((k) => [k.t, k.c] as [number, number])),
+    window: { from: Date.now() - 86400_000, to: Date.now() },
+  }
+}
+
 export function indicators(): Promise<Indicator[]> {
   return cached('indicators', 5000, async () => {
     const prices = (await tossIndicatorPrices(['KOSPI', 'KOSDAQ'])) as { symbol: string; lastPrice: string }[]
     const px = (s: string) => Number(prices.find((p) => p.symbol === s)?.lastPrice ?? 0)
-    return Promise.all([indexIndicator('KOSPI', '코스피', px('KOSPI')), indexIndicator('KOSDAQ', '코스닥', px('KOSDAQ')), usdcIndicator()])
+    return Promise.all([
+      indexIndicator('KOSPI', '코스피', px('KOSPI')),
+      indexIndicator('KOSDAQ', '코스닥', px('KOSDAQ')),
+      usIndicator('NDX', '나스닥 100', 'xyz:XYZ100'),
+      usIndicator('SPX', 'S&P 500', 'xyz:SP500'),
+      usdcIndicator(),
+    ])
   })
 }
