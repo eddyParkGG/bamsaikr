@@ -21,3 +21,17 @@ Plan and metrics: [H2](../H2-preopen-return.md). One row per post; read GA4 by `
   counter. Skip the acquisition step (visits ÷ post views) for these posts; judge them by GA visitors and returns only.
 - The DC body link is `http://bamsai.kr/?utm_…`; it 308-redirects to https with the UTM query intact (checked).
 - Numbers move every few seconds overnight; each post's text matches the screenshot taken just before posting.
+
+## Baseline 2026-11-05 21:29 KST (subtract at the next readout)
+
+The owner's refreshes and test visits are in these numbers, so later readouts use only the increase since this point.
+
+| Post | DC views | DC upvotes | Comments |
+|---|---|---|---|
+| [7334766](https://gall.dcinside.com/board/view/?id=neostock&no=7334766) (A, `smsn_thu_A`) | 23 | 1 | 0 |
+| [7334780](https://gall.dcinside.com/board/view/?id=neostock&no=7334780) (B, `skhx_thu_B`) | 52 | 1 | 0 |
+
+GA at the same moment (realtime, last 30 min): 4 active users, all desktop — likely the owner and test browsers, not
+community visitors. Events: page_view 8, prediction_view 5, user_engagement 4, scroll 3, first_visit 2,
+session_start 2, arb_view 1. Standard (non-realtime) GA reports were still empty: a new property needs up to 24–48 h.
+
