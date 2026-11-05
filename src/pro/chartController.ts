@@ -154,14 +154,14 @@ export class ChartController {
 
     // Main price series always exist; toggling a market only makes it transparent (see styleMain),
     // so both the time axis and the price axis stay exactly where they were
-    out.push({ key: 'krx', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'KRX' }, 0), feed: (d) => toCandles(d.krx) })
+    out.push({ key: 'krx', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: '정규장' }, 0), feed: (d) => toCandles(d.krx) })
     out.push({
         key: 'perpLine',
         pane: 'main',
-        create: (ch) => ch.addSeries(LineSeries, { color: c.perp, lineWidth: 2, title: 'perp', priceLineVisible: true, priceLineStyle: LineStyle.Dotted, crosshairMarkerRadius: 4, crosshairMarkerBorderColor: c.bg }, 0),
+        create: (ch) => ch.addSeries(LineSeries, { color: c.perp, lineWidth: 2, title: '하이퍼리퀴드', priceLineVisible: true, priceLineStyle: LineStyle.Dotted, crosshairMarkerRadius: 4, crosshairMarkerBorderColor: c.bg }, 0),
         feed: (d) => d.perpKrw.map((k) => ({ time: ct(k.t), value: k.c })),
       })
-    out.push({ key: 'perpCandle', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'perp' }, 0), feed: (d) => toCandles(d.perpKrw) })
+    out.push({ key: 'perpCandle', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: '하이퍼리퀴드' }, 0), feed: (d) => toCandles(d.perpKrw) })
 
     const P = this.params
     if (s.ma) P.ma.forEach((n, i) => out.push(overlay(`ma${i}:${n}`, MA_COLORS[i % MA_COLORS.length], (_, b) => toGappedLine(sma(b, n), STEP_MS[interval]))))
@@ -187,7 +187,7 @@ export class ChartController {
           key: 'volKrx',
           pane: 'volume',
           create: (ch, p) => {
-            const se = ch.addSeries(HistogramSeries, { priceScaleId: 'vk', priceFormat: { type: 'volume' }, priceLineVisible: false, lastValueVisible: false, title: 'KRX' }, p)
+            const se = ch.addSeries(HistogramSeries, { priceScaleId: 'vk', priceFormat: { type: 'volume' }, priceLineVisible: false, lastValueVisible: false, title: '정규장' }, p)
             se.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
             return se
           },
@@ -197,7 +197,7 @@ export class ChartController {
           key: 'volPerp',
           pane: 'volume',
           create: (ch, p) => {
-            const se = ch.addSeries(HistogramSeries, { priceScaleId: 'vp', priceFormat: { type: 'volume' }, color: c.perp + '99', priceLineVisible: false, lastValueVisible: false, title: 'perp' }, p)
+            const se = ch.addSeries(HistogramSeries, { priceScaleId: 'vp', priceFormat: { type: 'volume' }, color: c.perp + '99', priceLineVisible: false, lastValueVisible: false, title: '하이퍼리퀴드' }, p)
             se.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
             return se
           },
@@ -347,11 +347,11 @@ export class ChartController {
       on
         ? { upColor: c.up, downColor: c.down, wickUpColor: c.up, wickDownColor: c.down, priceLineVisible: true, lastValueVisible: true }
         : { upColor: clear, downColor: clear, wickUpColor: clear, wickDownColor: clear, priceLineVisible: false, lastValueVisible: false }
-    this.series.get('krx')?.applyOptions({ ...candle(krxOn), title: krxOn ? 'KRX' : '' })
-    this.series.get('perpCandle')?.applyOptions({ ...candle(candleOn), title: candleOn ? 'perp' : '' })
-    this.series.get('perpLine')?.applyOptions({ color: lineOn ? c.perp : clear, priceLineVisible: lineOn, lastValueVisible: lineOn, crosshairMarkerVisible: lineOn, title: lineOn ? 'perp' : '' })
-    this.series.get('volPerp')?.applyOptions({ color: c.perp + (s.showPerp ? '99' : '00'), title: s.showPerp ? 'perp' : '' })
-    this.series.get('volKrx')?.applyOptions({ title: s.showKrx ? 'KRX' : '' })
+    this.series.get('krx')?.applyOptions({ ...candle(krxOn), title: krxOn ? '정규장' : '' })
+    this.series.get('perpCandle')?.applyOptions({ ...candle(candleOn), title: candleOn ? '하이퍼리퀴드' : '' })
+    this.series.get('perpLine')?.applyOptions({ color: lineOn ? c.perp : clear, priceLineVisible: lineOn, lastValueVisible: lineOn, crosshairMarkerVisible: lineOn, title: lineOn ? '하이퍼리퀴드' : '' })
+    this.series.get('volPerp')?.applyOptions({ color: c.perp + (s.showPerp ? '99' : '00'), title: s.showPerp ? '하이퍼리퀴드' : '' })
+    this.series.get('volKrx')?.applyOptions({ title: s.showKrx ? '정규장' : '' })
   }
 
   setInput(input: Input) {
@@ -438,7 +438,7 @@ export class ChartController {
       this.priceLines = []
       if (s.forecast && prediction && prediction.status === 'pre-open') {
         this.priceLines = [
-          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '예상 시가' }),
+          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '예상 시작가' }),
           host.createPriceLine({ price: prediction.band80.high, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '80%' }),
           host.createPriceLine({ price: prediction.band80.low, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '80%' }),
         ]

@@ -74,11 +74,11 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const rows: string[] = []
       if (k)
         rows.push(
-          `<div class="row"><i class="lg-dot" style="background:${krxC}"></i><span>KRX</span><span class="k">시작</span><b class="${cls(k.o, k.o)}">${f(k.o)}</b><span class="k">고가</span><b class="${cls(k.h, k.o)}">${f(k.h)}</b><span class="k">저가</span><b class="${cls(k.l, k.o)}">${f(k.l)}</b><span class="k">종가</span><b class="${cls(k.c, k.o)}">${f(k.c)}</b></div>`,
+          `<div class="row"><i class="lg-dot" style="background:${krxC}"></i><span>정규장</span><span class="k">시작</span><b class="${cls(k.o, k.o)}">${f(k.o)}</b><span class="k">고가</span><b class="${cls(k.h, k.o)}">${f(k.h)}</b><span class="k">저가</span><b class="${cls(k.l, k.o)}">${f(k.l)}</b><span class="k">종가</span><b class="${cls(k.c, k.o)}">${f(k.c)}</b></div>`,
         )
       if (p)
         rows.push(
-          `<div class="row"><i class="lg-dot" style="background:${perpC}"></i><span>perp 환산</span><b>${f(p.c)}</b>${asset.fx ? `<span class="k">$${p.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>` : ''}${pr ? `<span class="k">${pr.live ? '괴리' : '종가 대비'}</span><b class="${pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}">${fmtPct(pr.v)}</b>` : ''}</div>`,
+          `<div class="row"><i class="lg-dot" style="background:${perpC}"></i><span>하이퍼리퀴드</span><b>${f(p.c)}</b>${asset.fx ? `<span class="k">$${p.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>` : ''}${pr ? `<span class="k">${pr.live ? '괴리' : '종가 대비'}</span><b class="${pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}">${fmtPct(pr.v)}</b>` : ''}</div>`,
         )
       if (s.ma) rows.push(`<div class="row"><span class="k">이동평균선</span>${live.current.params.ma.map((n, i) => `<span style="color:${MA_COLORS[i % MA_COLORS.length]}">${n}</span>`).join('')}</div>`)
       lg.innerHTML = rows.join('')
@@ -241,10 +241,10 @@ function sessionLabel(t: number) {
   const d = new Date(t * 1000)
   const wd = d.getUTCDay()
   const m = d.getUTCHours() * 60 + d.getUTCMinutes()
-  if (wd === 0 || wd === 6) return '주말 · perp만 거래'
+  if (wd === 0 || wd === 6) return '주말 · 하이퍼리퀴드만 거래'
   if (m >= 540 && m < 930) return '정규장'
   if ((m >= 480 && m < 540) || (m >= 930 && m < 1200)) return '넥스트레이드'
-  return '휴장 · perp만 거래'
+  return '휴장 · 하이퍼리퀴드만 거래'
 }
 
 /** Info card pinned where the user clicked */
@@ -266,19 +266,19 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
       {k && (
         <>
           <div className="kv">
-            <dt>KRX 시작 · 종가</dt>
+            <dt>정규장 시작 · 종가</dt>
             <dd>
               {fmtPrice(k.o)} → {fmtPrice(k.c)}
             </dd>
           </div>
           <div className="kv">
-            <dt>KRX 고가 · 저가</dt>
+            <dt>정규장 고가 · 저가</dt>
             <dd>
               {fmtPrice(k.h)} / {fmtPrice(k.l)}
             </dd>
           </div>
           <div className="kv">
-            <dt>KRX 거래량</dt>
+            <dt>정규장 거래량</dt>
             <dd>{fmtKoreanUnit(k.v)}주</dd>
           </div>
         </>
@@ -286,11 +286,11 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
       {p && (
         <>
           <div className="kv">
-            <dt>perp 환산 종가</dt>
+            <dt>하이퍼리퀴드 종가</dt>
             <dd>{fmtPrice(p.c)}</dd>
           </div>
           <div className="kv">
-            <dt>perp 거래량</dt>
+            <dt>하이퍼리퀴드 거래량</dt>
             <dd>{fmtKoreanUnit(p.v)}계약</dd>
           </div>
         </>

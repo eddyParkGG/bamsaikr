@@ -28,6 +28,10 @@
   --band-regular: rgba(255, 235, 0, 0.06);
   --band-nxt: rgba(52, 133, 250, 0.07);
   --band-closed: rgba(0, 0, 0, 0.22);
+  /* Opaque swatches of the chart backgrounds for the legend */
+  --band-regular-solid: #4a4520;
+  --band-nxt-solid: #1f3352;
+  --band-closed-solid: #0b0b0e;
   --shadow-panel: inset 0 0 0 1px rgba(217, 217, 255, 0.11);
   --shadow-chip: inset 0 0 0 0.5px rgba(209, 209, 253, 0.05);
 
@@ -71,6 +75,9 @@
   --band-regular: rgba(255, 220, 0, 0.1);
   --band-nxt: rgba(49, 130, 246, 0.06);
   --band-closed: rgba(0, 27, 55, 0.04);
+  --band-regular-solid: #fff3a8;
+  --band-nxt-solid: #d6e6fd;
+  --band-closed-solid: #e9ecef;
   --shadow-panel: inset 0 0 0 1px rgba(0, 27, 55, 0.06);
   --shadow-chip: none;
   color-scheme: light;
@@ -327,6 +334,9 @@ p {
   color: var(--text-3);
   white-space: nowrap;
   flex: 1;
+}
+.seg--sm button {
+  font-size: 12px;
 }
 .seg button[aria-pressed='true'] {
   background: var(--bg-float);

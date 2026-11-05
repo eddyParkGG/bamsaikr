@@ -106,10 +106,22 @@ export const IndicatorStrip = memo(function IndicatorStrip() {
         <b>넥스트레이드</b>
         <span className="faint">08:00 ~ 20:00</span>
         <span className="dot dot--on" style={{ marginLeft: 12 }} />
-        <b>해외 perp</b>
+        <b>하이퍼리퀴드</b>
         <span className="faint">24시간</span>
       </div>
-      <div className="ind-strip__cards">{q.data ? q.data.items.map((it) => <Card key={it.id} it={it} />) : [0, 1, 2].map((i) => <div key={i} className="ind skeleton" style={{ height: 40 }} />)}</div>
+      {q.data ? (
+        <div className="ind-strip__cards">
+          {q.data.items.map((it) => (
+            <Card key={it.id} it={it} />
+          ))}
+        </div>
+      ) : (
+        <div className="ind-strip__cards ind-strip__cards--loading">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="skeleton" />
+          ))}
+        </div>
+      )}
     </section>
   )
 })
