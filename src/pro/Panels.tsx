@@ -175,11 +175,6 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
             {options.map(([v, l]) => (
               <button key={v} role="radio" aria-checked={draft === v} className="fpop__opt" onClick={() => setDraft(draft === v ? '' : v)}>
                 {l}
-                {draft === v && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12.5l4.5 4.5L19 7.5" />
-                  </svg>
-                )}
               </button>
             ))}
           </div>

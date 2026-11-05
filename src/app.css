@@ -1735,34 +1735,24 @@ body.is-resizing * {
 }
 .fpop__list {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
   margin: 12px 0 16px;
+  padding: 0 4px;
 }
-/* Options read as buttons: filled row, darker on hover, key outline when picked */
+/* Options are Toss '산업' filter chips: grey fill, key tint when picked */
 .fpop__opt {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 44px;
-  padding: 0 14px;
-  border-radius: 10px;
-  background: var(--fill);
-  font-size: 15px;
+  height: 32px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(217, 217, 255, 0.11);
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-body);
-  text-align: left;
-}
-.fpop__opt:hover {
-  background: var(--fill-hover);
+  color: rgba(253, 253, 254, 0.89);
 }
 .fpop__opt[aria-checked='true'] {
+  background: rgba(255, 235, 0, 0.2);
   color: var(--key);
-  box-shadow: inset 0 0 0 1.5px var(--key);
-}
-:root[data-theme='light'] .fpop__opt[aria-checked='true'] {
-  color: #b8a100;
-  box-shadow: inset 0 0 0 1.5px #b8a100;
 }
 .fpop__foot {
   display: flex;
@@ -2115,8 +2105,16 @@ button.ob2__px:active::after {
 :root[data-theme='light'] .fpop {
   box-shadow: 0 0 0 1px var(--line), 0 10px 40px rgba(0, 0, 0, 0.12);
 }
-:root[data-theme='light'] .fpop__reset {
+:root[data-theme='light'] .fpop__reset,
+:root[data-theme='light'] .fpop__opt {
   background: var(--fill);
+}
+:root[data-theme='light'] .fpop__opt {
+  color: var(--text);
+}
+:root[data-theme='light'] .fpop__opt[aria-checked='true'] {
+  background: rgba(184, 161, 0, 0.14);
+  color: #8f7d00;
 }
 :root[data-theme='light'] .fpop__reset:disabled {
   color: var(--text-3);
