@@ -431,6 +431,13 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   const status = useQuery<Status & { liveKrxOrders?: boolean }>('/api/v1/status', 60_000)
 
   useEffect(() => subscribeUsdc(), [])
+  // Funnel events (H2–H4): forecast and spread seen on the stock screen, once per asset
+  useEffect(() => {
+    if (pred.data) track('prediction_view', { asset: asset.id, from: 'stock', prob_up: pred.data.probUp, ready: predictionReady(pred.data) })
+  }, [!!pred.data, asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (arb) track('arb_view', { asset: asset.id, net_pct: arb.net.netPct, mode: arb.mode })
+  }, [!!arb, asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => (hasKrx(asset) ? subscribeKrx(asset.id, asset.krxCode) : undefined), [asset])
   useEffect(() => subscribeHl({ type: 'candle', coin: asset.perp, interval }), [asset.perp, interval])
 
@@ -455,7 +462,16 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   return (
     <>
       {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
-      {asset.kind === 'stock' && <QuickAnswer p={pred.data ?? null} arb={arb} onPredict={() => setTab('predict')} />}
+      {asset.kind === 'stock' && (
+        <QuickAnswer
+          p={pred.data ?? null}
+          arb={arb}
+          onPredict={() => {
+            setTab('predict')
+            track('model_explain_open', { asset: asset.id, tab: 'predict', from: 'notice_bar' })
+          }}
+        />
+      )}
       <div className="ptabs" role="tablist">
         {tabs.map(([k, label]) => (
           <button
@@ -465,6 +481,8 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
             onClick={() => {
               setTab(k)
               if (k === 'conv') track('convergence_view', { asset: asset.id })
+              // H3: opening the evidence (forecast detail or the record) counts as checking the basis
+              if (k === 'predict' || k === 'conv') track('model_explain_open', { asset: asset.id, tab: k })
             }}
           >
             {label}

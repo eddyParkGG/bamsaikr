@@ -54,7 +54,10 @@ export default function About() {
           <span className="panel__title">가설과 지금까지의 결과</span>
         </div>
         <div className="panel__body about__body">
-          <p className="about__h">H1. 해외 선물 탈중앙 거래소 가격으로 다음 날 장 시작 가격의 방향을 80% 이상 맞힐 수 있다</p>
+          <p className="about__h">
+            H1. 국내 시장이 닫힌 동안 해외 선물 탈중앙 거래소(하이퍼리퀴드) 가격이 움직인 방향대로, 다음 날 국내 시장도 80% 이상 같은 방향으로 시작한다
+            <span className="about__status about__status--done">통과</span>
+          </p>
           <p className="muted" style={{ fontSize: 13 }}>
             국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요 (정규장 시작 가격 기준, 2026년 4월 13일~, 종목별 139번. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요).
           </p>
@@ -76,15 +79,20 @@ export default function About() {
               : [0, 1, 2].map((i) => <div key={i} className="about__hit skeleton" style={{ height: 44 }} />)}
           </div>
           <p className="about__h" style={{ marginTop: 20 }}>
-            H2. "오를 확률"을 보여주면 장 시작 전에 다시 찾아온다
+            H2. "오를 확률"을 보여주면 다음 날 장 시작 전에 다시 찾아온다
+            <span className="about__status">검증 예정</span>
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            장 마감 후 종목토론방·주식 갤러리에 링크를 올리고 4일 동안 봐요. 다음 개장 전(08~09시)에 다시 온 사람이 <b className="strong">15% 이상</b>이면 통과예요.
+            장 마감 후 종목토론방·주식 갤러리에 링크를 올리고 4일 동안 봐요. 처음 온 사람 중 다음 날 장 시작 전(08~09시)에 다시 온 사람이 <b className="strong">15% 이상</b>이면 통과예요.
           </p>
           <p className="about__h" style={{ marginTop: 20 }}>
-            H3·H4. 적중 이력을 보여주면 믿고, 비용 뺀 차익을 보여주면 주문까지 간다
+            H3·H4. 지난 예측 기록을 보여주면 믿고, 비용 뺀 시세차익 기회를 보여주면 주문 버튼까지 누른다
+            <span className="about__status">검증 예정</span>
           </p>
-          <p className="muted" style={{ fontSize: 13 }}>근거 펼침률 10% 이상, 차익 조회 → 주문 버튼 클릭 5% 이상을 봐요.</p>
+          <p className="muted" style={{ fontSize: 13 }}>
+            예측을 본 사람 중 근거(개장 예측·예측 기록 탭)를 연 사람이 <b className="strong">10% 이상</b>, 시세차익 기회를 본 사람 중 주문 버튼을 누른 사람이{' '}
+            <b className="strong">5% 이상</b>이면 통과예요. 주문은 아직 출시 전이라, 버튼을 누르면 출시 알림 신청을 받아요.
+          </p>
         </div>
       </section>
 

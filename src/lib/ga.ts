@@ -62,7 +62,7 @@ export type GaEvent =
   | 'asset_switch' // asset, query
   | 'prediction_view' // asset, session, hours_to_open
   | 'prediction_detail_open'
-  | 'model_explain_open' // expanded hit history / methodology (trust hypothesis)
+  | 'model_explain_open' // opened the forecast detail or the prediction record (trust hypothesis)
   | 'arb_view'
   | 'arb_calc_change'
   | 'chart_market_toggle' // market, on
@@ -70,7 +70,6 @@ export type GaEvent =
   | 'chart_interval_change'
   | 'news_open' // asset, date, kind
   | 'convergence_view'
-  | 'order_preview' // market, side, asset
   | 'order_submit' // order intent: orders are not live yet, a launch sign-up sheet opens
   | 'launch_notify_signup' // email left for the order launch (not stored)
   | 'wallet_connect'

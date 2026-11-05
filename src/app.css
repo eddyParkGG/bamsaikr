@@ -2297,3 +2297,20 @@ button.ob2__px:active::after {
   color: var(--text);
   font-weight: 700;
 }
+
+/* About: hypothesis status pill */
+.about__status {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: 2px;
+}
+.about__status--done {
+  background: var(--key);
+  color: var(--on-key);
+}
