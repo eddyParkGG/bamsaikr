@@ -7,13 +7,14 @@ to check it again. That return is the habit the product needs.
 
 | Item | Plan |
 |---|---|
-| Channels | Naver stock forum (Samsung, SK hynix boards), DC Inside stock gallery |
-| Timing | Post after the 20:00 close on Thu, Fri, Sun evening → measure Fri and Mon pre-open returns (weekend gap included) |
+| Channels | DC Inside 주식 갤러리. Stock-specific minor galleries were checked and skipped as nearly inactive (SK하이닉스: a few posts a day; 하이퍼리퀴드, 삼성전자 주주: none for months). Naver stock forum dropped: its rules ban ads/promotion, the first post was removed within minutes, and body URLs are not linked |
+| Timing | Post 21:00–22:00 (after the 20:00 close, when the forecast exists) on Thu, Fri, Sun → measure Fri and Mon pre-open returns (weekend gap included). Thu: one A and one B post, spaced apart (back-to-back posts read as spam) |
 | Duration | 4 days (Thu 20:00 → Mon 08:00) |
 | Message A/B | A forecast: "내일 장 시작 가격, 오를 확률 56%" / B fact: "지금 해외에선 삼성전자 -2.6%" |
-| Links | `https://bamsai.kr/?utm_source={naver_jongto|dc_stock}&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
+| Links | `https://bamsai.kr/?utm_source=dc_stock&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
 | Minimum sample | 200 visitors; below that, no conclusion and one more post |
-| Rules | Information-sharing format, one link per post, no buy/sell wording (avoid unregistered-advisory misreading) |
+| Rules | Information-sharing format, one link per post, no buy/sell wording (avoid unregistered-advisory misreading), a 밤사이 screenshot whose numbers match the text, different wording each post |
+| Log | Every post (time, gallery, link, message, numbers, image): [community/posts.md](community/posts.md) |
 
 ## Metrics
 
