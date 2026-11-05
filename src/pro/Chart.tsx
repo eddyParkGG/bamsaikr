@@ -6,8 +6,8 @@ import { sessionAt } from '../../shared/session'
 import { SESSION_LABEL, venueAt } from '../lib/market'
 import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit } from '../lib/format'
 import { useLive } from '../lib/live'
-import { arbKind, arbText } from '../lib/arb'
-import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
+import { arbKind } from '../lib/arb'
+import { predictionReady } from '../components/NextOpenState'
 import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
 import type { Span } from './primitives'
@@ -244,7 +244,8 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
 function ChartNotes({ ctl, ready, arb, prediction, onPredict, onArb }: { ctl: React.RefObject<ChartController | null>; ready: number; arb: ArbSnapshot | null; prediction: Prediction | null; onPredict: () => void; onArb: () => void }) {
   const arbEl = useRef<HTMLDivElement>(null)
   const fcEl = useRef<HTMLDivElement>(null)
-  const arbPrice = arb && arb.mode === 'live' ? arb.perpKrw : null
+  // Only a tradable spread gets a note (and its line); the usual gap is not news
+  const arbPrice = arb && arbKind(arb) === 'go' ? arb.perpKrw : null
   const fc = prediction && predictionReady(prediction) ? prediction : null
 
   useEffect(() => {
@@ -275,24 +276,17 @@ function ChartNotes({ ctl, ready, arb, prediction, onPredict, onArb }: { ctl: Re
     return () => cancelAnimationFrame(raf)
   }, [ctl, arbPrice, fc?.expectedOpen])
 
-  const t = arb ? arbText(arb) : null
   return (
     <>
-      {arb && t && arbPrice != null && (
+      {arb && arbPrice != null && (
         <div ref={arbEl} className="cnote cnote--arb" hidden>
           <span className="cnote__label">시세차익</span>
-          {arbKind(arb) === 'go' ? (
-            <>
-              <span>
-                평소보다 {fmtPct(Math.abs(arb.deviationPct), 2, false)} 더 벌어졌어요 · 1천만원이면 약 <b>{fmtWon(Math.round(arb.net.netKrwPer10m))}원</b> 남아요
-              </span>
-              <button className="cnote__btn cnote__btn--key" onClick={onArb}>
-                시세차익 내기
-              </button>
-            </>
-          ) : (
-            <span className="faint">{t.text}</span>
-          )}
+          <span>
+            1천만원이면 약 <b className="up">{fmtWon(Math.round(arb.net.netKrwPer10m))}원</b> 남아요
+          </span>
+          <button className="cnote__btn cnote__btn--key" onClick={onArb}>
+            시세차익 내기
+          </button>
         </div>
       )}
       {fc && (
@@ -309,9 +303,7 @@ function ChartNotes({ ctl, ready, arb, prediction, onPredict, onArb }: { ctl: Re
       {prediction && !predictionReady(prediction) && (
         <div className="cnote cnote--top">
           <span className="cnote__label">내일 예측</span>
-          <span className="faint">
-            장 마감 후 예측해요 · <NextOpenWhen at={prediction.targetOpenAt} />
-          </span>
+          <span className="faint">장 마감 후 예측해요</span>
         </div>
       )}
     </>

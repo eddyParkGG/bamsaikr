@@ -2427,7 +2427,7 @@ body {
   align-items: center;
   gap: 8px;
   height: 28px;
-  padding: 0 4px 0 10px;
+  padding: 0 10px;
   border-radius: 8px;
   transform: translateY(-50%);
   background: var(--bg-float);
@@ -2444,11 +2444,15 @@ body {
 .cnote--arb .cnote__label {
   color: var(--perp);
 }
+/* A note ending in a button keeps the button snug to the edge */
+.cnote:has(> .cnote__btn:last-child) {
+  padding-right: 4px;
+}
+/* Note without a price to sit on: top-left, under the chart legend */
 .cnote--top {
-  top: 52px;
-  right: 100px;
+  top: 84px;
+  left: 16px;
   transform: none;
-  padding-right: 10px;
 }
 .cnote__label {
   color: var(--text-3);
