@@ -233,7 +233,7 @@ Claude Code(Opus 5.5)와 대화하며 기획부터 배포까지 진행
 npm install
 cp .env.example .env.local   # TOSS_CLIENT_ID / TOSS_CLIENT_SECRET 입력 (토스증권 WTS > 설정 > Open API)
 npm run dev                  # 웹 http://localhost:5173, API http://localhost:8787/api
-npx tsx --env-file=.env.local server/scripts/backtest.ts        # 백테스트 결과 출력
+npx tsx --env-file=.env.local server/scripts/backtest.ts        # 백테스트 결과 출력 (서버를 끄고 실행: 토스 토큰이 서로를 무효화함. 서버가 켜져 있으면 /api/v1/convergence로 확인)
 npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 KRX 정규장 시작·종가 저장 (배포 전)
 ```
 
