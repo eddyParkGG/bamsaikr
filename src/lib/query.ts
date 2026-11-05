@@ -86,6 +86,11 @@ export function useQuery<T>(key: string | null, intervalMs = 0): State<T> & { lo
 
 const EMPTY: State<never> = { updatedAt: 0 }
 
+/** Reload everything on screen now (e.g. the moment a market opens or closes) */
+export function refetchAll() {
+  for (const [key, e] of entries) if (e.subscribers) load(key)
+}
+
 export async function post<T>(url: string, body: unknown, token?: string): Promise<T> {
   const res = await fetch(url, {
     method: 'POST',
