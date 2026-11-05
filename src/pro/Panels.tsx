@@ -237,7 +237,7 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
           <FilterChip key={x.key} label={x.label} options={x.options} value={f[x.key]} onApply={(v) => setF({ ...f, [x.key]: v })} />
         ))}
       </div>
-      <div className="table-wrap table-wrap--sticky" style={{ padding: '0 4px 8px' }}>
+      <div className="table-wrap" style={{ padding: '0 4px 8px' }}>
         <table className="table num">
           <thead>
             <tr>

@@ -1718,11 +1718,12 @@ body.is-resizing * {
 }
 
 /* Convergence history: sticky header + brokerage-style filter chips */
-.table-wrap--sticky {
+/* Every table: scrolls inside its panel with the header row pinned on top */
+.table-wrap {
   max-height: calc(100vh - 260px);
   overflow: auto;
 }
-.table-wrap--sticky thead th {
+.table-wrap thead th {
   position: sticky;
   top: 0;
   z-index: 1;
