@@ -545,23 +545,37 @@
 .side-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
+  height: 32px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(217, 217, 255, 0.11);
+  box-shadow: inset 0 0 0 0.75px rgba(209, 209, 253, 0.05);
 }
 .side-tabs button {
-  height: 36px;
-  border-radius: var(--r-btn);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-3);
-  background: var(--fill);
+  height: 28px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(216, 223, 237, 0.59);
+  transition: background-color 0.2s, color 0.2s;
+}
+.side-tabs button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 0.75px rgba(255, 255, 255, 0.05), 0 0 0 0.75px rgba(0, 0, 0, 0.15);
 }
 .side-tabs__buy[aria-pressed='true'] {
-  background: rgba(255, 60, 60, 0.16);
-  color: #ff5a5a;
+  background: rgba(211, 102, 92, 0.11);
+  color: #f5445a;
 }
 .side-tabs__sell[aria-pressed='true'] {
-  background: rgba(0, 141, 255, 0.16);
-  color: #3aa4ff;
+  background: rgba(71, 134, 235, 0.11);
+  color: #449bff;
+}
+:root[data-theme='light'] .side-tabs {
+  background: var(--fill);
+}
+:root[data-theme='light'] .side-tabs button[aria-pressed='true'] {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 .pct-chips {
   display: grid;
@@ -1429,8 +1443,9 @@
 }
 
 /* Orderbook v2 (brokerage PC layout; values measured from a brokerage PC web app) */
+/* Sized so the book and the order panel below fit in one screen (header 60 + ticker 52 + panel chrome + order panel 336) */
 .ob2-scroll {
-  height: 520px;
+  height: max(180px, calc(100vh - 612px));
   overflow-y: auto;
 }
 .ob2 {
@@ -1816,4 +1831,100 @@ button.ob2__px:active::after {
 }
 .stepper button {
   width: 34px;
+}
+
+/* Order launch sign-up sheet */
+.launch h3 {
+  margin: 12px 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.4px;
+}
+.launch p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.launch__field {
+  margin-top: 20px;
+  height: 48px;
+}
+.launch__field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-size: 16px;
+}
+.field--error,
+.field--error:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--up);
+}
+.launch__error {
+  margin-top: 6px;
+  font-size: 13px !important;
+  color: var(--up) !important;
+}
+.launch__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--key);
+  color: var(--on-key);
+  margin: 4px 0 4px;
+}
+.launch .btn--block {
+  margin-top: 20px;
+}
+
+/* Order form segmented controls (limit/market): brokerage order-box values */
+.order-form .seg {
+  height: 28px;
+  padding: 2px;
+  border-radius: 7px;
+  background: rgba(217, 217, 255, 0.11);
+  box-shadow: inset 0 0 0 0.75px rgba(209, 209, 253, 0.05);
+}
+.order-form .seg button {
+  height: 24px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(211, 224, 243, 0.42);
+  transition: background-color 0.2s, color 0.2s;
+}
+.order-form .seg button[aria-pressed='true'] {
+  background: rgba(214, 224, 239, 0.09);
+  color: rgba(242, 246, 255, 0.9);
+  box-shadow: inset 0 0 0 0.75px rgba(255, 255, 255, 0.05), 0 0 0 0.75px rgba(0, 0, 0, 0.15);
+}
+:root[data-theme='light'] .order-form .seg {
+  background: var(--fill);
+}
+:root[data-theme='light'] .order-form .seg button[aria-pressed='true'] {
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.order-form .form-row > span {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(217, 223, 235, 0.8);
+}
+
+/* Order panel: same height whichever order type is selected; the action button sits at the bottom */
+.order-form {
+  height: 276px;
+  display: flex;
+  flex-direction: column;
+}
+.order-form > .stack {
+  flex: 1;
+}
+.order-form > .stack > .btn--block {
+  margin-top: auto;
 }

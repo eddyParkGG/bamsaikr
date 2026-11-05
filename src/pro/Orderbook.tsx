@@ -193,8 +193,8 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
           ['시작', fmtPrice(k.open, isIdx), tone(k.open - k.prevClose)],
           ['최고', fmtPrice(k.high, isIdx), tone(k.high - k.prevClose)],
           ['최저', fmtPrice(k.low, isIdx), tone(k.low - k.prevClose)],
-          ['어제 종가', fmtPrice(k.prevClose, isIdx)],
-          ['거래대금', `${Math.round(k.tradeValue / 1e8).toLocaleString('ko-KR')}억`],
+          ['전일', fmtPrice(k.prevClose, isIdx)],
+          ...(k.tradeValue > 0 ? ([['거래대금', `${Math.round(k.tradeValue / 1e8).toLocaleString('ko-KR')}억`]] as [string, string][]) : []),
         ]
       : [],
   }

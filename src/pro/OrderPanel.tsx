@@ -2,10 +2,9 @@ import { forwardRef, memo, useEffect, useRef, useState } from 'react'
 import { krxTick, perpTick, snap, useTicket } from './ticket'
 import type { ArbSnapshot } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
-import type { HlNetwork } from '../../shared/hlOrder'
 import { track } from '../lib/ga'
 import { fmtPct, fmtWon, tone } from '../lib/format'
-import { post } from '../lib/query'
+import { openLaunchNotify } from '../components/LaunchNotify'
 
 type Tab = 'perp' | 'krx' | 'pair'
 type Side = 'buy' | 'sell'
@@ -94,28 +93,12 @@ function SideTabs({ side, setSide }: { side: Side; setSide: (s: Side) => void })
   )
 }
 
-function Result({ value, error }: { value: unknown; error: string }) {
-  if (error) return <p className="notice down">{error}</p>
-  if (!value) return null
-  return <pre className="result num">{JSON.stringify(value, null, 2)}</pre>
-}
-
-function useRunner() {
-  const [busy, setBusy] = useState(false)
-  const [out, setOut] = useState<unknown>(null)
-  const [err, setErr] = useState('')
-  const run = async (fn: () => Promise<unknown>) => {
-    setBusy(true)
-    setErr('')
-    try {
-      setOut(await fn())
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-  return { busy, out, err, run }
+function OrderButton({ side, label, onClick }: { side?: Side; label: string; onClick: () => void }) {
+  return (
+    <button className={`btn btn--lg btn--block ${side === 'buy' ? 'btn--buy' : side === 'sell' ? 'btn--sell' : 'btn--key'}`} onClick={onClick}>
+      {label}
+    </button>
+  )
 }
 
 function PerpForm({ asset }: { asset: Asset }) {
@@ -124,11 +107,6 @@ function PerpForm({ asset }: { asset: Asset }) {
   const [size, setSize] = useState('1')
   const [price, setPrice] = useState('')
   const [lev, setLev] = useState(2)
-  const [network, setNetwork] = useState<HlNetwork>('testnet')
-  const [via, setVia] = useState<'wallet' | 'api'>('wallet')
-  const [master, setMaster] = useState<`0x${string}` | null>(null)
-  const [hasAgent, setHasAgent] = useState(false)
-  const { busy, out, err, run } = useRunner()
   const sizeRef = useRef<HTMLInputElement>(null)
   const [flash, setFlash] = useState(0)
   usePicked('perp', (px) => {
@@ -137,22 +115,9 @@ function PerpForm({ asset }: { asset: Asset }) {
     setFlash((f) => f + 1)
     requestAnimationFrame(() => sizeRef.current?.focus())
   })
-  const input = { side, size: Number(size), price: kind === 'limit' && price ? Number(price) : undefined, leverage: lev }
-  const sideBtn = side === 'buy' ? 'btn--buy' : 'btn--sell'
-
   return (
     <div className="stack" style={{ gap: 10 }}>
       <SideTabs side={side} setSide={setSide} />
-      <Row label="네트워크">
-        <div className="seg" style={{ width: '100%' }}>
-          <button aria-pressed={network === 'testnet'} onClick={() => setNetwork('testnet')}>
-            테스트넷
-          </button>
-          <button aria-pressed={network === 'mainnet'} onClick={() => setNetwork('mainnet')}>
-            메인넷
-          </button>
-        </div>
-      </Row>
       <Row label="주문 가격">
         <div className="stack" style={{ gap: 6 }}>
           <div className="seg" style={{ width: '100%' }}>
@@ -178,113 +143,23 @@ function PerpForm({ asset }: { asset: Asset }) {
           ))}
         </div>
       </Row>
-      <Row label="서명">
-        <div className="seg" style={{ width: '100%' }}>
-          <button aria-pressed={via === 'wallet'} onClick={() => setVia('wallet')}>
-            내 지갑
-          </button>
-          <button aria-pressed={via === 'api'} onClick={() => setVia('api')}>
-            서버 API
-          </button>
-        </div>
-      </Row>
-      {network === 'mainnet' && <p className="notice">메인넷은 실제 돈이 오가요. 한국 종목은 격리 마진 전용이고, 국내 투자자 보호 대상이 아니에요.</p>}
-
-      {via === 'wallet' ? (
-        !master ? (
-          <button
-            className="btn btn--lg btn--key btn--block"
-            disabled={busy}
-            onClick={() =>
-              run(async () => {
-                const w = await import('./wallet')
-                const m = await w.connectWallet()
-                setMaster(m)
-                setHasAgent(!!w.getAgent(m, network))
-                track('wallet_connect', { network })
-                return { connected: m }
-              })
-            }
-          >
-            지갑 연결하기
-          </button>
-        ) : !hasAgent ? (
-          <button
-            className="btn btn--lg btn--key btn--block"
-            disabled={busy}
-            onClick={() =>
-              run(async () => {
-                const w = await import('./wallet')
-                const agent = await w.approveAgent(master, network)
-                setHasAgent(true)
-                return { approvedAgent: agent.address, note: '이 브라우저에만 저장돼요. 출금 권한은 없어요.' }
-              })
-            }
-          >
-            주문용 에이전트 승인하기
-          </button>
-        ) : (
-          <button
-            className={`btn btn--lg btn--block ${sideBtn}`}
-            disabled={busy}
-            onClick={() =>
-              run(async () => {
-                const w = await import('./wallet')
-                track('order_submit', { market: 'perp', side, asset: asset.id, network, via })
-                return w.placeWithAgent(master, network, { coin: asset.perp, ...input })
-              })
-            }
-          >
-            {side === 'buy' ? '매수하기' : '매도하기'}
-          </button>
-        )
-      ) : (
-        <div className="row" style={{ gap: 6 }}>
-          <button
-            className="btn btn--lg btn--fill"
-            style={{ flex: 1 }}
-            disabled={busy}
-            onClick={() =>
-              run(() => {
-                track('order_preview', { market: 'perp', side, asset: asset.id })
-                return post(`/api/v1/orders/perp?asset=${asset.id}`, { ...input, network, dryRun: true })
-              })
-            }
-          >
-            미리보기
-          </button>
-          <button
-            className={`btn btn--lg ${sideBtn}`}
-            style={{ flex: 1.4 }}
-            disabled={busy || network === 'mainnet'}
-            title={network === 'mainnet' ? '메인넷은 내 지갑으로만 주문할 수 있어요' : ''}
-            onClick={() =>
-              run(() => {
-                track('order_submit', { market: 'perp', side, asset: asset.id, network, via })
-                return post(`/api/v1/orders/perp?asset=${asset.id}`, { ...input, network, dryRun: false })
-              })
-            }
-          >
-            {side === 'buy' ? '매수하기' : '매도하기'}
-          </button>
-        </div>
-      )}
-      {master && (
-        <p className="faint" style={{ fontSize: 12 }}>
-          연결된 지갑 {master.slice(0, 6)}…{master.slice(-4)}
-        </p>
-      )}
-      <Result value={out} error={err} />
+      <OrderButton
+        side={side}
+        label={side === 'buy' ? '매수하기' : '매도하기'}
+        onClick={() => {
+          track('order_submit', { market: 'perp', side, asset: asset.id, kind, leverage: lev })
+          openLaunchNotify(`${asset.name} 하이퍼리퀴드 ${side === 'buy' ? '매수' : '매도'}`)
+        }}
+      />
     </div>
   )
 }
 
-function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
+function KrxForm({ asset }: { asset: Asset }) {
   const [side, setSide] = useState<Side>('buy')
   const [kind, setKind] = useState<'limit' | 'market'>('limit')
   const [qty, setQty] = useState('1')
   const [price, setPrice] = useState('')
-  const { busy, out, err, run } = useRunner()
   const qtyRef = useRef<HTMLInputElement>(null)
   const [flash, setFlash] = useState(0)
   usePicked('krx', (px) => {
@@ -293,11 +168,6 @@ function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
     setFlash((f) => f + 1)
     requestAnimationFrame(() => qtyRef.current?.focus())
   })
-  const send = (dryRun: boolean) =>
-    run(() => {
-      track(dryRun ? 'order_preview' : 'order_submit', { market: 'krx', side, asset: asset.id })
-      return post(`/api/v1/orders/krx?asset=${asset.id}`, { side, qty: Number(qty), price: kind === 'limit' && price ? Number(price) : undefined, dryRun })
-    })
   return (
     <div className="stack" style={{ gap: 10 }}>
       <SideTabs side={side} setSide={setSide} />
@@ -317,40 +187,28 @@ function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
       <Row label="수량">
         <Field ref={qtyRef} value={qty} onChange={setQty} unit="주" />
       </Row>
-      <div className="row" style={{ gap: 6 }}>
-        <button className="btn btn--lg btn--fill" style={{ flex: 1 }} disabled={busy} onClick={() => send(true)}>
-          미리보기
-        </button>
-        {live && (
-          <button className={`btn btn--lg ${side === 'buy' ? 'btn--buy' : 'btn--sell'}`} style={{ flex: 1.4 }} disabled={busy} onClick={() => send(false)}>
-            {side === 'buy' ? '매수하기' : '매도하기'}
-          </button>
-        )}
-      </div>
-      <p className="faint" style={{ fontSize: 12 }}>
-        {live ? '연결된 증권 계좌로 바로 주문돼요. 모의투자가 없어서 실제 돈이 나가요.' : '국내 주식은 모의투자가 없어서 주문 내용만 미리 확인할 수 있어요.'}
-      </p>
-      <Result value={out} error={err} />
+      <OrderButton
+        side={side}
+        label={side === 'buy' ? '매수하기' : '매도하기'}
+        onClick={() => {
+          track('order_submit', { market: 'krx', side, asset: asset.id, kind })
+          openLaunchNotify(`${asset.name} ${side === 'buy' ? '매수' : '매도'}`)
+        }}
+      />
     </div>
   )
 }
 
-function PairForm({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot | null; live: boolean }) {
+function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const [amount, setAmount] = useState('10000000')
-  const { busy, out, err, run } = useRunner()
   const dir = arb?.net.direction ?? 'perp_short_stock_long'
-  const send = (dryRun: boolean) =>
-    run(() => {
-      track(dryRun ? 'order_preview' : 'order_submit', { market: 'pair', asset: asset.id })
-      return post(`/api/v1/orders/pair?asset=${asset.id}`, { notionalKrw: Number(amount), direction: dir, network: 'testnet', dryRun })
-    })
   return (
     <div className="stack" style={{ gap: 10 }}>
       {arb && (
         <div className="pair-box num">
           <div>
             <span className="muted">지금 괴리</span>
-            <b className={arb.premiumPct >= 0 ? 'up' : 'down'} data-fit>{fmtPct(arb.premiumPct)}</b>
+            <b className={tone(arb.premiumPct)} data-fit>{fmtPct(arb.premiumPct)}</b>
           </div>
           <div>
             <span className="muted">비용 뺀 순차익</span>
@@ -365,34 +223,27 @@ function PairForm({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot | null;
       <p className="faint num" style={{ fontSize: 12 }}>
         {arb ? `약 ${Math.floor(Number(amount) / arb.krx.price)}주 · 예상 순이익 ${fmtWon((Number(amount) * arb.net.netPct) / 100)}원` : ''}
       </p>
-      <div className="row" style={{ gap: 6 }}>
-        <button className="btn btn--lg btn--fill" style={{ flex: 1 }} disabled={busy} onClick={() => send(true)}>
-          미리보기
-        </button>
-        {live && (
-          <button className="btn btn--lg btn--key" style={{ flex: 1.4 }} disabled={busy} onClick={() => send(false)}>
-            두 주문 동시에
-          </button>
-        )}
-      </div>
-      <p className="faint" style={{ fontSize: 12 }}>
-        두 주문은 동시에 나가지만 한쪽만 체결될 수 있어요. 미체결 쪽은 직접 확인해 주세요.
-      </p>
-      <Result value={out} error={err} />
+      <OrderButton
+        label="실행하기"
+        onClick={() => {
+          track('order_submit', { market: 'pair', asset: asset.id })
+          openLaunchNotify(`${asset.name} 시세차익 페어 주문`)
+        }}
+      />
     </div>
   )
 }
 
-function OrderPanelImpl({ asset, arb, liveKrx }: { asset: Asset; arb: ArbSnapshot | null; liveKrx: boolean }) {
+function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null; liveKrx?: boolean }) {
   const [tab, setTab] = useState<Tab>('perp')
   const tabs: [Tab, string][] =
     asset.kind === 'stock'
       ? [
           ['perp', '하이퍼리퀴드'],
           ['krx', '국내 주식'],
-          ['pair', '시세차익 페어'],
+          ['pair', '시세차익'],
         ]
-      : [['perp', '하이퍼리퀴드 주문']]
+      : [['perp', '하이퍼리퀴드']]
   useEffect(() => setTab('perp'), [asset.id])
   // A price picked in the order book opens the matching order tab
   const pick = useTicket((s) => s.pick)
@@ -404,16 +255,22 @@ function OrderPanelImpl({ asset, arb, liveKrx }: { asset: Asset; arb: ArbSnapsho
   return (
     <section className="panel">
       <div className="panel__head">
-        {tabs.map(([k, label]) => (
-          <button key={k} className={k === tab ? 'panel__title' : 'chip'} onClick={() => setTab(k)}>
-            {label}
-          </button>
-        ))}
+        <span className="panel__title">주문</span>
+        <span className="spacer" />
+        {tabs.length > 1 && (
+          <div className="seg seg--sm" role="group" aria-label="주문 종류">
+            {tabs.map(([k, label]) => (
+              <button key={k} aria-pressed={k === tab} onClick={() => setTab(k)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="panel__body">
+      <div className="panel__body order-form">
         {tab === 'perp' && <PerpForm asset={asset} />}
-        {tab === 'krx' && <KrxForm asset={asset} live={liveKrx} />}
-        {tab === 'pair' && <PairForm asset={asset} arb={arb} live={liveKrx} />}
+        {tab === 'krx' && <KrxForm asset={asset} />}
+        {tab === 'pair' && <PairForm asset={asset} arb={arb} />}
       </div>
     </section>
   )

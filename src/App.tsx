@@ -6,6 +6,7 @@ import { Header } from './components/Header'
 import { IndicatorStrip } from './components/IndicatorStrip'
 import { Ticker } from './components/Ticker'
 import { Toaster } from './components/Toast'
+import { LaunchNotify } from './components/LaunchNotify'
 import { usePrefs } from './lib/prefs'
 import { useQuery } from './lib/query'
 import { usePath } from './lib/router'
@@ -16,6 +17,18 @@ import EasyDetail from './pages/EasyDetail'
 const ProTerminal = lazy(() => import('./pages/ProTerminal'))
 const Developers = lazy(() => import('./pages/Developers'))
 const About = lazy(() => import('./pages/About'))
+
+/** Loading shape for the About / API pages: title, subtitle and two panels in the same column */
+function DocSkeleton() {
+  return (
+    <div className="easy doc-skel" aria-hidden>
+      <div className="skeleton" style={{ width: '38%', height: 30, marginTop: 12 }} />
+      <div className="skeleton" style={{ width: '64%', height: 16, marginTop: 14 }} />
+      <div className="skeleton" style={{ height: 180, marginTop: 32, borderRadius: 'var(--r-panel)' }} />
+      <div className="skeleton" style={{ height: 240, marginTop: 12, borderRadius: 'var(--r-panel)' }} />
+    </div>
+  )
+}
 
 export default function App() {
   const path = usePath()
@@ -69,11 +82,12 @@ export default function App() {
           </Boundary>
         )}
         <Boundary key={path + mode}>
-          <Suspense fallback={<div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
+          <Suspense fallback={isDocs ? <DocSkeleton /> : <div className="skeleton" style={{ height: 480, marginTop: 16 }} />}>{page}</Suspense>
         </Boundary>
       </main>
       <Ticker items={arb.data?.items} status={status.data} />
       <Toaster />
+      <LaunchNotify />
     </>
   )
 }

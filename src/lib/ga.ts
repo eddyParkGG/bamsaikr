@@ -72,7 +72,8 @@ export type GaEvent =
   | 'news_open' // asset, date, kind
   | 'convergence_view'
   | 'order_preview' // market, side, asset
-  | 'order_submit'
+  | 'order_submit' // order intent: orders are not live yet, a launch sign-up sheet opens
+  | 'launch_notify_signup' // email left for the order launch (not stored)
   | 'wallet_connect'
   | 'api_docs_view'
   | 'mcp_copy'
