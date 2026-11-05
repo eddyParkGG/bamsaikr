@@ -5,7 +5,7 @@ import type { CanvasRenderingTarget2D } from 'fancy-canvas'
 export interface Span {
   from: number // chart time (seconds)
   to: number
-  kind: 'regular' | 'nxt' | 'closed'
+  kind: 'open' | 'closed' // domestic market (KRX or NXT) trading, or closed
 }
 
 abstract class Base implements ISeriesPrimitive<Time> {
@@ -27,7 +27,7 @@ abstract class Base implements ISeriesPrimitive<Time> {
 
 export class SessionBands extends Base {
   private spans: Span[] = []
-  private colors: Record<Span['kind'], string> = { regular: '', nxt: '', closed: '' }
+  private colors: Record<Span['kind'], string> = { open: '', closed: '' }
   private visible = true
 
   set(spans: Span[], colors: Record<Span['kind'], string>, visible: boolean) {

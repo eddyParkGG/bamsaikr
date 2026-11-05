@@ -37,12 +37,12 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   live.current = { settings, params, news, onNews }
 
   const holidays = useMemo(() => new Set(data.holidays), [data.holidays])
-  // Session background spans (perp bars are continuous, so use them as the time grid)
+  // Background: domestic market open (KRX or NXT) vs closed. Perp bars are continuous, so they are the time grid.
+  // Daily bars are keyed 09:00 KST; read them at 10:00 so a trading day counts as open and weekends/holidays as closed
   const spans = useMemo<Span[]>(() => {
-    if (interval === '1d') return []
     const out: Span[] = []
     for (const k of data.perp) {
-      const kind = sessionAt(k.t, holidays)
+      const kind: Span['kind'] = sessionAt(interval === '1d' ? k.t + 3600_000 : k.t, holidays) === 'closed' ? 'closed' : 'open'
       const t = ct(k.t)
       const last = out[out.length - 1]
       if (last && last.kind === kind) last.to = t

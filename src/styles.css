@@ -25,12 +25,10 @@
   --on-key: #060b11;
   --perp: #7ff0cf; /* Hyperliquid mint, toned for the dark ground */
   --krx: rgba(242, 246, 255, 0.9);
-  --band-regular: rgba(255, 235, 0, 0.06);
-  --band-nxt: rgba(52, 133, 250, 0.07);
+  --band-open: rgba(255, 235, 0, 0.06);
   --band-closed: rgba(0, 0, 0, 0.22);
   /* Opaque swatches of the chart backgrounds for the legend */
-  --band-regular-solid: #4a4520;
-  --band-nxt-solid: #1f3352;
+  --band-open-solid: #4a4520;
   --band-closed-solid: #0b0b0e;
   --shadow-panel: inset 0 0 0 1px rgba(217, 217, 255, 0.11);
   --shadow-chip: inset 0 0 0 0.5px rgba(209, 209, 253, 0.05);
@@ -72,11 +70,9 @@
   --down-bg: #e8f3ff;
   --perp: #0ea886; /* Hyperliquid mint, deepened to read on white */
   --krx: #191f28;
-  --band-regular: rgba(255, 220, 0, 0.1);
-  --band-nxt: rgba(49, 130, 246, 0.06);
+  --band-open: rgba(255, 220, 0, 0.1);
   --band-closed: rgba(0, 27, 55, 0.04);
-  --band-regular-solid: #fff3a8;
-  --band-nxt-solid: #d6e6fd;
+  --band-open-solid: #fff3a8;
   --band-closed-solid: #e9ecef;
   --shadow-panel: inset 0 0 0 1px rgba(0, 27, 55, 0.06);
   --shadow-chip: none;

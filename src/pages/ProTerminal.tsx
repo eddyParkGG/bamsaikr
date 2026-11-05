@@ -34,7 +34,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
   {
     group: '표시',
     items: [
-      { k: 'bands', label: '장 시간대 배경', help: '정규장·넥스트레이드·휴장 시간을 배경색으로 나눠 보여줘요' },
+      { k: 'bands', label: '장 시간대 배경', help: '국내 시장이 열린 시간과 닫힌 시간(휴장)을 배경색으로 나눠 보여줘요' },
       { k: 'news', label: '뉴스 말풍선', help: '가격이 크게 움직인 날의 주요 뉴스를 차트 위에 표시해요' },
       { k: 'convergence', label: '따라간 정도 %', help: '밤사이 하이퍼리퀴드가 1% 이상 움직인 날, 그 움직임을 아침 8시 국내 시장이 몇 % 따라 시작했는지 차트 아래 막대로 보여줘요. 점선(100%)에 닿으면 그대로, 절반 높이면 절반만 따라간 거예요' },
       { k: 'forecast', label: '내일 아침 예상 가격 · 범위', help: '국내 시장이 닫힌 밤에, 내일 아침 8시 국내 시장이 다시 열릴 때 예상 가격과 10번 중 8번은 들어올 범위를 그려요' },
@@ -598,12 +598,8 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                 <span className="chart-tools__sep" />
                 <span className="band-legend" aria-label="차트 배경색">
                   <span>
-                    <i style={{ background: 'var(--band-regular-solid)' }} />
-                    정규장
-                  </span>
-                  <span>
-                    <i style={{ background: 'var(--band-nxt-solid)' }} />
-                    넥스트레이드
+                    <i style={{ background: 'var(--band-open-solid)' }} />
+                    국내 시장
                   </span>
                   <span>
                     <i style={{ background: 'var(--band-closed-solid)' }} />

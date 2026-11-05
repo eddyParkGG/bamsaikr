@@ -427,7 +427,7 @@ export class ChartController {
     const c = this.c
     const interval = this.interval
 
-    this.bands.set(spans, { regular: css('--band-regular'), nxt: css('--band-nxt'), closed: css('--band-closed') }, s.bands)
+    this.bands.set(spans, { open: css('--band-open'), closed: css('--band-closed') }, s.bands)
 
     // News: pin onto the bar the headline falls in (daily bars use the KST date)
     const step = STEP_MS[interval]
