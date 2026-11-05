@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ArbSnapshot } from '../../shared/api'
 import { hasKrx, type Asset } from '../../shared/assets'
-import { fmtPct, fmtPrice, fmtUsd, fmtUsdCompact, tone } from '../lib/format'
+import { fmtPct, fmtPrice, fmtUsd, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, useLive, type Level, type Trade } from '../lib/live'
 import { useQuery } from '../lib/query'
 import type { PerpQuote } from '../components/AssetSearch'
@@ -181,8 +181,8 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
     rows: [
       ['전일', prevDay ? perpFmt(prevDay) : '-'],
       ['펀딩', ctx ? `${(ctx.funding * 100).toFixed(4)}%` : '-', ctx ? tone(ctx.funding) : ''],
-      ['미결제', pq ? fmtUsdCompact(pq.openInterest * (ctx?.mid ?? pq.mid)) : '-'],
-      ['거래대금', pq ? fmtUsdCompact(pq.volume24hUsd) : '-'],
+      ['미결제', pq && rate ? `${fmtWonUnit(pq.openInterest * (ctx?.mid ?? pq.mid) * rate)}원` : '-'],
+      ['거래대금', pq && rate ? `${fmtWonUnit(pq.volume24hUsd * rate)}원` : '-'],
       ['레버리지', pq ? `최대 ${pq.maxLeverage}배` : '-'],
     ],
   }

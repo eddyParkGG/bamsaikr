@@ -9,7 +9,7 @@ import { NewsSheet } from '../components/NewsSheet'
 import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtUsd, fmtUsdCompact, tone } from '../lib/format'
+import { fmtPct, fmtPrice, fmtUsd, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
@@ -206,6 +206,7 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   if (!p || (asset.fx && !usdc)) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
   const rate = asset.fx ? usdc!.rate : 1
+  const usdcKrw = usdc?.rate ?? 0 // contract notional is USDC for every product, index included
   const mid = ctx?.mid ?? p.mid
   const prev = ctx?.prevDay ?? p.prevDay
   const diff = (mid - prev) * rate
@@ -248,9 +249,9 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         </div>
         <div className="stats__group">
           <dt>미결제약정</dt>
-          <dd>{fmtUsdCompact(p.openInterest * mid)}</dd>
+          <dd>{usdcKrw ? `${fmtWonUnit(p.openInterest * mid * usdcKrw)}원` : '-'}</dd>
           <dt>거래대금</dt>
-          <dd>{fmtUsdCompact(p.volume24hUsd)}</dd>
+          <dd>{usdcKrw ? `${fmtWonUnit(p.volume24hUsd * usdcKrw)}원` : '-'}</dd>
         </div>
         <div className="stats__group">
           <dt>최대 레버리지</dt>
@@ -285,6 +286,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const krxPrice = trade && trade.t > arb.updatedAt - 5000 ? trade.price : arb.krx.price
   const mid = ctx?.mid ?? arb.perp.mid
   const rate = asset.fx ? (usdc?.rate ?? arb.fx?.rate ?? 0) : 1
+  const usdcKrw = usdc?.rate ?? arb.fx?.rate ?? 0
   const perpKrw = mid * rate
   const premium = (perpKrw / krxPrice - 1) * 100
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
@@ -338,11 +340,11 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           <dt>펀딩 (1시간)</dt>
           <dd className={tone(funding)}>{funding.toFixed(4)}%</dd>
           <dt>미결제약정</dt>
-          <dd>{fmtUsdCompact(arb.perp.openInterest * mid)}</dd>
+          <dd>{fmtWonUnit(arb.perp.openInterest * mid * usdcKrw)}원</dd>
         </div>
         <div className="stats__group">
           <dt>하이퍼리퀴드 거래대금</dt>
-          <dd>{fmtUsdCompact(arb.perp.volume24hUsd)}</dd>
+          <dd>{fmtWonUnit(arb.perp.volume24hUsd * usdcKrw)}원</dd>
           <dt>최대 레버리지</dt>
           <dd>{arb.perp.maxLeverage}배</dd>
         </div>
