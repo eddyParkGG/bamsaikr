@@ -231,7 +231,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       <div ref={tip} className="chart__tip" hidden />
       {card && ctl.current && <BarCard card={card} interval={interval} lookup={ctl.current.lookup} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} isIdx={asset.kind === 'index'} />}
       {!data.krx.length && settings.showKrx && <div className="chart__empty">이 구간에는 국내 시세가 없어요.</div>}
-      {asset.kind === 'stock' && <ChartNotes ctl={ctl} ready={ready} arb={arb} prediction={settings.forecast ? prediction : null} onPredict={onPredict} onArb={onArb} />}
+      {asset.kind === 'stock' && <ChartNotes ctl={ctl} legend={legend} ready={ready} arb={arb} prediction={settings.forecast ? prediction : null} onPredict={onPredict} onArb={onArb} />}
     </div>
   )
 }
@@ -241,8 +241,17 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
  * the spread opportunity sits on the Hyperliquid price, tomorrow's forecast on its expected price.
  * While the domestic market trades there is no forecast yet, so a small note sits at the top instead
  */
-function ChartNotes({ ctl, ready, arb, prediction, onPredict, onArb }: { ctl: React.RefObject<ChartController | null>; ready: number; arb: ArbSnapshot | null; prediction: Prediction | null; onPredict: () => void; onArb: () => void }) {
+function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: { ctl: React.RefObject<ChartController | null>; legend: React.RefObject<HTMLDivElement | null>; ready: number; arb: ArbSnapshot | null; prediction: Prediction | null; onPredict: () => void; onArb: () => void }) {
   const arbEl = useRef<HTMLDivElement>(null)
+  // The 'before close' note reads as one more legend row: right under the legend, whatever its height
+  const [legendBottom, setLegendBottom] = useState(48)
+  useEffect(() => {
+    const el = legend.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setLegendBottom(el.offsetTop + el.offsetHeight))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [legend])
   const fcEl = useRef<HTMLDivElement>(null)
   // Only a tradable spread gets a note (and its line); the usual gap is not news
   const arbPrice = arb && arbKind(arb) === 'go' ? arb.perpKrw : null
@@ -301,7 +310,7 @@ function ChartNotes({ ctl, ready, arb, prediction, onPredict, onArb }: { ctl: Re
         </div>
       )}
       {prediction && !predictionReady(prediction) && (
-        <div className="cnote cnote--top">
+        <div className="cnote--top" style={{ top: legendBottom + 4 }}>
           <span className="cnote__label">내일 예측</span>
           <span className="faint">장 마감 후 예측해요</span>
         </div>
