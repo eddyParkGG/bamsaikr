@@ -130,7 +130,16 @@ export default function EasyHome() {
           </span>
         </div>
         <div className="panel__body">
-          {preds.data ? preds.data.items.map((p) => <PredictRow key={p.asset} p={p} />) : <div className="skeleton" style={{ height: 260, margin: 8 }} />}
+          {!preds.data ? (
+            <div className="skeleton" style={{ height: 260, margin: 8 }} />
+          ) : preds.data.items.every((p) => !predictionReady(p)) ? (
+            // During regular hours: one notice instead of the same line on every row
+            <div style={{ padding: '12px 12px 8px' }}>
+              <InSessionNotice />
+            </div>
+          ) : (
+            preds.data.items.map((p) => <PredictRow key={p.asset} p={p} />)
+          )}
         </div>
       </section>
 
@@ -152,7 +161,13 @@ export default function EasyHome() {
           국내 주식시장은 오후 3시 30분에 닫히지만, 하이퍼리퀴드 같은 해외 거래소에서는 삼성전자·SK하이닉스 가격을 밤에도 주말에도 사고팔아요. 이 가격을 원화로
           바꿔서 다음 날 시가가 어디서 시작할지 계산해요.
         </p>
-        <p>지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 화면에서 볼 수 있어요.</p>
+        <p>
+          지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 화면과{' '}
+          <Link href="/about" className="link">
+            소개
+          </Link>
+          에서 볼 수 있어요.
+        </p>
         <p className="faint" style={{ fontSize: 12 }}>
           투자 판단을 돕는 참고 정보예요. 예측이 틀릴 수 있고, 투자 결과는 본인에게 돌아가요. 해외 perp는 국내 투자자 보호 대상이 아니에요.
         </p>

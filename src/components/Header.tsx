@@ -18,6 +18,9 @@ export function Header() {
           <Link href="/" aria-current={onMarket ? 'page' : undefined}>
             시세
           </Link>
+          <Link href="/about" aria-current={path === '/about' ? 'page' : undefined}>
+            소개
+          </Link>
           <Link href="/developers" aria-current={path === '/developers' ? 'page' : undefined} onClick={() => track('api_docs_view')}>
             API
           </Link>

@@ -14,6 +14,7 @@ import EasyDetail from './pages/EasyDetail'
 // Pro mode and API docs are loaded lazily on first visit
 const ProTerminal = lazy(() => import('./pages/ProTerminal'))
 const Developers = lazy(() => import('./pages/Developers'))
+const About = lazy(() => import('./pages/About'))
 
 export default function App() {
   const path = usePath()
@@ -29,10 +30,11 @@ export default function App() {
   const m = path.match(/^\/s\/([A-Za-z0-9]+)/)
   const id = m?.[1].toUpperCase()
   const asset = id && isAssetId(id) ? ASSET_BY_ID[id] : null
-  const isDocs = path === '/developers'
+  const isDocs = path === '/developers' || path === '/about'
 
   let page
-  if (isDocs) page = <Developers />
+  if (path === '/developers') page = <Developers />
+  else if (path === '/about') page = <About />
   else if (mode === 'pro') page = <ProTerminal asset={asset ?? ASSET_BY_ID.SKHX} />
   else if (asset) page = <EasyDetail asset={asset} />
   else page = <EasyHome />

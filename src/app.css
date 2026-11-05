@@ -1098,3 +1098,66 @@
   background: var(--fill-strong);
   color: var(--text);
 }
+/* About page */
+.about__block {
+  margin-bottom: 8px;
+}
+.about__body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-body);
+}
+.about__body b {
+  color: var(--text);
+}
+.about__lead {
+  font-size: 15px;
+  color: var(--text);
+}
+.about__body ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--text-2);
+}
+.about__targets {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.about__targets dt {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.about__targets dd {
+  margin: 2px 0 0;
+  color: var(--text-2);
+}
+.about__h {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.about__hits {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+.about__hit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-item);
+  background: var(--fill);
+}
+.about__hit b {
+  font-size: 15px;
+}
+.link {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
