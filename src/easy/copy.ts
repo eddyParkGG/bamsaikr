@@ -1,0 +1,15 @@
+// 쉬운 모드 문구. 결론 먼저, 숫자는 하나만 크게, 전문 용어는 풀어서
+export function verdict(probUp: number) {
+  if (probUp >= 0.7) return { text: '오를 가능성이 높아요', tone: 'up' as const }
+  if (probUp >= 0.57) return { text: '조금 오를 것 같아요', tone: 'up' as const }
+  if (probUp > 0.43) return { text: '오를지 내릴지 반반이에요', tone: '' as const }
+  if (probUp > 0.3) return { text: '조금 내릴 것 같아요', tone: 'down' as const }
+  return { text: '내릴 가능성이 높아요', tone: 'down' as const }
+}
+
+/** 확률은 오를 쪽/내릴 쪽 중 큰 쪽으로 말함 */
+export function probLabel(probUp: number) {
+  return probUp >= 0.5 ? { label: '오를 확률', value: Math.round(probUp * 100), tone: 'up' } : { label: '내릴 확률', value: Math.round((1 - probUp) * 100), tone: 'down' }
+}
+
+export const PERP_PLAIN = '해외 24시간 시장'

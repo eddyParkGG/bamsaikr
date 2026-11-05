@@ -15,7 +15,7 @@ export interface CostInput {
   holdHours: number // 괴리가 닫힐 때까지 예상 보유 시간 (펀딩비 계산용)
 }
 
-export const DEFAULT_COST: CostInput = { stockFeeBps: 1.5, stockTaxBps: 20, perpFeeBps: 0.9, fxFeeBps: 5, leverage: 2, holdHours: 6 }
+export const DEFAULT_COST: CostInput = { stockFeeBps: 1.5, stockTaxBps: 20, perpFeeBps: 0.9, fxFeeBps: 5, leverage: 2, holdHours: 1 }
 
 export type Direction = 'perp_short_stock_long' | 'perp_long_stock_short'
 
@@ -73,9 +73,9 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
   if (mode === 'gap') note = '국내 시장이 닫혀 있어서 지금은 주식 쪽 주문이 안 돼요. 다음 개장 때 벌어진 만큼 시가에 반영될 가능성이 커요.'
   else if (direction === 'perp_long_stock_short') {
     executable = false
-    note = '주식을 빌려서 파는 건 개인이 하기 어려워요. 이미 갖고 있는 주식을 팔고 perp를 사는 방식으로만 가능해요.'
+    note = '주식을 빌려서 파는 건 개인이 하기 어려워요. 이미 갖고 있는 주식을 팔고 해외 시장에서 사는 방식으로만 가능해요.'
   } else if (asset.kind === 'index') note = '지수는 직접 살 수 없어서 KODEX 200 같은 ETF로 대신 담아야 해요. 추적오차만큼 차이가 날 수 있어요.'
-  else note = 'perp를 팔고 주식을 사두면, 두 가격이 다시 붙을 때 차이만큼 남아요.'
+  else note = '해외 시장에서 팔고 국내 주식을 사두면, 두 가격이 다시 붙을 때 차이만큼 남아요.'
   if (netPct <= 0) executable = false
 
   return {

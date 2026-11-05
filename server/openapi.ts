@@ -23,7 +23,7 @@ export const openapi = {
         operationId: 'getArbitrage',
         summary: '두 시장 괴리율과 비용 뺀 순차익',
         description: 'premiumPct>0 이면 perp 가 비쌈. net.netPct 는 수수료·세금·환전·펀딩 차감 후 기대 순수익률(%). mode=gap 이면 국내 휴장 중이라 직전 종가와 비교한 값.',
-        parameters: [assetOpt, bps('stockFeeBps', '증권사 수수료 편도 bp (기본 1.5)'), bps('stockTaxBps', '매도 세금 bp (기본 20)'), bps('perpFeeBps', 'HL taker bp (기본 0.9)'), bps('fxFeeBps', '업비트 수수료 bp (기본 5)'), bps('leverage', 'perp 증거금 배수 (기본 2)'), bps('holdHours', '보유 예상 시간 (기본 6)')],
+        parameters: [assetOpt, bps('stockFeeBps', '증권사 수수료 편도 bp (기본 1.5)'), bps('stockTaxBps', '매도 세금 bp (기본 20)'), bps('perpFeeBps', 'HL taker bp (기본 0.9)'), bps('fxFeeBps', '업비트 수수료 bp (기본 5)'), bps('leverage', 'perp 증거금 배수 (기본 2)'), bps('holdHours', '보유 예상 시간 (기본 1)')],
         responses: ok,
       },
     },
