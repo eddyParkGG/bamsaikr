@@ -296,11 +296,11 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
               <th>하이퍼리퀴드 차이</th>
               <th>실제 시작 차이</th>
               <th title="저녁 8시~아침 8시 하이퍼리퀴드 거래대금(원화 환산). 100만 달러(약 13억 원)보다 적으면 덜 믿을 만해요">밤사이 거래</th>
-              <th className="th-key" title="밤사이 하이퍼리퀴드가 오르거나 내린 방향대로 아침 8시 국내 시장이 시작했는지">
+              <th className="th-key" title="밤사이 하이퍼리퀴드가 오르거나 내린 방향대로 아침 8시 국내 시장이 시작했는지예요">
                 하이퍼리퀴드 방향대로
               </th>
-              <th title="실제 차이 ÷ 하이퍼리퀴드 차이. 100%면 하이퍼리퀴드가 보여준 그대로 시작">따라간 정도</th>
-              <th title="아침 8시~9시 동안 두 가격이 어디서 만났는지">만난 지점</th>
+              <th title="실제 차이 ÷ 하이퍼리퀴드 차이예요. 100%면 하이퍼리퀴드가 보여준 그대로 시작한 거예요">따라간 정도</th>
+              <th title="아침 8시~9시 동안 두 가격이 어디서 만났는지예요">만난 지점</th>
             </tr>
           </thead>
           <tbody>
@@ -337,7 +337,7 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                   {e.meetPoint == null ? (
                     <span className="faint">-</span>
                   ) : (
-                    <span className="meet" title="왼쪽 = 하이퍼리퀴드가 주식 쪽으로, 오른쪽 = 주식이 하이퍼리퀴드 쪽으로">
+                    <span className="meet" title="왼쪽일수록 하이퍼리퀴드가 주식 쪽으로, 오른쪽일수록 주식이 하이퍼리퀴드 쪽으로 움직였어요">
                       <span className="meet__label">{meetText(e.meetPoint)}</span>
                       <span className="range__bar">
                         <i style={{ left: `calc(${e.meetPoint} * (100% - 4px))` }} />

@@ -317,7 +317,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </dd>
         </div>
         <div className="stats__group">
-          <dt title="가격 차이가 평소 수준으로 돌아온다고 볼 때, 수수료·세금·환전·펀딩비를 빼고 남는 비율">비용 뺀 수익</dt>
+          <dt title="가격 차이가 평소 수준으로 돌아온다고 볼 때, 수수료·세금·환전·펀딩비를 빼고 남는 비율이에요">비용 뺀 수익</dt>
           <dd className={tone(arb.net.netPct)}>{fmtPct(arb.net.netPct)}</dd>
           <dt>USDC</dt>
           <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
@@ -569,7 +569,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
             </div>
             <div className="chart-foot">
               <span className="spacer" />
-              <span>{asset.fx ? '하이퍼리퀴드 가격은 업비트 원/USDC로 원화 환산' : '하이퍼리퀴드 지수 포인트 그대로'}</span>
+              <span>{asset.fx ? '하이퍼리퀴드 가격은 업비트 원/USDC로 원화 환산했어요' : '하이퍼리퀴드 지수 포인트 그대로예요'}</span>
             </div>
           </section>
 
@@ -592,7 +592,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
           <div className="panel__head">
             <span className="panel__title">예측 기록</span>
             <span className="faint" style={{ fontSize: 12, marginLeft: 6 }}>
-              하이퍼리퀴드가 미리 보여준 차이를 다음 날 장 시작 가격이 얼마나 따라갔는지
+              하이퍼리퀴드가 미리 보여준 차이를 다음 날 장 시작 가격이 얼마나 따라갔는지 보여줘요
             </span>
           </div>
           <ConvergenceTable asset={asset} />
