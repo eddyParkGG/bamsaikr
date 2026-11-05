@@ -973,3 +973,35 @@
 .easy-hero {
   padding: 12px 0 20px !important;
 }
+/* Auto-size targets: single line, shrink to fit (see lib/fit.ts) */
+[data-fit] {
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+.ind__text {
+  flex: 1;
+  min-width: 0;
+}
+.kv dd {
+  min-width: 0;
+}
+.easy-row > div {
+  min-width: 0;
+}
+.easy-row__right {
+  max-width: 50%;
+}
+.easy-intro {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+.easy-intro .dot-key {
+  flex-shrink: 0;
+  transform: translateY(-2px);
+}

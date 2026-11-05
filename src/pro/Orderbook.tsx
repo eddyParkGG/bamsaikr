@@ -21,7 +21,7 @@ function Book({ asks, bids, fmt, sizeFmt }: { asks: Level[]; bids: Level[]; fmt:
               <i style={{ width: `${(l.sz / max) * 100}%` }} />
               <span>{sizeFmt(l.sz)}</span>
             </span>
-            <span className="ob__px down">{fmt(l.px)}</span>
+            <span className="ob__px down" data-fit>{fmt(l.px)}</span>
             <span />
           </div>
         ))}
@@ -29,7 +29,7 @@ function Book({ asks, bids, fmt, sizeFmt }: { asks: Level[]; bids: Level[]; fmt:
         {b.map((l, i) => (
           <div className="ob__row ob__row--bid" key={`b${i}`}>
             <span />
-            <span className="ob__px up">{fmt(l.px)}</span>
+            <span className="ob__px up" data-fit>{fmt(l.px)}</span>
             <span className="ob__size ob__size--bid">
               <i style={{ width: `${(l.sz / max) * 100}%` }} />
               <span>{sizeFmt(l.sz)}</span>

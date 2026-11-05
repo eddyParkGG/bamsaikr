@@ -226,7 +226,7 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
             {up ? '오를 확률' : '내릴 확률'}
           </span>
           <span className="spacer" />
-          <span className="num strong" style={{ fontWeight: 700 }}>
+          <span className="num strong" style={{ fontWeight: 700, minWidth: 0 }} data-fit>
             {fmtPrice(p.expectedOpen, isIdx)} <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
           </span>
         </div>

@@ -22,23 +22,23 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
         <dl>
           <div className="kv">
             <dt>{p.status === 'in-session' ? '기준가 (장중 현재가, 잠정)' : '기준 종가'}</dt>
-            <dd>{fmtPrice(p.refClose, isIdx)}</dd>
+            <dd data-fit>{fmtPrice(p.refClose, isIdx)}</dd>
           </div>
           <div className="kv">
             <dt>perp 원화 환산</dt>
-            <dd>
+            <dd data-fit>
               {fmtPrice(p.perpKrw, isIdx)} <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
             </dd>
           </div>
           <div className="kv">
             <dt>예상 시가</dt>
-            <dd>
+            <dd data-fit>
               <b>{fmtPrice(p.expectedOpen, isIdx)}</b> <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct)}</span>
             </dd>
           </div>
           <div className="kv">
             <dt>80% 구간</dt>
-            <dd>
+            <dd data-fit>
               {fmtPrice(p.band80.low, isIdx)} ~ {fmtPrice(p.band80.high, isIdx)}
             </dd>
           </div>
@@ -80,25 +80,25 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
         <dl>
           <div className="kv">
             <dt>방향 적중</dt>
-            <dd>
+            <dd data-fit>
               <b>{p.backtest.hitRatePct}%</b> <span className="faint">({p.backtest.tested}회)</span>
             </dd>
           </div>
           <div className="kv">
             <dt>80% 구간 실제 포함</dt>
-            <dd>{p.backtest.coverage80Pct}%</dd>
+            <dd data-fit>{p.backtest.coverage80Pct}%</dd>
           </div>
           <div className="kv">
             <dt>시가 평균 오차</dt>
-            <dd>{p.backtest.maePct}%p</dd>
+            <dd data-fit>{p.backtest.maePct}%p</dd>
           </div>
           <div className="kv">
             <dt>perp 가격 그대로 썼을 때</dt>
-            <dd>{p.backtest.perpRawMaePct}%p</dd>
+            <dd data-fit>{p.backtest.perpRawMaePct}%p</dd>
           </div>
           <div className="kv">
             <dt>전일 종가 그대로 썼을 때</dt>
-            <dd>{p.backtest.naiveMaePct}%p</dd>
+            <dd data-fit>{p.backtest.naiveMaePct}%p</dd>
           </div>
         </dl>
         <p className="faint" style={{ fontSize: 12, marginTop: 6 }}>

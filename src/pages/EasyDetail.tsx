@@ -103,7 +103,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
         <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 시가, 오를까요?` : '다음 시가, 오를까요?'}</p>
         {p && p.status === 'in-session' ? (
           <>
-            <p className="q-card__a">지금은 장이 열려 있어요</p>
+            <p className="q-card__a" data-fit>지금은 장이 열려 있어요</p>
             <p className="q-card__reason">
               국내 시장과 해외 시장이 같이 열려 있을 때는 해외 가격이 국내 주가를 바로 따라가요. 그래서 지금은 내일 시가를 미리 알려줄 정보가 거의 없어요. 오늘 15:30에 장이
               끝나면 그때부터 예측을 보여드릴게요.
@@ -130,7 +130,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
           </>
         ) : p ? (
           <>
-            <p className={`q-card__a ${verdict(p.probUp).tone}`}>{verdict(p.probUp).text}</p>
+            <p className={`q-card__a ${verdict(p.probUp).tone}`} data-fit>{verdict(p.probUp).text}</p>
             <div className="big-prob">
               <span className={`num ${probLabel(p.probUp).tone}`}>{probLabel(p.probUp).value}%</span>
               <span className="muted">{probLabel(p.probUp).label}</span>
@@ -141,14 +141,14 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
             <dl className="q-facts">
               <div>
                 <dt>예상 시가</dt>
-                <dd className="num">
+                <dd className="num" data-fit>
                   {fmtPrice(p.expectedOpen, isIdx)}
                   {unit} <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
                 </dd>
               </div>
               <div>
                 <dt>10번 중 8번은 이 안에서 시작해요</dt>
-                <dd className="num">
+                <dd className="num" data-fit>
                   {fmtPrice(p.band80.low, isIdx)} ~ {fmtPrice(p.band80.high, isIdx)}
                   {unit}
                 </dd>
@@ -206,7 +206,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
             </div>
             {arb.mode === 'gap' ? (
               <>
-                <p className="q-card__a">장 열리면 바로 확인할 수 있어요</p>
+                <p className="q-card__a" data-fit>장 열리면 바로 확인할 수 있어요</p>
                 <p className="q-card__reason">
                   국내 주식시장이 닫혀 있어서 지금은 주식을 사고팔 수 없어요. 대신 {PERP_PLAIN} 가격이 종가보다 {fmtPct(arb.premiumPct)} 벌어져 있어요. 이 차이는 보통 다음
                   시가에 대부분 반영돼요.
@@ -214,7 +214,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
               </>
             ) : (
               <>
-                <p className={`q-card__a num ${net > 0 && arb.net.executable ? 'up' : ''}`}>
+                <p className={`q-card__a num ${net > 0 && arb.net.executable ? 'up' : ''}`} data-fit>
                   {net > 0 && arb.net.executable ? `약 ${fmtWon(net)}원 남아요` : '지금은 남는 게 없어요'}
                 </p>
                 <p className="q-card__reason">

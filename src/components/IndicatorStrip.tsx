@@ -53,9 +53,9 @@ function Card({ it }: { it: Indicator }) {
   return (
     <div className="ind">
       <Spark data={live ? [...it.spark, [Date.now(), live]] : it.spark} base={it.prevClose} up={up} window={it.id === 'USDC' ? { from: it.window.from, to: Date.now() } : it.window} />
-      <div>
-        <p className="ind__name">{it.name}</p>
-        <p className="ind__value num">
+      <div className="ind__text">
+        <p className="ind__name" data-fit>{it.name}</p>
+        <p className="ind__value num" data-fit>
           {price.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}{' '}
           <span className={up ? 'up' : 'down'}>
             {up ? '+' : '-'}

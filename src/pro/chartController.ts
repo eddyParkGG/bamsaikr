@@ -129,16 +129,16 @@ export class ChartController {
     })
     const out: Spec[] = []
 
-    // Main price: KRX candles; perp is a line on top, or candles when KRX is hidden
-    if (s.showKrx) out.push({ key: 'krx', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'KRX' }, 0), feed: (d) => toCandles(d.krx) })
-    if (s.showPerp && s.showKrx)
-      out.push({
+    // Main price series always exist; toggling a market only makes it transparent (see styleMain),
+    // so both the time axis and the price axis stay exactly where they were
+    out.push({ key: 'krx', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'KRX' }, 0), feed: (d) => toCandles(d.krx) })
+    out.push({
         key: 'perpLine',
         pane: 'main',
         create: (ch) => ch.addSeries(LineSeries, { color: c.perp, lineWidth: 2, title: 'perp', priceLineVisible: true, priceLineStyle: LineStyle.Dotted, crosshairMarkerRadius: 4, crosshairMarkerBorderColor: c.bg }, 0),
         feed: (d) => d.perpKrw.map((k) => ({ time: ct(k.t), value: k.c })),
       })
-    if (s.showPerp && !s.showKrx) out.push({ key: 'perpCandle', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'perp' }, 0), feed: (d) => toCandles(d.perpKrw) })
+    out.push({ key: 'perpCandle', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'perp' }, 0), feed: (d) => toCandles(d.perpKrw) })
 
     if (s.ma) for (const [n, color] of MA_COLORS) out.push(overlay(`ma${n}`, color, (_, b) => toLine(sma(b, n))))
     if (s.ribbon) RIBBON.forEach((n, i) => out.push(overlay(`rb${n}`, `hsla(${200 + i * 9}, 70%, 50%, 0.55)`, (_, b) => toLine(sma(b, n)))))
@@ -158,8 +158,7 @@ export class ChartController {
     if (s.vwap && interval !== '1d') out.push(overlay('vwap', '#f5a623', (_, b) => toLine(vwap(b)), 2, LineStyle.Dashed))
 
     if (s.volume) {
-      if (s.showKrx)
-        out.push({
+      out.push({
           key: 'volKrx',
           pane: 'volume',
           create: (ch, p) => {
@@ -167,10 +166,9 @@ export class ChartController {
             se.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
             return se
           },
-          feed: (d) => d.krx.map((k) => ({ time: ct(k.t), value: k.v, color: (k.c >= k.o ? c.up : c.down) + '80' })),
+          feed: (d) => d.krx.map((k) => ({ time: ct(k.t), value: k.v, color: (k.c >= k.o ? c.up : c.down) + (this.settings.showKrx ? '80' : '00') })),
         })
-      if (s.showPerp)
-        out.push({
+      out.push({
           key: 'volPerp',
           pane: 'volume',
           create: (ch, p) => {
@@ -226,8 +224,9 @@ export class ChartController {
   }
 
   private base(d: ChartSeries) {
-    // Indicators follow KRX when it is shown, otherwise the KRW-converted perp
-    return this.settings.showKrx && d.krx.length ? d.krx : d.perpKrw
+    // Indicators always describe the stock (KRX); perp only when there is no KRX data.
+    // Keeping the base fixed means toggling markets never rescales the price axis.
+    return d.krx.length ? d.krx : d.perpKrw
   }
 
   /** Bring the set of series in line with the settings without recreating the chart */
@@ -267,7 +266,8 @@ export class ChartController {
     for (let i = 1; i < after.length; i++) after[i].setStretchFactor(0.8)
 
     // Primitives (session bands, news pins) and markers live on whichever main series is visible
-    const host = this.series.get('krx') ?? this.series.get('perpCandle') ?? this.series.get('perpLine') ?? null
+    // KRX series is permanent, so it hosts the primitives and markers
+    const host = this.series.get('krx') ?? null
     if (host !== this.host) {
       if (this.host) {
         try {
@@ -292,7 +292,27 @@ export class ChartController {
       this.feedAll()
       this.decorate()
     }
+    this.styleMain()
     if (view) this.chart.timeScale().setVisibleRange(view)
+  }
+
+  /** Show/hide markets by colour only: hidden series keep their data so the axes do not move */
+  private styleMain() {
+    const s = this.settings
+    const c = this.c
+    const clear = 'rgba(0,0,0,0)'
+    const krxOn = s.showKrx
+    const lineOn = s.showPerp && s.showKrx
+    const candleOn = s.showPerp && !s.showKrx
+    const candle = (on: boolean) =>
+      on
+        ? { upColor: c.up, downColor: c.down, wickUpColor: c.up, wickDownColor: c.down, priceLineVisible: true, lastValueVisible: true }
+        : { upColor: clear, downColor: clear, wickUpColor: clear, wickDownColor: clear, priceLineVisible: false, lastValueVisible: false }
+    this.series.get('krx')?.applyOptions({ ...candle(krxOn), title: krxOn ? 'KRX' : '' })
+    this.series.get('perpCandle')?.applyOptions({ ...candle(candleOn), title: candleOn ? 'perp' : '' })
+    this.series.get('perpLine')?.applyOptions({ color: lineOn ? c.perp : clear, priceLineVisible: lineOn, lastValueVisible: lineOn, crosshairMarkerVisible: lineOn, title: lineOn ? 'perp' : '' })
+    this.series.get('volPerp')?.applyOptions({ color: c.perp + (s.showPerp ? '99' : '00'), title: s.showPerp ? 'perp' : '' })
+    this.series.get('volKrx')?.applyOptions({ title: s.showKrx ? 'KRX' : '' })
   }
 
   setInput(input: Input) {

@@ -34,8 +34,8 @@ function PredictRow({ p }: { p: Prediction }) {
       <Link href={`/s/${p.asset}`} className="easy-row">
         <StockLogo id={p.asset} size={36} />
         <div>
-          <p className="easy-row__name">{a.name}</p>
-          <p className="easy-row__sub">지금은 국내 시장이 열려 있어요</p>
+          <p className="easy-row__name" data-fit>{a.name}</p>
+          <p className="easy-row__sub" data-fit>지금은 국내 시장이 열려 있어요</p>
         </div>
         <div className="easy-row__right">
           <p className="easy-row__big faint" style={{ fontSize: 14 }}>
@@ -48,14 +48,14 @@ function PredictRow({ p }: { p: Prediction }) {
     <Link href={`/s/${p.asset}`} className="easy-row" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
       <StockLogo id={p.asset} size={36} />
       <div>
-        <p className="easy-row__name">{a.name}</p>
-        <p className="easy-row__sub num">
+        <p className="easy-row__name" data-fit>{a.name}</p>
+        <p className="easy-row__sub num" data-fit>
           예상 시가 {fmtPrice(p.expectedOpen, a.kind === 'index')}
           {a.kind === 'stock' ? '원' : ''} <span className={p.expectedGapPct >= 0 ? 'up' : 'down'}>{fmtPct(p.expectedGapPct, 1)}</span>
         </p>
       </div>
       <div className="easy-row__right">
-        <p className={`easy-row__big num ${v.tone}`}>
+        <p className={`easy-row__big num ${v.tone}`} data-fit>
           {pl.label} {pl.value}%
         </p>
         <div className="prob-mini">
@@ -74,8 +74,8 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
     <Link href={`/s/${s.asset}`} className="easy-row">
       <StockLogo id={s.asset} size={36} />
       <div>
-        <p className="easy-row__name">{a.name}</p>
-        <p className="easy-row__sub">{s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff}`}</p>
+        <p className="easy-row__name" data-fit>{a.name}</p>
+        <p className="easy-row__sub" data-fit>{s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff}`}</p>
       </div>
       <div className="easy-row__right">
         {s.mode === 'gap' ? (
@@ -83,13 +83,13 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
             장 열리면 확인
           </p>
         ) : net > 0 && s.net.executable ? (
-          <p className="easy-row__big up num">+{fmtWon(net)}원</p>
+          <p className="easy-row__big up num" data-fit>+{fmtWon(net)}원</p>
         ) : (
           <p className="easy-row__big faint" style={{ fontSize: 14 }}>
             비용이 더 커요
           </p>
         )}
-        <p className="easy-row__sub">1천만원 기준</p>
+        <p className="easy-row__sub" data-fit>1천만원 기준</p>
       </div>
     </Link>
   )
@@ -110,6 +110,10 @@ export default function EasyHome() {
   return (
     <div className="easy">
       <section className="easy-hero">
+        <p className="easy-intro">
+          <i className="dot-key" />
+          국내 주식시장이 닫힌 밤과 주말에도 삼성전자·SK하이닉스·현대차는 해외에서 거래돼요. 그 가격으로 다음 날 시가와 두 시장의 가격 차이를 알려드려요.
+        </p>
         <h1>{inSession ? '장이 끝나면 내일 시가를 알려드려요' : `${day} 아침 시가, 오를까요?`}</h1>
         <StatusLine s={status.data} />
       </section>

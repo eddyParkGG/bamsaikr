@@ -280,11 +280,11 @@ function PairForm({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot | null;
         <div className="pair-box num">
           <div>
             <span className="muted">지금 괴리</span>
-            <b className={arb.premiumPct >= 0 ? 'up' : 'down'}>{fmtPct(arb.premiumPct)}</b>
+            <b className={arb.premiumPct >= 0 ? 'up' : 'down'} data-fit>{fmtPct(arb.premiumPct)}</b>
           </div>
           <div>
             <span className="muted">비용 뺀 순차익</span>
-            <b className={arb.net.netPct > 0 ? 'up' : 'strong'}>{fmtPct(arb.net.netPct)}</b>
+            <b className={arb.net.netPct > 0 ? 'up' : 'strong'} data-fit>{fmtPct(arb.net.netPct)}</b>
           </div>
           <p>{dir === 'perp_short_stock_long' ? 'perp 매도 + 주식 매수' : 'perp 매수 + 주식 매도'}</p>
         </div>
