@@ -17,5 +17,7 @@ Plan and metrics: [H2](../H2-preopen-return.md). One row per post; read GA4 by `
 - The 21:21 post went to the 주식 갤러리 but carries `utm_source=dc_skhynix` (the link was drafted for the SK하이닉스 minor
   gallery). Read `dc_skhynix` as "주식 갤러리, B post"; `utm_content=skhx_thu_B` identifies it on its own.
 - A third post (특이점 주식 minor gallery, A) was drafted and skipped: same message as post 1, and the gallery is small.
+- **DC view counts for the 2026-11-05 posts are not usable**: the owner refreshed the posts, which inflates DC's view
+  counter. Skip the acquisition step (visits ÷ post views) for these posts; judge them by GA visitors and returns only.
 - The DC body link is `http://bamsai.kr/?utm_…`; it 308-redirects to https with the UTM query intact (checked).
 - Numbers move every few seconds overnight; each post's text matches the screenshot taken just before posting.
