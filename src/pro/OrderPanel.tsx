@@ -241,7 +241,7 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null;
       ? [
           ['krx', '정규장'],
           ['perp', '하이퍼리퀴드'],
-          ['pair', '시세차익'],
+          ['pair', '시세차익 기회'],
         ]
       : [['perp', '하이퍼리퀴드']]
   useEffect(() => setTab(asset.kind === 'stock' ? 'krx' : 'perp'), [asset.id, asset.kind])

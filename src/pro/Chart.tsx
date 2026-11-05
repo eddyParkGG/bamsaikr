@@ -150,7 +150,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   useEffect(() => {
     placed.current = false
     setCard(null)
-  }, [asset.id, interval])
+  }, [asset.id, interval, theme]) // the chart is rebuilt on a theme change, so place the range again
   useEffect(() => {
     const c = ctl.current
     if (!c) return

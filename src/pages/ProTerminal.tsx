@@ -39,7 +39,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
   {
     group: '가격 지표',
     items: [
-      { k: 'ma', label: '이동평균선', help: '최근 N개 봉의 평균 가격을 이은 선이에요. 추세 방향을 볼 때 써요', swatch: ['#f5a623', '#f04251', '#00b37e', '#8b95a1'], param: 'ma' },
+      { k: 'ma', label: '이동평균선', help: '최근 N개 봉의 평균 가격을 이은 선이에요. 추세 방향을 볼 때 써요', swatch: ['#f5a623', '#f04251', '#a78bfa', '#8b95a1'], param: 'ma' },
       { k: 'ribbon', label: '이동평균 그물망', help: '기간이 다른 이동평균선 여러 개를 겹쳐 그려요. 선이 벌어지면 추세가 강해요', swatch: ['#3e9bff', '#7b8cff', '#a78bfa'] },
       { k: 'bb', label: '볼린저 밴드', help: '평균 가격 위아래로 변동폭만큼 띠를 그려요. 띠 밖으로 나가면 평소보다 많이 움직인 거예요', param: 'bb' },
       { k: 'ichimoku', label: '일목균형표', help: '기준선·전환선과 앞으로 26봉의 구름대로 지지와 저항을 봐요' },
@@ -392,7 +392,7 @@ function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnap
         {chevron}
       </button>
       <button className="nbar" onClick={() => window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}>
-        <span className="nbar__label">시세차익</span>
+        <span className="nbar__label">시세차익 기회</span>
         <i className="nbar__sep" />
         <span className="nbar__text num" data-fit>
           {!arb ? (

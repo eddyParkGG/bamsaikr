@@ -50,7 +50,7 @@ const toGappedLine = (pts: Pt[], step: number) => {
 const toCandles = (bars: Bar[]) => bars.map((k) => ({ time: ct(k.t), open: k.o, high: k.h, low: k.l, close: k.c }))
 
 /** Colours for the 1st..4th moving average (periods are user-configurable) */
-export const MA_COLORS = ['#f5a623', '#f04251', '#00b37e', '#8b95a1']
+export const MA_COLORS = ['#f5a623', '#f04251', '#a78bfa', '#8b95a1']
 
 /** Bars Ichimoku projects into the future (standard 26) */
 const ICHIMOKU_SHIFT = 26
@@ -120,7 +120,8 @@ export class ChartController {
         vertLine: { color: c.text3, width: 1, style: LineStyle.Dashed, labelBackgroundColor: c.float },
         horzLine: { color: c.text3, width: 1, style: LineStyle.Dashed, labelBackgroundColor: c.float },
       },
-      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.16, bottom: 0.12 }, textColor: c.text2 },
+      // Fixed axis width: price tags stay flush right even when the number of digits changes
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.16, bottom: 0.12 }, textColor: c.text2, minimumWidth: 92 },
       timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffset: 6, minBarSpacing: 1 },
       localization: { locale: 'ko-KR', priceFormatter: (p: number) => Math.round(p).toLocaleString('ko-KR') },
     })

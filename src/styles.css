@@ -23,7 +23,7 @@
   --key: #ffeb00; /* KakaoPay */
   --key-press: #f0dc00;
   --on-key: #060b11;
-  --perp: #a78bfa;
+  --perp: #7ff0cf; /* Hyperliquid mint, toned for the dark ground */
   --krx: rgba(242, 246, 255, 0.9);
   --band-regular: rgba(255, 235, 0, 0.06);
   --band-nxt: rgba(52, 133, 250, 0.07);
@@ -70,7 +70,7 @@
   --up-bg: #ffeeee;
   --down: #3182f6;
   --down-bg: #e8f3ff;
-  --perp: #7c5cff;
+  --perp: #0ea886; /* Hyperliquid mint, deepened to read on white */
   --krx: #191f28;
   --band-regular: rgba(255, 220, 0, 0.1);
   --band-nxt: rgba(49, 130, 246, 0.06);
