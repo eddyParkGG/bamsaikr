@@ -1,6 +1,6 @@
 // 차트용 시계열: 두 시장 캔들 + 원화 환산 + 괴리율
 import type { Asset } from '../../shared/assets.js'
-import { isTradingDay, kstDateKey, kstToMs, sessionAt } from '../../shared/session.js'
+import { kstDateKey, kstToMs, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
 import { getFundingHistory, getPerpCandles, type Candle, type HlInterval } from '../sources/hyperliquid.js'
 import { krxDaily, krxHolidays, krxMinutes, krxSource } from '../sources/krx.js'
@@ -8,8 +8,8 @@ import { getUsdcKrwCandles, rateAt, type UpbitUnit } from '../sources/upbit.js'
 
 export type ChartInterval = '1m' | '5m' | '15m' | '1h' | '1d'
 
-// 구간별 기본 조회 기간(일). KRX 분봉은 대체 소스에서 1~2주치만 있어서 1h 이하는 짧게
-const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 2, '5m': 6, '15m': 12, '1h': 40, '1d': 400 }
+// 국내 분봉은 토스 API 1회 200개라 구간이 길면 호출이 많아짐 → 1시간봉은 3주까지
+const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 2, '5m': 5, '15m': 10, '1h': 21, '1d': 400 }
 const STEP: Record<ChartInterval, number> = { '1m': 60_000, '5m': 300_000, '15m': 900_000, '1h': 3600_000, '1d': 86400_000 }
 const UPBIT_UNIT: Record<ChartInterval, UpbitUnit> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 'day' }
 
@@ -51,17 +51,12 @@ function bucketize(minutes: Candle[], step: number): Candle[] {
   return out
 }
 
-async function krxCandles(asset: Asset, interval: ChartInterval, since: number, holidays: ReadonlySet<string>): Promise<Candle[]> {
+async function krxCandles(asset: Asset, interval: ChartInterval, since: number): Promise<Candle[]> {
   if (interval === '1d') {
     const daily = await krxDaily(asset, kstDateKey(since), kstDateKey(Date.now()))
     return daily.map((d) => ({ t: kstToMs(d.date, '0900'), o: d.o, h: d.h, l: d.l, c: d.c, v: d.v }))
   }
-  const days: string[] = []
-  // 대체 소스는 분봉을 최근 1~2주만 줘서 그 이전은 요청하지 않음
-  if (krxSource() === 'naver') since = Math.max(since, Date.now() - 12 * 86400_000)
-  for (let t = since; t <= Date.now(); t += 86400_000) if (isTradingDay(t, holidays)) days.push(kstDateKey(t))
-  const perDay = await Promise.all(days.map((d) => krxMinutes(asset, d).catch(() => [] as Candle[])))
-  return bucketize(perDay.flat(), STEP[interval])
+  return bucketize(await krxMinutes(asset, since), STEP[interval])
 }
 
 export function chartSeries(asset: Asset, interval: ChartInterval): Promise<ChartSeries> {
@@ -71,7 +66,7 @@ export function chartSeries(asset: Asset, interval: ChartInterval): Promise<Char
     const since = Date.now() - RANGE_DAYS[interval] * 86400_000
     const [perpRaw, krx, fx, funding] = await Promise.all([
       getPerpCandles(asset.perp, interval as HlInterval, Math.floor(since / STEP[interval]) * STEP[interval]),
-      krxCandles(asset, interval, since, holidays),
+      krxCandles(asset, interval, since),
       asset.fx ? getUsdcKrwCandles(UPBIT_UNIT[interval], since) : Promise.resolve([]),
       getFundingHistory(asset.perp, Math.max(since, Date.now() - 30 * 86400_000)).catch(() => []),
     ])

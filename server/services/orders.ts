@@ -3,7 +3,7 @@
 import { privateKeyToAccount } from 'viem/accounts'
 import type { Asset } from '../../shared/assets.js'
 import { cancelPerpOrder, perpAccount, planPerpOrder, sendPerpOrder, type HlNetwork } from '../../shared/hlOrder.js'
-import { kisBalance, kisBuyable, kisCancel, kisConfig, kisOrder } from '../sources/kis.js'
+import { tossBuyingPower, tossCancel, tossEnabled, tossHoldings, tossOrder, tossOrderBody } from '../sources/toss.js'
 import { krxQuote } from '../sources/krx.js'
 
 export class OrderError extends Error {
@@ -19,17 +19,18 @@ export interface KrxOrderReq {
   side: 'buy' | 'sell'
   qty: number
   price?: number
-  exchange?: 'KRX' | 'NXT' | 'SOR'
   dryRun?: boolean
 }
 
+/** 토스증권은 모의투자가 없어서 실제 돈이 나감 → 서버 주인이 TOSS_LIVE_ORDERS=1 로 켠 경우에만 */
+export const tossLiveOrders = () => tossEnabled() && process.env.TOSS_LIVE_ORDERS === '1'
+
 export async function placeKrxOrder(asset: Asset, req: KrxOrderReq) {
-  if (asset.kind !== 'stock') throw new OrderError(400, '지수는 직접 주문할 수 없어요. ETF 종목코드로 주문해 주세요')
   if (!Number.isInteger(req.qty) || req.qty <= 0) throw new OrderError(400, '수량은 1주 이상 정수로 입력해 주세요')
   const quote = await krxQuote(asset)
-  const cfg = kisConfig()
   const preview = {
     market: 'krx' as const,
+    broker: '토스증권',
     code: asset.krxCode,
     name: asset.name,
     side: req.side,
@@ -37,27 +38,23 @@ export async function placeKrxOrder(asset: Asset, req: KrxOrderReq) {
     orderType: req.price ? '지정가' : '시장가',
     price: req.price ?? null,
     estAmount: Math.round((req.price ?? quote.price) * req.qty),
-    account: cfg ? (cfg.env === 'prod' ? '실전' : '모의투자') : null,
+    request: tossOrderBody({ code: asset.krxCode, side: req.side, qty: req.qty, price: req.price }),
   }
-  if (req.dryRun !== false) return { dryRun: true, preview }
-  if (!cfg) throw new OrderError(503, 'KIS 키가 설정되지 않아서 실제 주문은 할 수 없어요')
-  const result = await kisOrder({ code: asset.krxCode, side: req.side, qty: req.qty, price: req.price, exchange: req.exchange })
+  if (req.dryRun !== false) return { dryRun: true, liveAvailable: tossLiveOrders(), preview }
+  if (!tossLiveOrders()) throw new OrderError(403, '이 서버는 실제 주문을 꺼뒀어요. 토스증권은 모의투자가 없어서 실제 돈이 나가요')
+  const result = await tossOrder({ code: asset.krxCode, side: req.side, qty: req.qty, price: req.price })
   return { dryRun: false, preview, result }
 }
 
-export async function cancelKrxOrder(orderId: string, branch: string) {
-  return kisCancel({ orderId, branch })
+export async function cancelKrxOrder(orderId: string) {
+  if (!tossLiveOrders()) throw new OrderError(403, '이 서버는 실제 주문을 꺼뒀어요')
+  return tossCancel(orderId)
 }
 
 export async function krxAccount() {
-  if (!kisConfig()) throw new OrderError(503, 'KIS 키가 설정되지 않았어요')
-  return kisBalance()
-}
-
-export async function krxBuyable(asset: Asset, price?: number) {
-  if (!kisConfig()) throw new OrderError(503, 'KIS 키가 설정되지 않았어요')
-  const p = price ?? (await krxQuote(asset)).price
-  return kisBuyable(asset.krxCode, p)
+  if (!tossLiveOrders()) throw new OrderError(403, '이 서버는 계좌 조회를 꺼뒀어요')
+  const [holdings, buyingPower] = await Promise.all([tossHoldings(), tossBuyingPower()])
+  return { holdings, buyingPower }
 }
 
 // ───────── 하이퍼리퀴드 ─────────
@@ -113,7 +110,6 @@ export async function perpPositions(network: HlNetwork, user?: string) {
 
 /** 차익 거래 한 쌍: perp 한쪽 + 주식 반대쪽. 수량은 1주 = perp 1계약 */
 export async function placePairOrder(asset: Asset, req: { notionalKrw: number; direction: 'perp_short_stock_long' | 'perp_long_stock_short'; network?: HlNetwork; dryRun?: boolean }) {
-  if (asset.kind !== 'stock') throw new OrderError(400, '페어 주문은 개별 종목만 가능해요')
   const quote = await krxQuote(asset)
   const qty = Math.floor(req.notionalKrw / quote.price)
   if (qty < 1) throw new OrderError(400, `1주(${quote.price.toLocaleString()}원) 이상 금액을 입력해 주세요`)

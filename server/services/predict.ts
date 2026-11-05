@@ -10,7 +10,8 @@ import type { Asset } from '../../shared/assets.js'
 import { isTradingDay, kstDateKey, kstToMs, nextRegularOpen, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
 import { getPerpCandles, getPerpCtxs, type Candle } from '../sources/hyperliquid.js'
-import { krxDaily, krxHolidays, krxOrderbook, krxQuote } from '../sources/krx.js'
+import { krxHolidays, krxQuote } from '../sources/krx.js'
+import { regularSessions } from '../sources/krxSessions.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
 
 const H = 3600_000
@@ -149,12 +150,14 @@ export function loadHistory(asset: Asset) {
   return cached(`predict:history:${asset.id}`, 10 * 60_000, async () => {
     const perp = await getPerpCandles(asset.perp, '1h', 0)
     const start = perp[0]?.t ?? Date.now() - 200 * 86400_000
-    const [daily, fx, holidays] = await Promise.all([
-      krxDaily(asset, kstDateKey(start - 5 * 86400_000), kstDateKey(Date.now())),
+    const [sessions, fx, holidays] = await Promise.all([
+      regularSessions(asset.krxCode, kstDateKey(start - 5 * 86400_000)),
       asset.fx ? getUsdcKrwHourly(start) : Promise.resolve([] as FxPoint[]),
       krxHolidays(),
     ])
-    const events = buildEvents(asset, daily, perp, fx)
+    // 정규장 시가·종가가 모두 있는 날만 (오늘 장중이면 종가 없음)
+    const daily = sessions.map((s) => ({ date: s.date, o: s.open, c: s.close ?? NaN }))
+    const events = buildEvents(asset, daily, perp, fx).filter((e) => Number.isFinite(e.prevClose))
     const vol = closedHoursVol(perp, holidays)
 
     // walk-forward: 그날 이전 데이터로만 학습해서 예측 → 실제와 비교
@@ -215,8 +218,8 @@ export async function predictOpen(asset: Asset) {
   const regularDoneToday = isTradingDay(now, holidays) && now >= todayClose
   const inSession = session === 'regular'
   const last = events[events.length - 1]
-  const daily = await krxDaily(asset, kstDateKey(now - 10 * 86400_000), todayKey)
-  const lastBar = daily.filter((d) => d.date < todayKey || regularDoneToday).at(-1)
+  const sessions = await regularSessions(asset.krxCode, kstDateKey(now - 10 * 86400_000))
+  const lastBar = sessions.filter((d) => d.close != null && (d.date < todayKey || regularDoneToday)).map((d) => ({ date: d.date, c: d.close! })).at(-1)
   const refClose = inSession ? quote.price : (lastBar?.c ?? quote.prevClose)
   const refCloseAt = inSession ? todayClose : lastBar ? kstToMs(lastBar.date, '1530') : todayClose
 
@@ -231,14 +234,6 @@ export async function predictOpen(asset: Asset) {
 
   const bucket = (lo: number, hi: number) => normCdf((hi - mu) / sigma) - normCdf((lo - mu) / sigma)
   const r = (x: number) => Math.round(x * 10000) / 10000
-
-  // 동시호가(08:30~09:00) 중이면 KIS 예상체결가를 같이 보여줌
-  let auction: { price: number; changePct: number } | null = null
-  const kstMin = (now / 60_000 + 540) % 1440
-  if (kstMin >= 510 && kstMin < 540 && asset.kind === 'stock') {
-    const ob = await krxOrderbook(asset).catch(() => null)
-    if (ob?.krx?.expected?.price) auction = { price: ob.krx.expected.price, changePct: ob.krx.expected.changePct }
-  }
 
   return {
     asset: asset.id,
@@ -262,7 +257,6 @@ export async function predictOpen(asset: Asset) {
       { label: '+1~+3%', p: r(bucket(0.01, 0.03)) },
       { label: '+3% 이상', p: r(1 - normCdf((0.03 - mu) / sigma)) },
     ],
-    auction,
     model: { alpha: r(model.alpha), beta: r(model.beta), sigmaPct: { overnight: r(model.sigma.overnight * 100), weekend: r(model.sigma.weekend * 100) }, n: model.n },
     backtest,
     lastEvent: last ?? null,

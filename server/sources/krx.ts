@@ -1,24 +1,47 @@
-// 국내 시세 창구. KIS 키가 있으면 KIS, 없으면 공개 시세로 대체하고 출처를 같이 돌려줌
+// 국내 시세 창구: 토스증권 Open API (통합 시세 KRX+NXT)
 import type { Asset } from '../../shared/assets.js'
-import { KRX_HOLIDAYS_FALLBACK, kstDateKey, kstToMs } from '../../shared/session.js'
+import { isTradingDay, isWeekend, kstDateKey, kstToMs } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
 import type { Candle } from './hyperliquid.js'
-import { kisDaily, kisEnabled, kisHolidays, kisIndexQuote, kisMinutes, kisNews, kisOrderbook, kisQuote, type KisQuote } from './kis.js'
-import { naverDaily, naverMinutes, naverQuote } from './naver.js'
+import { regularSessions } from './krxSessions.js'
+import { tossCalendar, tossCandles, tossOrderbook, tossPrices } from './toss.js'
 
-export type KrxSource = 'kis' | 'naver'
-export const krxSource = (): KrxSource => (kisEnabled() ? 'kis' : 'naver')
+export const krxSource = () => 'toss' as const
 
-export async function krxQuote(a: Asset): Promise<KisQuote & { source: KrxSource }> {
-  if (kisEnabled()) {
-    try {
-      const q = a.kind === 'index' ? await kisIndexQuote(a.krxCode) : await kisQuote(a.krxCode, 'UN')
-      return { ...q, source: 'kis' }
-    } catch (e) {
-      console.warn('[kis] quote 실패, 대체 소스 사용', (e as Error).message)
-    }
+export interface KrxQuote {
+  price: number
+  prevClose: number
+  open: number
+  high: number
+  low: number
+  volume: number
+  tradeValue: number
+  changePct: number
+  source: 'toss'
+}
+
+export async function krxQuote(a: Asset): Promise<KrxQuote> {
+  const [prices, daily] = await Promise.all([tossPrices([a.krxCode]), tossCandles(a.krxCode, '1d', Date.now() - 12 * 86400_000)])
+  const price = prices.get(a.krxCode)?.price ?? daily.at(-1)?.c ?? 0
+  const last = daily.at(-1)
+  const isToday = !!last && kstDateKey(last.t) === kstDateKey(Date.now())
+  // '어제보다'는 KRX 정규장 종가 기준 (토스 앱과 같은 기준). 오늘이 거래일이면 오늘 이전 마지막 종가
+  const [sessions, holidays] = await Promise.all([regularSessions(a.krxCode, kstDateKey(Date.now() - 12 * 86400_000)), krxHolidays()])
+  const today = kstDateKey(Date.now())
+  const done = sessions.filter((s) => s.close != null)
+  const prevSession = isTradingDay(Date.now(), holidays) ? done.filter((s) => s.date < today).at(-1) : done.at(-2)
+  const prevClose = prevSession?.close ?? (isToday ? daily.at(-2) : last)?.c ?? price
+  return {
+    price,
+    prevClose,
+    open: isToday ? last.o : price,
+    high: isToday ? Math.max(last.h, price) : price,
+    low: isToday ? Math.min(last.l, price) : price,
+    volume: isToday ? last.v : 0,
+    tradeValue: 0,
+    changePct: prevClose ? Math.round((price / prevClose - 1) * 10000) / 100 : 0,
+    source: 'toss',
   }
-  return { ...(await naverQuote(a)), source: 'naver' }
 }
 
 export interface DailyBar {
@@ -30,89 +53,35 @@ export interface DailyBar {
   v: number
 }
 
-export function krxDaily(a: Asset, from: string, to: string): Promise<DailyBar[]> {
-  return cached(`krx:daily:${a.id}:${from}:${to}:${krxSource()}`, 5 * 60_000, async () => {
-    if (kisEnabled() && a.kind === 'stock') {
-      try {
-        // KIS 일봉은 1회 100개 → 끝에서부터 거슬러 올라감
-        const out: DailyBar[] = []
-        let end = to
-        for (let i = 0; i < 6; i++) {
-          const page = await kisDaily(a.krxCode, from, end)
-          if (!page.length) break
-          out.push(...page)
-          const oldest = page[page.length - 1].date
-          if (oldest <= from || page.length < 100) break
-          end = kstDateKey(kstToMs(oldest) - 86400_000)
-        }
-        return out.sort((x, y) => x.date.localeCompare(y.date))
-      } catch (e) {
-        console.warn('[kis] daily 실패, 대체 소스 사용', (e as Error).message)
-      }
-    }
-    return naverDaily(a, from, to)
+export async function krxDaily(a: Asset, from: string, _to?: string): Promise<DailyBar[]> {
+  const rows = await tossCandles(a.krxCode, '1d', kstToMs(from))
+  return rows.map((k) => ({ date: kstDateKey(k.t), o: k.o, h: k.h, l: k.l, c: k.c, v: k.v }))
+}
+
+/** 1분봉 (통합 시세라 08:00~20:00 넥스트레이드 포함). 토스는 봉 끝 시각이라 시작 시각으로 1분 당김 */
+export async function krxMinutes(a: Asset, since: number): Promise<Candle[]> {
+  const rows = await tossCandles(a.krxCode, '1m', since)
+  return rows.filter((k) => k.v > 0).map((k) => ({ ...k, t: k.t - 60_000 }))
+}
+
+export function krxOrderbook(a: Asset) {
+  return tossOrderbook(a.krxCode)
+}
+
+/**
+ * 휴장일(평일) 집합
+ * 과거: 일봉이 없는 평일 / 앞으로: 토스 장 운영 캘린더의 다음 영업일까지 건너뛴 평일
+ */
+export function krxHolidays(): Promise<Set<string>> {
+  return cached('krx:holidays', 30 * 60_000, async () => {
+    const [daily, cal] = await Promise.all([tossCandles('005930', '1d', Date.now() - 400 * 86400_000), tossCalendar()])
+    const traded = new Set(daily.map((k) => kstDateKey(k.t)))
+    const set = new Set<string>()
+    const first = daily[0]?.t ?? Date.now()
+    for (let t = first; t < Date.now() - 86400_000; t += 86400_000) if (!isWeekend(t) && !traded.has(kstDateKey(t))) set.add(kstDateKey(t))
+    if (!cal.today.integrated?.regularMarket) set.add(cal.today.date.replace(/-/g, ''))
+    const next = kstToMs(cal.nextBusinessDay.date.replace(/-/g, ''))
+    for (let t = Date.now() + 86400_000; t < next; t += 86400_000) if (!isWeekend(t)) set.add(kstDateKey(t))
+    return set
   })
-}
-
-/** 하루치 분봉 (KIS 는 통합시세라 NXT 08:00~20:00 포함, 대체 소스는 KRX 09:00~15:30) */
-export function krxMinutes(a: Asset, date: string): Promise<Candle[]> {
-  const today = kstDateKey(Date.now()) === date
-  return cached(`krx:min:${a.id}:${date}:${krxSource()}`, today ? 20_000 : 3600_000, async () => {
-    if (kisEnabled() && a.kind === 'stock') {
-      try {
-        const out: Candle[] = []
-        let cursor = '200000'
-        for (let i = 0; i < 8; i++) {
-          const page = await kisMinutes(a.krxCode, date, cursor, 'UN')
-          const sameDay = page.filter((k) => k.date === date)
-          if (!sameDay.length) break
-          for (const k of sameDay) out.push({ t: kstToMs(k.date, k.time.slice(0, 4)), o: k.o, h: k.h, l: k.l, c: k.c, v: k.v })
-          const oldest = sameDay[sameDay.length - 1].time
-          if (oldest <= '080000' || sameDay.length < 120) break
-          const ms = kstToMs(date, oldest.slice(0, 4)) - 60_000
-          const d = new Date(ms + 9 * 3600_000)
-          cursor = `${String(d.getUTCHours()).padStart(2, '0')}${String(d.getUTCMinutes()).padStart(2, '0')}00`
-        }
-        return out.sort((x, y) => x.t - y.t)
-      } catch (e) {
-        console.warn('[kis] minutes 실패, 대체 소스 사용', (e as Error).message)
-      }
-    }
-    const raw = await naverMinutes(a, date)
-    return raw.map((k) => ({ t: kstToMs(k.dt.slice(0, 8), k.dt.slice(8, 12)), o: k.o, h: k.h, l: k.l, c: k.c, v: k.v }))
-  })
-}
-
-export async function krxOrderbook(a: Asset) {
-  if (!kisEnabled() || a.kind !== 'stock') return null
-  const [krx, nxt] = await Promise.allSettled([kisOrderbook(a.krxCode, 'J'), kisOrderbook(a.krxCode, 'NX')])
-  return {
-    krx: krx.status === 'fulfilled' ? krx.value : null,
-    nxt: nxt.status === 'fulfilled' ? nxt.value : null,
-  }
-}
-
-/** 휴장일 집합. KIS 실전키면 휴장일조회 API, 아니면 내장 목록 */
-export async function krxHolidays(): Promise<Set<string>> {
-  if (kisEnabled() && process.env.KIS_ENV === 'prod') {
-    try {
-      const days = await kisHolidays(kstDateKey(Date.now()))
-      const set = new Set(KRX_HOLIDAYS_FALLBACK)
-      for (const d of days) if (!d.open) set.add(d.date)
-      return set
-    } catch (e) {
-      console.warn('[kis] holiday 실패', (e as Error).message)
-    }
-  }
-  return KRX_HOLIDAYS_FALLBACK
-}
-
-export async function krxNews(a: Asset) {
-  if (!kisEnabled() || a.kind !== 'stock') return []
-  try {
-    return await kisNews(a.krxCode)
-  } catch (e) {
-    console.warn('[kis] news 실패', (e as Error).message)
-    return []
-  }
 }

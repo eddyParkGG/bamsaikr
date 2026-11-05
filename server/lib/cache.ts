@@ -32,3 +32,7 @@ export async function fetchJson<T>(url: string, init?: RequestInit, timeoutMs = 
   if (!res.ok) throw new Error(`${res.status} ${res.statusText} ${url}`)
   return (await res.json()) as T
 }
+
+export function invalidate(key: string) {
+  store.delete(key)
+}

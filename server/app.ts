@@ -1,24 +1,27 @@
 import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
+import { streamSSE } from 'hono/streaming'
+import { subscribeKrx } from './sources/tossWs.js'
 import { ASSET_BY_ID, ASSETS, isAssetId, type Asset } from '../shared/assets.js'
 import { nextRegularOpen, prevRegularClose, sessionAt } from '../shared/session.js'
-import { KisError, kisEnabled, kisInvestors, kisProgramTrade } from './sources/kis.js'
+import { TossError, tossEnabled, tossInvestors } from './sources/toss.js'
 import { getPerpBook } from './sources/hyperliquid.js'
 import { krxHolidays, krxOrderbook, krxSource } from './sources/krx.js'
 import { arbAll, arbSnapshot, DEFAULT_COST, type CostInput } from './services/arb.js'
 import { loadHistory, predictOpen } from './services/predict.js'
 import { chartSeries, type ChartInterval } from './services/series.js'
 import { newsMarkers } from './services/news.js'
+import { indicators } from './services/indicators.js'
 import {
   cancelKrxOrder,
   cancelPerp,
   krxAccount,
-  krxBuyable,
   OrderError,
   perpPositions,
   placeKrxOrder,
   placePairOrder,
   placePerpOrder,
+  tossLiveOrders,
 } from './services/orders.js'
 import { openapi } from './openapi.js'
 import { mcp } from './mcp.js'
@@ -36,7 +39,7 @@ app.use('*', async (c, next) => {
 
 app.onError((err, c) => {
   if (err instanceof OrderError) return c.json({ error: err.message }, err.status)
-  if (err instanceof KisError) return c.json({ error: err.message, code: err.code, source: 'kis' }, 502)
+  if (err instanceof TossError) return c.json({ error: err.message, code: err.code, source: 'toss' }, err.status === 403 ? 502 : 502)
   console.error(err)
   return c.json({ error: '잠시 후 다시 시도해 주세요', detail: (err as Error).message }, 500)
 })
@@ -47,7 +50,13 @@ function assetOf(c: Context): Asset {
   return ASSET_BY_ID[id]
 }
 
-/** 실주문은 API_TOKEN 이 맞을 때만 */
+/**
+ * 실주문 권한
+ * - 국내(토스증권)는 모의투자가 없어서 서버 주인이 TOSS_LIVE_ORDERS=1 로 켰을 때만 (orders.ts)
+ * - 같은 사이트 화면에서 누른 주문은 토큰 없이, 외부(에이전트) 호출은 API_TOKEN 필요
+ * - 하이퍼리퀴드 메인넷은 항상 토큰 필요, 테스트넷은 바로
+ */
+const isExternal = (c: Context) => c.req.header('sec-fetch-site') !== 'same-origin'
 function requireToken(c: Context) {
   const token = process.env.API_TOKEN
   if (!token) throw new OrderError(403, '이 서버는 실주문을 받지 않아요 (API_TOKEN 미설정). dryRun 으로 확인해 주세요')
@@ -75,9 +84,15 @@ v1.get('/status', async (c) => {
     nextOpen: nextRegularOpen(now, holidays),
     prevClose: prevRegularClose(now, holidays),
     krxSource: krxSource(),
-    kis: kisEnabled(),
+    toss: tossEnabled(),
+    liveKrxOrders: tossLiveOrders(),
     hlAgent: !!process.env.HL_AGENT_KEY,
   })
+})
+
+v1.get('/indicators', async (c) => {
+  c.header('Cache-Control', 'public, s-maxage=5, stale-while-revalidate=30')
+  return c.json({ items: await indicators() })
 })
 
 v1.get('/arb', async (c) => {
@@ -112,20 +127,50 @@ v1.get('/series', async (c) => {
 
 v1.get('/orderbook', async (c) => {
   const asset = assetOf(c)
-  const [perp, krx] = await Promise.all([getPerpBook(asset.perp), krxOrderbook(asset).catch(() => null)])
-  return c.json({ perp, krx: krx?.krx ?? null, nxt: krx?.nxt ?? null, krxAvailable: !!krx })
+  const [perp, krx] = await Promise.all([getPerpBook(asset.perp), krxOrderbook(asset)])
+  return c.json({ perp, krx })
 })
 
 v1.get('/news', async (c) => {
   c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-  return c.json({ items: await newsMarkers(assetOf(c)) })
+  if (c.req.query('asset')) return c.json({ items: await newsMarkers(assetOf(c)) })
+  // 전체 종목: 같은 날 같은 제목은 하나로, 최신순
+  const all = (await Promise.all(ASSETS.map(async (a) => (await newsMarkers(a)).map((n) => ({ ...n, asset: a.id }))))).flat()
+  const seen = new Set<string>()
+  const items = all
+    .sort((a, b) => b.t - a.t)
+    .filter((n) => (seen.has(n.date + n.title) ? false : (seen.add(n.date + n.title), true)))
+    .slice(0, Number(c.req.query('limit') ?? 10))
+  return c.json({ items })
 })
 
 v1.get('/flows', async (c) => {
   const asset = assetOf(c)
-  if (!kisEnabled() || asset.kind !== 'stock') return c.json({ investors: [], program: [], available: false })
-  const [investors, program] = await Promise.all([kisInvestors(asset.krxCode).catch(() => []), kisProgramTrade(asset.krxCode).catch(() => [])])
-  return c.json({ investors, program, available: true })
+  c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+  return c.json({ investors: await tossInvestors(asset.krxCode), available: true })
+})
+
+// 국내 실시간 체결·호가 (토스증권 웹소켓 중계, SSE). 함수 최대 실행시간이 지나면 브라우저가 알아서 다시 붙음
+v1.get('/stream/krx', async (c) => {
+  const asset = assetOf(c)
+  return streamSSE(c, async (stream) => {
+    let closed = false
+    const unsub = await subscribeKrx(asset.krxCode, (m) => {
+      if (!closed) stream.writeSSE({ event: m.type, data: JSON.stringify(m) }).catch(() => {})
+    })
+    stream.onAbort(() => {
+      closed = true
+      unsub()
+    })
+    // 연결 유지용 주석 + 함수 시간 제한 전에 스스로 닫기
+    const until = Date.now() + 55_000
+    while (!closed && Date.now() < until) {
+      await stream.sleep(15_000)
+      await stream.write(': ping\n\n')
+    }
+    closed = true
+    unsub()
+  })
 })
 
 // ───────── 주문 ─────────
@@ -133,34 +178,28 @@ v1.get('/flows', async (c) => {
 v1.post('/orders/krx', async (c) => {
   const body = await c.req.json()
   const asset = assetOf(c)
-  if (body.dryRun === false) requireToken(c)
+  if (body.dryRun === false && isExternal(c)) requireToken(c)
   return c.json(await placeKrxOrder(asset, body))
 })
 
 v1.delete('/orders/krx/:orderId', async (c) => {
-  requireToken(c)
-  return c.json(await cancelKrxOrder(c.req.param('orderId'), c.req.query('branch') ?? ''))
+  if (isExternal(c)) requireToken(c)
+  return c.json(await cancelKrxOrder(c.req.param('orderId')))
 })
 
 v1.get('/account/krx', async (c) => {
-  requireToken(c)
+  if (isExternal(c)) requireToken(c)
   return c.json(await krxAccount())
-})
-
-v1.get('/account/krx/buyable', async (c) => {
-  requireToken(c)
-  const p = c.req.query('price')
-  return c.json(await krxBuyable(assetOf(c), p ? +p : undefined))
 })
 
 v1.post('/orders/perp', async (c) => {
   const body = await c.req.json()
-  if (body.dryRun === false) requireToken(c)
+  if (body.dryRun === false && body.network === 'mainnet') requireToken(c)
   return c.json(await placePerpOrder(assetOf(c), body))
 })
 
 v1.delete('/orders/perp/:oid', async (c) => {
-  requireToken(c)
+  if (c.req.query('network') === 'mainnet') requireToken(c)
   return c.json(await cancelPerp(assetOf(c), Number(c.req.param('oid')), c.req.query('network')))
 })
 
@@ -171,7 +210,7 @@ v1.get('/account/perp', async (c) => {
 
 v1.post('/orders/pair', async (c) => {
   const body = await c.req.json()
-  if (body.dryRun === false) requireToken(c)
+  if (body.dryRun === false && (isExternal(c) || body.network === 'mainnet')) requireToken(c)
   return c.json(await placePairOrder(assetOf(c), body))
 })
 
