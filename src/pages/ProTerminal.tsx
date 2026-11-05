@@ -406,18 +406,23 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
 
   // Chart and order book fill the screen below the stock head: no page scroll on the chart tab.
   // 60px = the page's bottom padding (bottom bar + margin)
-  const gridRef = useRef<HTMLDivElement>(null)
+  // The stock head and the chart stay put; the page scrolls only the right column (today's issue slides away,
+  // then the order book and order form line up with the chart). 60px = the page's bottom padding (bottom bar + margin)
+  const headRef = useRef<HTMLDivElement>(null)
+  const [pinTop, setPinTop] = useState(300)
   const [chartH, setChartH] = useState(600)
   useEffect(() => {
     const measure = () => {
-      const el = gridRef.current
-      if (!el) return
-      const top = el.getBoundingClientRect().top + window.scrollY
+      const head = headRef.current
+      if (!head) return
+      const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 60
+      const top = Math.round(headerH + head.getBoundingClientRect().height + 8)
+      setPinTop(top)
       setChartH(Math.max(480, Math.round(window.innerHeight - top - 60)))
     }
     measure()
     const ro = new ResizeObserver(measure)
-    ro.observe(document.body)
+    if (headRef.current) ro.observe(headRef.current)
     window.addEventListener('resize', measure)
     return () => {
       ro.disconnect()
@@ -427,17 +432,20 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
 
   return (
     <>
-      {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
-      <div className="ptabs" role="tablist">
-        {tabs.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
-            {label}
-          </button>
-        ))}
+      <div ref={headRef} className={tab === 'chart' ? 'phead phead--pin' : 'phead'}>
+        {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
+        <div className="ptabs" role="tablist">
+          {tabs.map(([k, label]) => (
+            <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
+              {label}
+            </button>
+          ))}
+      </div>
       </div>
 
+      {tab === 'chart' && <div className="pro-fade" aria-hidden />}
       {tab === 'chart' && (
-        <div className="pro-grid" ref={gridRef} style={{ '--side-w': `${sideW}px`, '--chart-h': `${chartH}px` } as React.CSSProperties}>
+        <div className="pro-grid" style={{ '--side-w': `${sideW}px`, '--chart-h': `${chartH}px`, '--pin-top': `${pinTop}px` } as React.CSSProperties}>
           <section className="panel pro-chart">
             <div className="panel__head">
               <span className="panel__title">차트</span>

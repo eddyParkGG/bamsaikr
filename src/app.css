@@ -33,6 +33,8 @@
 }
 .shell--pro {
   max-width: none;
+  /* The stock head pins right under the top menu: no top padding, so pinned and flowing positions match */
+  padding-top: 0;
 }
 
 /* Top indicators (Toss home: market status line + mini chart cards) */
@@ -254,6 +256,8 @@
   margin-top: 8px;
 }
 .pro-chart {
+  position: sticky;
+  top: var(--pin-top);
   height: var(--chart-h);
 }
 /* Order book + order form: same height as the chart */
@@ -283,6 +287,8 @@
 
 /* Chart ↔ right column resize handle: hidden until hover, 4px key-color bar */
 .split {
+  position: sticky;
+  top: var(--pin-top);
   height: var(--chart-h);
   width: 10px;
   margin-left: -1px;
@@ -324,17 +330,24 @@ body.is-resizing * {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  /* The right column scrolls on its own (the chart stays put): scrolling down slides today's issue away
-     and leaves the order book and order form at the chart's height */
-  height: var(--chart-h);
-  overflow-y: auto;
-  scrollbar-width: none;
 }
-.pro-col::-webkit-scrollbar {
-  display: none;
+/* Chart tab: the stock head stays under the top menu while the page scrolls the right column */
+.phead--pin {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 6;
+  background: var(--bg-screen);
 }
-.pro-col > * {
-  flex-shrink: 0;
+/* Right-column content running past the screen fades into the space above the bottom bar instead of a hard cut */
+.pro-fade {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 36px;
+  height: 24px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--bg-screen));
 }
 .chart-tools {
   display: flex;
@@ -985,9 +998,11 @@ body.is-resizing * {
   .pro-trade {
     height: auto;
   }
-  .pro-col {
-    height: auto;
-    overflow: visible;
+  .phead--pin {
+    position: static;
+  }
+  .pro-fade {
+    display: none;
   }
   .pro-trade .ob2-scroll {
     height: 360px;
@@ -995,6 +1010,7 @@ body.is-resizing * {
   }
   /* One column: the page scrolls normally */
   .pro-chart {
+    position: static;
     --chart-h: clamp(420px, 70vh, 640px);
     height: var(--chart-h);
   }
