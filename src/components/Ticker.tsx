@@ -1,6 +1,7 @@
 import { memo, useEffect } from 'react'
 import type { ArbSnapshot, Status } from '../../shared/api'
 import { fmtPct, tone } from '../lib/format'
+import { arbKind, arbText } from '../lib/arb'
 import { subscribeUsdc } from '../lib/live'
 import { SessionLine, useNow, venuesNow } from '../lib/market'
 
@@ -38,7 +39,7 @@ export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnaps
           <span key={s.asset}>
             <span className="strong">{s.name}</span> <span className="faint">하이퍼리퀴드</span>{' '}
             <span className={tone(s.premiumPct)}>{fmtPct(s.premiumPct)}</span> <span className="faint">· 시세차익</span>{' '}
-            <span className={tone(s.net.netPct)}>{fmtPct(s.net.netPct)}</span>
+            {arbKind(s) === 'go' ? <span className="up">{fmtPct(s.net.netPct)}</span> : <span className="faint">{arbText(s).short}</span>}
           </span>
         ))}
     </footer>
