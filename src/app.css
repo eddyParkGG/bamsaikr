@@ -2142,3 +2142,42 @@ button.ob2__px:active::after {
 :root[data-theme='light'] .hit-yes {
   color: #b8a100;
 }
+
+/* Light theme: order box and filter popover text used dark-only values */
+:root[data-theme='light'] .side-tabs button {
+  color: var(--text-3);
+}
+:root[data-theme='light'] .side-tabs__buy[aria-pressed='true'] {
+  color: var(--up);
+}
+:root[data-theme='light'] .side-tabs__sell[aria-pressed='true'] {
+  color: var(--down);
+}
+:root[data-theme='light'] .order-form .seg button {
+  color: var(--text-3);
+}
+:root[data-theme='light'] .order-form .form-row > span {
+  color: var(--text-2);
+}
+:root[data-theme='light'] .fchip svg {
+  color: var(--text-2);
+}
+:root[data-theme='light'] .fchip--on svg {
+  color: #3182f6;
+}
+:root[data-theme='light'] .fpop {
+  box-shadow: 0 0 0 1px var(--line), 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+:root[data-theme='light'] .fpop__reset {
+  background: var(--fill);
+}
+:root[data-theme='light'] .fpop__reset:disabled {
+  color: var(--text-3);
+}
+:root[data-theme='light'] .search__foot {
+  background: var(--bg-sub);
+}
+:root[data-theme='light'] .kbd-icon,
+:root[data-theme='light'] .kbd-text {
+  color: var(--text-2);
+}

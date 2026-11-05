@@ -29,7 +29,12 @@ export const usePrefs = create<Prefs>()(
       params: DEFAULT_PARAMS,
       setParams: (p) => set((s) => ({ params: { ...s.params, ...p } })),
       setMode: (mode) => set({ mode }),
-      setTheme: (theme) => set({ theme }),
+      // Stamp the attribute before React re-renders, so anything that reads CSS variables
+      // on that render (the chart reads them when it is rebuilt) sees the new theme
+      setTheme: (theme) => {
+        document.documentElement.dataset.theme = theme
+        set({ theme })
+      },
       setInterval: (interval) => set({ interval }),
       toggle: (k) => set((s) => ({ chart: { ...s.chart, [k]: !s.chart[k] } })),
     }),
