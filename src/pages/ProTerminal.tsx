@@ -359,62 +359,56 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-/** Beginner answers on top of the stock screen: "will it open higher?" and "what does the gap pay?" */
-function QuickAnswer({ p, arb }: { p: Prediction | null; arb: ArbSnapshot | null }) {
+/** Beginner answers on top of the stock screen, in the brokerage app's notice-bar style */
+function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnapshot | null; onPredict: () => void }) {
   const net = arb ? Math.round(arb.net.netKrwPer10m) : 0
   const pl = p ? probLabel(p.probUp) : null
+  const chevron = (
+    <svg className="nbar__chev" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M10 7l5 5-5 5" />
+    </svg>
+  )
   return (
     <div className="quick">
-      <div className="quick__cell">
-        <span className="quick__q">내일 아침 가격, 오를까요?</span>
-        {!p ? (
-          <div className="skeleton" style={{ height: 24, width: 200 }} />
-        ) : !predictionReady(p) ? (
-          <p className="quick__a">
-            <b className="muted">장 마감 후 예측해요</b>
-            <span className="faint">
-              <NextOpenWhen at={p.targetOpenAt} />
-            </span>
-          </p>
-        ) : (
-          <p className="quick__a num">
-            <b className={pl!.tone}>
-              {pl!.label} {pl!.value}%
-            </b>
-            <span className="muted">
-              예상 {fmtPrice(p.expectedOpen)}원 <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
-            </span>
-            <span className="faint">
-              지난 {p.backtest.tested}번 중 {Math.round(((p.backtest.hitRatePct ?? 0) * p.backtest.tested) / 100)}번 맞힘
-            </span>
-          </p>
-        )}
-      </div>
-      <div className="quick__cell">
-        <span className="quick__q">지금 시세차익 기회 · 1천만원 기준</span>
-        {!arb ? (
-          <div className="skeleton" style={{ height: 24, width: 200 }} />
-        ) : (
-          <p className="quick__a num">
-            {arb.mode === 'gap' ? (
-              <b className="muted">장 열리면 확인할 수 있어요</b>
-            ) : net > 0 && arb.net.executable ? (
-              <b className="up">약 {fmtWon(net)}원 남아요</b>
-            ) : (
-              <b className="muted">지금은 비용이 더 커요</b>
-            )}
-            <span className="faint">
-              차이 {fmtPct(arb.premiumPct)} · 비용 뺀 {fmtPct(arb.net.netPct)}
-            </span>
-            <button className="quick__link" onClick={() => window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}>
-              시세차익 실행
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M9 6l6 6-6 6" />
-              </svg>
-            </button>
-          </p>
-        )}
-      </div>
+      <button className="nbar" onClick={onPredict}>
+        <span className="nbar__label">내일 예측</span>
+        <i className="nbar__sep" />
+        <span className="nbar__text num" data-fit>
+          {!p ? (
+            '불러오는 중'
+          ) : !predictionReady(p) ? (
+            <>
+              장 마감 후 예측해요 · <NextOpenWhen at={p.targetOpenAt} />
+            </>
+          ) : (
+            <>
+              <b className={pl!.tone}>
+                {pl!.label} {pl!.value}%
+              </b>{' '}
+              · 예상 {fmtPrice(p.expectedOpen)}원 <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
+            </>
+          )}
+        </span>
+        {chevron}
+      </button>
+      <button className="nbar" onClick={() => window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}>
+        <span className="nbar__label">시세차익</span>
+        <i className="nbar__sep" />
+        <span className="nbar__text num" data-fit>
+          {!arb ? (
+            '불러오는 중'
+          ) : arb.mode === 'gap' ? (
+            '장 열리면 확인할 수 있어요'
+          ) : net > 0 && arb.net.executable ? (
+            <>
+              1천만원 기준 <b className="up">약 {fmtWon(net)}원</b> 남아요 · 실행하기
+            </>
+          ) : (
+            <>지금은 비용이 더 커요 · 비용 뺀 {fmtPct(arb.net.netPct)}</>
+          )}
+        </span>
+        {chevron}
+      </button>
     </div>
   )
 }
@@ -461,7 +455,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   return (
     <>
       {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
-      {asset.kind === 'stock' && <QuickAnswer p={pred.data ?? null} arb={arb} />}
+      {asset.kind === 'stock' && <QuickAnswer p={pred.data ?? null} arb={arb} onPredict={() => setTab('predict')} />}
       <div className="ptabs" role="tablist">
         {tabs.map(([k, label]) => (
           <button

@@ -2208,56 +2208,65 @@ button.ob2__px:active::after {
   flex-shrink: 0;
 }
 
-/* Stock screen top: the two beginner answers */
+/* Stock screen top: two notice bars (brokerage notice-bar values: 38px, radius 8, blue label, divider) */
 .quick {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin: 0 0 10px;
 }
-.quick__cell {
+.nbar {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 16px;
-  border-radius: var(--r-item);
-  background: var(--bg);
-  box-shadow: var(--shadow-panel);
+  align-items: center;
+  height: 38px;
+  padding: 6px 4px 6px 12px;
+  border-radius: 8px;
+  background: rgba(217, 217, 255, 0.11);
+  text-align: left;
   min-width: 0;
 }
-.quick__q {
-  font-size: 13px;
-  font-weight: 500;
+:root[data-theme='light'] .nbar {
+  background: var(--fill);
+}
+.nbar__label {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-2);
 }
-.quick__a {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 14px;
+.nbar__sep {
+  flex-shrink: 0;
+  width: 1px;
+  height: 16px;
+  margin: 0 10px;
+  background: var(--line-strong);
 }
-.quick__a b {
-  font-size: 18px;
+.nbar__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.nbar__text b {
   font-weight: 700;
 }
-.quick__a .faint {
-  font-size: 13px;
-}
-.quick__link {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-2);
-}
-.quick__link:hover {
-  color: var(--text);
+.nbar__chev {
+  flex-shrink: 0;
+  color: #62626d;
 }
 @media (max-width: 720px) {
   .quick {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* Stock header: fixed-width name/price block so the stat strip never shifts as digits change */
+.stock-head__id {
+  flex: 0 0 340px;
+  max-width: 100%;
+}
+.stock-head__price,
+.stats dd {
+  font-variant-numeric: tabular-nums;
 }

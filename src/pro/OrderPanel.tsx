@@ -245,14 +245,14 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null;
         ]
       : [['perp', '하이퍼리퀴드']]
   useEffect(() => setTab(asset.kind === 'stock' ? 'krx' : 'perp'), [asset.id, asset.kind])
-  // "시세차익 실행" on the top summary opens the pair tab and brings the panel into view
+  // "시세차익" on the top bar opens the pair tab and scrolls to the bottom so the whole order panel shows
   const panelRef = useRef<HTMLElement>(null)
   useEffect(() => {
     const on = (e: Event) => {
       const t = (e as CustomEvent<Tab>).detail
       if (t === 'pair' && asset.kind !== 'stock') return
       setTab(t)
-      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
     }
     window.addEventListener('bamsai:order-tab', on)
     return () => window.removeEventListener('bamsai:order-tab', on)
