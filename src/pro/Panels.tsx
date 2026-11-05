@@ -1,7 +1,8 @@
-import { memo, useState } from 'react'
-import type { OpenEvent, Prediction } from '../../shared/api'
+import { memo, useEffect, useRef, useState } from 'react'
+import type { ArbSnapshot, OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
-import { fmtPct, fmtPrice, kstDay, tone, untilText } from '../lib/format'
+import { fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
+import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
 import { InSessionNotice, predictionReady } from '../components/NextOpenState'
 
@@ -16,7 +17,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           <span className="panel__title">다음 장 시작 가격</span>
           <span className="spacer" />
           <span className="faint" style={{ fontSize: 12 }}>
-            {kstDay(p.targetOpenAt)} 09:00 · {untilText(p.targetOpenAt)}
+            <NextOpenWhen at={p.targetOpenAt} />
           </span>
         </div>
         <div className="panel__body">
@@ -115,6 +116,68 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
   )
 })
 
+/** Brokerage-style filter chip: opens a popover with options, applies on 보기 */
+function FilterChip({ label, options, value, onApply }: { label: string; options: [string, string][]; value: string; onApply: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    setDraft(value)
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', close)
+    window.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      window.removeEventListener('keydown', esc)
+    }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  const current = options.find(([v]) => v === value)?.[1]
+  return (
+    <div className="fchip-wrap" ref={ref}>
+      <button className={`fchip ${value ? 'fchip--on' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)}>
+        {current ? `${label} · ${current}` : label}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div className="fpop" role="dialog" aria-label={label}>
+          <p className="fpop__title">{label}</p>
+          <div className="fpop__list" role="radiogroup">
+            {options.map(([v, l]) => (
+              <button key={v} role="radio" aria-checked={draft === v} className="fpop__opt" onClick={() => setDraft(draft === v ? '' : v)}>
+                {l}
+                {draft === v && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="fpop__foot">
+            <button className="fpop__reset" disabled={!draft} onClick={() => setDraft('')}>
+              초기화
+            </button>
+            <button
+              className="fpop__apply"
+              disabled={draft === value}
+              onClick={() => {
+                onApply(draft)
+                setOpen(false)
+              }}
+            >
+              보기
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** 17 → "17시간", 65 → "2일 17시간" */
 function hoursText(h: number) {
   const r = Math.round(h)
@@ -122,18 +185,17 @@ function hoursText(h: number) {
   return `${Math.floor(r / 24)}일${r % 24 ? ` ${r % 24}시간` : ''}`
 }
 
-const meetText = (m: number) => (m > 0.66 ? '주식이 따라감' : m < 0.34 ? '하이퍼리퀴드가 맞춤' : '가운데')
+const meetText = (m: number) => (m > 0.66 ? '주식이 따라감' : m < 0.34 ? '하이퍼리퀴드가 맞춤' : '가운데서 만남')
 
 type Filters = { regime: string; gap: string; open: string; absorb: string; meet: string; hit: string }
 const ALL: Filters = { regime: '', gap: '', open: '', absorb: '', meet: '', hit: '' }
 
-const COLS: { key: keyof Filters | 'date'; label: string; title?: string; options?: [string, string][] }[] = [
-  { key: 'date', label: '개장일' },
+const FILTERS: { key: keyof Filters; label: string; options: [string, string][] }[] = [
   { key: 'regime', label: '닫혀 있던 시간', options: [['overnight', '평일 밤'], ['weekend', '주말 · 연휴']] },
   { key: 'gap', label: '하이퍼리퀴드 차이', options: [['up', '올라 있었음'], ['down', '내려 있었음'], ['big', '1% 넘게 벌어짐']] },
   { key: 'open', label: '실제 시작 차이', options: [['up', '올라서 시작'], ['down', '내려서 시작']] },
-  { key: 'absorb', label: '따라간 정도', title: '실제 차이 ÷ 하이퍼리퀴드 차이. 100%면 하이퍼리퀴드가 보여준 그대로 시작', options: [['80', '80% 이상'], ['50', '50~80%'], ['low', '50% 미만']] },
-  { key: 'meet', label: '만난 지점', title: '장 시작 후 1시간 동안 두 가격이 어디서 만났는지', options: [['stock', '주식이 따라감'], ['mid', '가운데'], ['perp', '하이퍼리퀴드가 맞춤']] },
+  { key: 'absorb', label: '따라간 정도', options: [['80', '80% 이상'], ['50', '50~80%'], ['low', '50% 미만']] },
+  { key: 'meet', label: '만난 지점', options: [['stock', '주식이 따라감'], ['mid', '가운데서 만남'], ['perp', '하이퍼리퀴드가 맞춤']] },
   { key: 'hit', label: '예측', options: [['hit', '맞음'], ['miss', '틀림']] },
 ]
 
@@ -167,52 +229,27 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
   const [f, setF] = useState<Filters>(ALL)
   if (!q.data) return <div className="skeleton" style={{ height: 240, margin: 16 }} />
   const rows = q.data.events.filter((e) => pass(e, f))
-  const active = Object.values(f).some(Boolean)
   const hits = rows.filter((e) => e.hit != null)
   return (
     <>
-      <div className="conv-sum">
-        <span>
-          <b className="strong">{rows.length}</b>번의 개장
-        </span>
-        {hits.length > 0 && (
-          <span>
-            예측 적중 <b className="strong">{Math.round((hits.filter((e) => e.hit).length / hits.length) * 100)}%</b>
-          </span>
-        )}
-        <span className="spacer" />
-        {active && (
-          <button className="chip" onClick={() => setF(ALL)}>
-            필터 초기화
-          </button>
-        )}
+      <div className="fbar">
+        {FILTERS.map((x) => (
+          <FilterChip key={x.key} label={x.label} options={x.options} value={f[x.key]} onApply={(v) => setF({ ...f, [x.key]: v })} />
+        ))}
       </div>
       <div className="table-wrap table-wrap--sticky" style={{ padding: '0 4px 8px' }}>
         <table className="table num">
           <thead>
             <tr>
-              {COLS.map((c) => (
-                <th key={c.key} title={c.title}>
-                  {c.options ? (
-                    <label className={`th-filter ${f[c.key as keyof Filters] ? 'th-filter--on' : ''}`}>
-                      <select value={f[c.key as keyof Filters]} onChange={(e) => setF({ ...f, [c.key]: e.target.value })} aria-label={`${c.label} 필터`}>
-                        <option value="">{c.label}</option>
-                        {c.options.map(([v, l]) => (
-                          <option key={v} value={v}>
-                            {l}
-                          </option>
-                        ))}
-                      </select>
-                      <span>{f[c.key as keyof Filters] ? c.options.find(([v]) => v === f[c.key as keyof Filters])?.[1] : c.label}</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </label>
-                  ) : (
-                    c.label
-                  )}
-                </th>
-              ))}
+              <th>
+                개장일 · {rows.length}개{hits.length > 0 && ` · 적중 ${Math.round((hits.filter((e) => e.hit).length / hits.length) * 100)}%`}
+              </th>
+              <th>닫혀 있던 시간</th>
+              <th>하이퍼리퀴드 차이</th>
+              <th>실제 시작 차이</th>
+              <th title="실제 차이 ÷ 하이퍼리퀴드 차이. 100%면 하이퍼리퀴드가 보여준 그대로 시작">따라간 정도</th>
+              <th title="장 시작 후 1시간 동안 두 가격이 어디서 만났는지">만난 지점</th>
+              <th>예측</th>
             </tr>
           </thead>
           <tbody>
@@ -230,14 +267,14 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                     <span className="faint">-</span>
                   ) : (
                     <span className="meet" title="왼쪽 = 하이퍼리퀴드가 주식 쪽으로, 오른쪽 = 주식이 하이퍼리퀴드 쪽으로">
+                      <span className="meet__label">{meetText(e.meetPoint)}</span>
                       <span className="meet__track">
                         <i style={{ left: `${e.meetPoint * 100}%` }} />
                       </span>
-                      <span className="faint">{meetText(e.meetPoint)}</span>
                     </span>
                   )}
                 </td>
-                <td>{e.hit == null ? '' : e.hit ? <span className="up">맞음</span> : <span className="down">틀림</span>}</td>
+                <td>{e.hit == null ? '' : e.hit ? <span className="hit-yes">맞음</span> : <span className="faint">틀림</span>}</td>
               </tr>
             ))}
             {rows.length === 0 && (
@@ -256,11 +293,13 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
 
 interface Flows {
   available: boolean
-  investors: { date: string; individual: number | null; foreign: number | null; institution: number | null }[]
+  investors: { date: string; individual: number | null; foreign: number | null; institution: number | null; close: number | null }[]
 }
 
 export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) {
   const q = useQuery<Flows>(`/api/v1/flows?asset=${asset.id}`, 60_000)
+  const arbQ = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 5000)
+  const livePx = arbQ.data?.items.find((x) => x.asset === asset.id)?.krx.price ?? null
   if (!q.data) return <div className="skeleton" style={{ height: 160, margin: 16 }} />
   if (!q.data.available)
     return (
@@ -285,11 +324,22 @@ export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) 
               <td>
                 {+d.date.slice(4, 6)}/{+d.date.slice(6, 8)}
               </td>
-              {[d.individual, d.foreign, d.institution].map((v, i) => (
-                <td key={i} className={v == null ? 'faint' : tone(v)}>
-                  {v == null ? '집계 전' : `${v > 0 ? '+' : ''}${v.toLocaleString('ko-KR')}주`}
-                </td>
-              ))}
+              {[d.individual, d.foreign, d.institution].map((v, i) => {
+                // Today's close is not final yet: value it at the live price
+                const px = d.close ?? (d === q.data!.investors[0] ? livePx : null)
+                const won = v != null && px ? v * px : null
+                return (
+                  <td key={i} className={v == null ? 'faint' : tone(v)}>
+                    {v == null ? '집계 전' : `${v > 0 ? '+' : ''}${v.toLocaleString('ko-KR')}주`}
+                    {won != null && (
+                      <span className="flow-won">
+                        {won > 0 ? '+' : won < 0 ? '-' : ''}
+                        {fmtWonUnit(Math.abs(won))}원
+                      </span>
+                    )}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>

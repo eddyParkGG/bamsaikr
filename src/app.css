@@ -759,9 +759,15 @@ body.is-resizing * {
   background: var(--fill);
 }
 .meet {
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: 112px 64px;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+.meet__label {
+  color: var(--text-3);
+  text-align: right;
+  white-space: nowrap;
 }
 .meet__track {
   position: relative;
@@ -1728,17 +1734,9 @@ body.is-resizing * {
   font-weight: 600;
 }
 
-/* Convergence history: summary line, sticky header, per-column filters */
-.conv-sum {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 4px 16px 8px;
-  font-size: 13px;
-  color: var(--text-2);
-}
+/* Convergence history: sticky header + brokerage-style filter chips */
 .table-wrap--sticky {
-  max-height: calc(100vh - 240px);
+  max-height: calc(100vh - 260px);
   overflow: auto;
 }
 .table-wrap--sticky thead th {
@@ -1748,31 +1746,114 @@ body.is-resizing * {
   background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--line);
 }
-.th-filter {
+.fbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 16px 12px;
+}
+.fchip-wrap {
   position: relative;
+}
+.fchip {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 6px;
-  margin: -3px -6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.th-filter:hover {
-  background: var(--fill);
-  color: var(--text-2);
-}
-.th-filter--on {
-  color: var(--text);
-  background: var(--fill);
-}
-.th-filter select {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+  gap: 4px;
+  height: 28px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: rgba(214, 224, 239, 0.09);
+  box-shadow: inset 0 0 0 0.5px rgba(209, 209, 253, 0.05);
   font-size: 13px;
+  font-weight: 600;
+  color: rgba(242, 246, 255, 0.9);
+  white-space: nowrap;
 }
+.fchip svg {
+  color: rgba(217, 223, 235, 0.8);
+}
+.fchip--on,
+.fchip--on svg {
+  background: rgba(67, 122, 223, 0.2);
+  color: #4391ff;
+}
+:root[data-theme='light'] .fchip {
+  background: var(--fill);
+  color: var(--text);
+}
+:root[data-theme='light'] .fchip--on {
+  background: #e8f3ff;
+  color: #3182f6;
+}
+.fpop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  width: 320px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--bg-float);
+  box-shadow: 0 0 0 1px rgba(222, 222, 255, 0.19), 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+.fpop__title {
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.fpop__list {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 16px;
+}
+.fpop__opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  padding: 8px 8px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-body);
+  text-align: left;
+}
+.fpop__opt:hover {
+  background: var(--fill);
+}
+.fpop__opt[aria-checked='true'] {
+  color: var(--text);
+}
+.fpop__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.fpop__foot button {
+  height: 32px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.fpop__reset {
+  background: rgba(217, 217, 255, 0.11);
+  color: var(--text-body);
+}
+.fpop__reset:disabled {
+  color: rgba(224, 224, 255, 0.27);
+  cursor: default;
+}
+.fpop__apply {
+  background: var(--key);
+  color: var(--on-key);
+}
+.fpop__apply:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 
 /* Indicator menu: basis note + "?" help with hover tooltip */
 .menu__pop {
@@ -2060,4 +2141,20 @@ button.ob2__px:active::after {
 .back-btn {
   align-self: flex-start;
   width: fit-content;
+}
+
+/* Investor flows: won amount under the share count, same sign colour but lighter */
+.flow-won {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.6;
+}
+/* Prediction result: key colour for a hit, faint for a miss */
+.hit-yes {
+  color: var(--key);
+}
+:root[data-theme='light'] .hit-yes {
+  color: #b8a100;
 }

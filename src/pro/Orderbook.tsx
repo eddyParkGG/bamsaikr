@@ -153,9 +153,9 @@ const SESSION_TEXT = { regular: '정규장', nxt: '넥스트레이드', closed: 
 function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const krxOk = hasKrx(asset)
   const pickPrice = useTicket((s) => s.pickPrice)
-  const [tab, setTab] = useState<Tab>('perp')
+  const [tab, setTab] = useState<Tab>(krxOk ? 'krx' : 'perp')
   const [unit, setUnit] = useState<'krw' | 'usd'>('krw')
-  useEffect(() => setTab('perp'), [asset.id])
+  useEffect(() => setTab(krxOk ? 'krx' : 'perp'), [asset.id, krxOk])
   useEffect(() => subscribeHl({ type: 'l2Book', coin: asset.perp }), [asset.perp])
   useEffect(() => subscribeHl({ type: 'trades', coin: asset.perp }), [asset.perp])
   useEffect(() => (krxOk ? subscribeKrx(asset.id, asset.krxCode) : undefined), [asset, krxOk])
@@ -216,11 +216,11 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
         )}
         {krxOk && (
           <div className="seg" role="group" aria-label="호가 시장" style={{ width: 150 }}>
-            <button aria-pressed={tab === 'perp'} onClick={() => setTab('perp')}>
-              하이퍼리퀴드
-            </button>
             <button aria-pressed={tab === 'krx'} onClick={() => setTab('krx')}>
               {asset.kind === 'stock' ? '정규장' : '국내'}
+            </button>
+            <button aria-pressed={tab === 'perp'} onClick={() => setTab('perp')}>
+              하이퍼리퀴드
             </button>
           </div>
         )}

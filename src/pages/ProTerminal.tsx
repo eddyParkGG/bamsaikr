@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { InSessionNotice, predictionReady } from '../components/NextOpenState'
+import { InSessionNotice, NextOpenWhen, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction, Status } from '../../shared/api'
 import { canPredict, hasKrx, type Asset } from '../../shared/assets'
 import { openSearch, type PerpQuote } from '../components/AssetSearch'
@@ -9,7 +9,7 @@ import { NewsSheet } from '../components/NewsSheet'
 import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtUsd, fmtUsdCompact, kstDay, tone, untilText } from '../lib/format'
+import { fmtPct, fmtPrice, fmtUsd, fmtUsdCompact, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
@@ -361,7 +361,7 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
         <span className="panel__title">다음 장 시작 가격</span>
         <span className="spacer" />
         <span className="faint" style={{ fontSize: 12 }}>
-          {kstDay(p.targetOpenAt)} 09:00 · {untilText(p.targetOpenAt)}
+          <NextOpenWhen at={p.targetOpenAt} />
         </span>
       </div>
       <div className="panel__body">

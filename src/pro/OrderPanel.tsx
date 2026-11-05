@@ -235,16 +235,16 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
 }
 
 function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null; liveKrx?: boolean }) {
-  const [tab, setTab] = useState<Tab>('perp')
+  const [tab, setTab] = useState<Tab>(asset.kind === 'stock' ? 'krx' : 'perp')
   const tabs: [Tab, string][] =
     asset.kind === 'stock'
       ? [
+          ['krx', '정규장'],
           ['perp', '하이퍼리퀴드'],
-          ['krx', '국내 주식'],
           ['pair', '시세차익'],
         ]
       : [['perp', '하이퍼리퀴드']]
-  useEffect(() => setTab('perp'), [asset.id])
+  useEffect(() => setTab(asset.kind === 'stock' ? 'krx' : 'perp'), [asset.id, asset.kind])
   // A price picked in the order book opens the matching order tab
   const pick = useTicket((s) => s.pick)
   useEffect(() => {

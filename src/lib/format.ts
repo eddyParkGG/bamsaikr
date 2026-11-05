@@ -75,3 +75,12 @@ export function leftText(ms: number) {
   const h = Math.floor(m / 60)
   return h ? `${h}시간${m % 60 ? ` ${m % 60}분` : ''}` : `${m}분`
 }
+
+/** Large won amounts in Korean units: 1.2조, 3,450억, 120만 */
+export function fmtWonUnit(v: number) {
+  const a = Math.abs(v)
+  if (a >= 1e12) return `${(v / 1e12).toFixed(a >= 1e13 ? 1 : 2)}조`
+  if (a >= 1e8) return `${Math.round(v / 1e8).toLocaleString('ko-KR')}억`
+  if (a >= 1e4) return `${Math.round(v / 1e4).toLocaleString('ko-KR')}만`
+  return Math.round(v).toLocaleString('ko-KR')
+}

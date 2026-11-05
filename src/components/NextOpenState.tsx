@@ -1,7 +1,9 @@
 // Single source of truth for "is the next-open prediction meaningful right now?".
 // Every surface (easy list, easy detail, pro mini panel, pro prediction tab) uses this, so the
 // in-session behaviour and copy can never drift between modes.
-import type { Prediction } from '../../shared/api'
+import type { Prediction, Status } from '../../shared/api'
+import { kstDay, leftText, regularCloseAt, untilText } from '../lib/format'
+import { useQuery } from '../lib/query'
 
 /** During regular hours both markets trade and perp just tracks KRX, so there is no signal yet */
 export const predictionReady = (p: Prediction | null | undefined) => !!p && p.status !== 'in-session'
@@ -25,5 +27,16 @@ export function InSessionNotice({ compact = false }: { compact?: boolean }) {
       <p className="in-session__title">{IN_SESSION.title}</p>
       <p className="in-session__body">{IN_SESSION.body}</p>
     </div>
+  )
+}
+
+/** "When" line next to a forecast: time left to today's close during the regular session, else the next open */
+export function NextOpenWhen({ at, long = false }: { at: number; long?: boolean }) {
+  const status = useQuery<Status>('/api/v1/status', 60_000).data
+  if (status?.session === 'regular') return <>장 마감까지 {leftText(regularCloseAt())}</>
+  return (
+    <>
+      {kstDay(at)} {long ? '오전 9시 개장' : '09:00'} · {untilText(at)}
+    </>
   )
 }

@@ -2,6 +2,7 @@ import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
 import { streamSSE } from 'hono/streaming'
 import { subscribeKrx } from './sources/tossWs.js'
+import { regularSessions } from './sources/krxSessions.js'
 import { ASSET_BY_ID, ASSETS, canPredict, hasKrx, isAssetId, PREDICTABLE, type Asset } from '../shared/assets.js'
 import { nextRegularOpen, prevRegularClose, sessionAt } from '../shared/session.js'
 import { TossError, tossEnabled, tossInvestors } from './sources/toss.js'
@@ -174,7 +175,11 @@ v1.get('/flows', async (c) => {
   const asset = assetOf(c)
   c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
   if (!hasKrx(asset)) return c.json({ investors: [], available: false })
-  return c.json({ investors: await tossInvestors(asset.krxCode), available: true })
+  const investors = await tossInvestors(asset.krxCode)
+  // KRX regular-session close of each day, to show the flows in won as well as shares
+  const from = investors.map((d) => d.date).sort()[0]
+  const closes = new Map((from ? await regularSessions(asset.krxCode, from) : []).map((x) => [x.date, x.close]))
+  return c.json({ investors: investors.map((d) => ({ ...d, close: closes.get(d.date) ?? null })), available: true })
 })
 
 // Domestic live trades/orderbook (Toss Securities WebSocket relay, SSE). The browser reconnects automatically after the max function duration

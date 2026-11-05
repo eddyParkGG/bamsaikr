@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { IN_SESSION, predictionReady } from '../components/NextOpenState'
+import { IN_SESSION, NextOpenWhen, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartSeries, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { PERP_PLAIN, probLabel, verdict } from '../easy/copy'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtWon, kstDay, openDayText, tone, untilText } from '../lib/format'
+import { fmtPct, fmtPrice, fmtWon, openDayText, tone } from '../lib/format'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
 import { SessionBadge } from '../components/SessionBadge'
@@ -244,7 +244,7 @@ function StockDetail({ asset }: { asset: Asset }) {
               </div>
             )}
             <p className="faint" style={{ fontSize: 13, margin: '12px 0 0' }}>
-              {kstDay(p.targetOpenAt)} 오전 9시 개장 · {untilText(p.targetOpenAt)}
+              <NextOpenWhen at={p.targetOpenAt} long />
             </p>
           </>
         ) : (
