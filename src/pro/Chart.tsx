@@ -319,11 +319,10 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
   )
 }
 
-/** News tooltip date: 'M/D (요일)', the whole date in red on weekends */
+/** News tooltip date: 'M/D (요일)', one colour for every day (red read like 'buy' or 'important') */
 function tipDate(key: string) {
   const p = dateKeyParts(key)
-  const text = `${p.md} (${p.dow})`
-  return p.weekend ? `<span class="dow--weekend">${text}</span>` : text
+  return `${p.md} (${p.dow})`
 }
 
 export const Chart = memo(ChartImpl)
