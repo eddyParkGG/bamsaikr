@@ -409,6 +409,14 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   // The stock head and the chart stay put; the page scrolls only the right column (today's issue slides away,
   // then the order book and order form line up with the chart). 60px = the page's bottom padding (bottom bar + margin)
   const headRef = useRef<HTMLDivElement>(null)
+  // Right-column content sliding under the stock head fades out instead of a hard cut (only once scrolled)
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 2)
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
   const [pinTop, setPinTop] = useState(300)
   const [chartH, setChartH] = useState(600)
   useEffect(() => {
@@ -444,6 +452,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       </div>
 
       {tab === 'chart' && <div className="pro-fade" aria-hidden />}
+      {tab === 'chart' && <div className={scrolled ? 'pro-topfade is-on' : 'pro-topfade'} style={{ '--pin-top': `${pinTop}px`, '--side-w': `${sideW}px` } as React.CSSProperties} aria-hidden />}
       {tab === 'chart' && (
         <div className="pro-grid" style={{ '--side-w': `${sideW}px`, '--chart-h': `${chartH}px`, '--pin-top': `${pinTop}px` } as React.CSSProperties}>
           <section className="panel pro-chart">

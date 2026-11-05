@@ -338,6 +338,22 @@ body.is-resizing * {
   z-index: 6;
   background: var(--bg-screen);
 }
+/* Same at the top: the right column fades as it slides under the pinned stock head */
+.pro-topfade {
+  position: fixed;
+  top: calc(var(--pin-top) - 8px);
+  right: 24px;
+  width: var(--side-w);
+  height: 28px;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--bg-screen), transparent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pro-topfade.is-on {
+  opacity: 1;
+}
 /* Right-column content running past the screen fades into the space above the bottom bar instead of a hard cut */
 .pro-fade {
   position: fixed;
@@ -1001,7 +1017,8 @@ body.is-resizing * {
   .phead--pin {
     position: static;
   }
-  .pro-fade {
+  .pro-fade,
+  .pro-topfade {
     display: none;
   }
   .pro-trade .ob2-scroll {
