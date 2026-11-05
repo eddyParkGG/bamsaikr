@@ -62,3 +62,16 @@ export function openDayText(ms: number) {
   if (days === 1) return '내일'
   return `${DOW[d.getUTCDay()]}요일`
 }
+
+/** Today's KRX regular-session close (15:30 KST) as epoch ms */
+export function regularCloseAt(now = Date.now()) {
+  const d = new Date(now + KST)
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 15, 30) - KST
+}
+
+/** Remaining time without the trailing '뒤': '2시간 10분', '25분' */
+export function leftText(ms: number) {
+  const m = Math.max(0, Math.ceil((ms - Date.now()) / 60_000))
+  const h = Math.floor(m / 60)
+  return h ? `${h}시간${m % 60 ? ` ${m % 60}분` : ''}` : `${m}분`
+}

@@ -4,7 +4,7 @@ import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
 import { probLabel, verdict, PERP_PLAIN } from '../easy/copy'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtWon, kstDay, openDayText, untilText } from '../lib/format'
+import { fmtPct, fmtPrice, fmtWon, kstDay, leftText, openDayText, regularCloseAt, untilText } from '../lib/format'
 import { useQuery } from '../lib/query'
 import { Link } from '../lib/router'
 import { StockLogo } from '../components/Brand'
@@ -21,7 +21,7 @@ function StatusLine({ s }: { s?: Status }) {
         : `국내 주식시장은 닫혀 있어요. ${PERP_PLAIN}는 지금도 거래 중이에요`
   return (
     <p>
-      {msg} · 다음 개장 {kstDay(s.nextOpen)} 오전 9시 ({untilText(s.nextOpen)})
+      {msg} · {s.session === 'regular' ? `장 마감까지 ${leftText(regularCloseAt())}` : `다음 개장 ${kstDay(s.nextOpen)} 오전 9시 (${untilText(s.nextOpen)})`}
     </p>
   )
 }
