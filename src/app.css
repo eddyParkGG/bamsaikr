@@ -1017,10 +1017,12 @@ body.is-resizing * {
     flex-wrap: wrap;
     gap: 4px;
   }
+  /* Own full-width line under the tabs, whatever room is left beside them */
   .ptabs-row .issue-inline {
+    flex: 1 1 100%;
     margin-left: 0;
     max-width: 100%;
-    padding: 0 4px;
+    padding: 0 16px;
   }
   /* Chart toolbar stays on one line and scrolls sideways; the background legend is left out */
   .pro-chart .chart-tools {
@@ -1624,22 +1626,22 @@ body.is-resizing * {
   pointer-events: none;
 }
 .ob2__info div {
+  /* Narrow column: the whole row (label + value) shrinks to fit (data-fit) instead of cutting off */
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 6px;
+  overflow: hidden;
 }
 .ob2__info dt {
+  flex-shrink: 0;
   color: var(--text-3);
   white-space: nowrap;
 }
 .ob2__info dd {
-  /* Narrow column: the value shrinks to fit (data-fit) before it would ever be cut */
-  flex: 1;
+  flex-shrink: 0;
   text-align: right;
   margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--text-body);
   white-space: nowrap;
 }
@@ -2501,6 +2503,8 @@ body {
   flex: 1;
   min-height: 0;
   max-height: none;
+  /* 1px in from the panel's edge: the panel border is an inset shadow that the sticky header's background would paint over */
+  margin: 0 1px 1px;
   /* Room for the fade below the last row, so at the end of the scroll nothing stays covered */
   padding-bottom: 36px !important;
 }
@@ -2516,8 +2520,6 @@ body {
   background: linear-gradient(to bottom, transparent, var(--bg));
 }
 @media (max-width: 1100px) {
-  /* 1px in from the panel's edge: the panel border is an inset shadow that the sticky header's background would paint over */
-  margin: 0 1px 1px;
   .panel--fill {
     height: auto !important;
   }

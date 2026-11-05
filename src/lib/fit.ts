@@ -1,4 +1,4 @@
-// Auto-size: any element with [data-fit] shrinks its font (down to 70%) instead of wrapping or overflowing.
+// Auto-size: any element with [data-fit] shrinks its font (down to 70%, or [data-fit-min]) instead of wrapping or overflowing.
 // One global observer keeps it in sync as numbers stream in or the layout resizes.
 const MIN_SCALE = 0.7
 
@@ -7,10 +7,11 @@ function fit(el: HTMLElement) {
   el.dataset.fitBase = String(base)
   el.style.fontSize = ''
   if (el.scrollWidth <= el.clientWidth + 0.5) return
-  let size = base * Math.max(MIN_SCALE, el.clientWidth / el.scrollWidth)
+  const min = Number(el.dataset.fitMin) || MIN_SCALE
+  let size = base * Math.max(min, el.clientWidth / el.scrollWidth)
   el.style.fontSize = `${size}px`
   // One refinement pass for rounding/letter-spacing
-  while (el.scrollWidth > el.clientWidth + 0.5 && size > base * MIN_SCALE) {
+  while (el.scrollWidth > el.clientWidth + 0.5 && size > base * min) {
     size -= 0.5
     el.style.fontSize = `${size}px`
   }
@@ -32,7 +33,9 @@ export function initFit() {
   const resize = new ResizeObserver((entries) => entries.forEach((e) => schedule(e.target as HTMLElement)))
   const watched = new WeakSet<Element>()
   const scan = (root: ParentNode) => {
-    root.querySelectorAll<HTMLElement>('[data-fit]').forEach((el) => {
+    // The added node itself may be the one to fit, not only its descendants
+    const self = root instanceof HTMLElement && root.matches('[data-fit]') ? [root] : []
+    ;[...self, ...root.querySelectorAll<HTMLElement>('[data-fit]')].forEach((el) => {
       if (!watched.has(el)) {
         watched.add(el)
         resize.observe(el)

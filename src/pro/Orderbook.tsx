@@ -121,11 +121,9 @@ function Book({
           {/* Day stats beside the asks, recent trades beside the bids */}
           <dl className="ob2__info" style={{ height: a.length * 40 }}>
             {info.rows.map(([k, v, c]) => (
-              <div key={k}>
+              <div key={k} data-fit data-fit-min="0.6">
                 <dt>{k}</dt>
-                <dd className={c} data-fit>
-                  {v}
-                </dd>
+                <dd className={c}>{v}</dd>
               </div>
             ))}
           </dl>
@@ -195,7 +193,7 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
       ['펀딩', ctx ? `${(ctx.funding * 100).toFixed(4)}%` : '-', ctx ? tone(ctx.funding) : ''],
       ['미결제', pq && rate ? `${fmtWonUnit(pq.openInterest * (ctx?.mid ?? pq.mid) * rate)}원` : '-'],
       ['거래대금', pq && rate ? `${fmtWonUnit(pq.volume24hUsd * rate)}원` : '-'],
-      ['레버리지', pq ? `최대 ${pq.maxLeverage}배` : '-'],
+      ['최대 배율', pq ? `${pq.maxLeverage}배` : '-'],
     ],
   }
   const k = arb?.krx
