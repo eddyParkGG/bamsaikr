@@ -23,9 +23,23 @@ interface LiveState {
   hlConnected: boolean
   krxBook: Record<string, { asks: Level[]; bids: Level[]; t: number }>
   krxTrade: Record<string, { price: number; volume: number; t: number }>
+  /** Recent trades per Hyperliquid coin or KRX code, newest first */
+  tape: Record<string, Trade[]>
 }
 
-export const useLive = create<LiveState>(() => ({ ctx: {}, book: {}, candle: {}, usdc: null, hlConnected: false, krxBook: {}, krxTrade: {} }))
+export interface Trade {
+  px: number
+  sz: number
+  buy: boolean | null // aggressor side; null when the feed does not say
+  t: number
+}
+const TAPE = 30
+function pushTape(p: Partial<LiveState>, key: string, trades: Trade[]) {
+  const cur = p.tape?.[key] ?? useLive.getState().tape[key] ?? []
+  ;(p.tape ??= {})[key] = [...trades, ...cur].slice(0, TAPE)
+}
+
+export const useLive = create<LiveState>(() => ({ ctx: {}, book: {}, candle: {}, usdc: null, hlConnected: false, krxBook: {}, krxTrade: {}, tape: {} }))
 
 let pending: Partial<LiveState> = {}
 let raf = 0
@@ -43,6 +57,7 @@ function queue(patch: (p: typeof pending) => void) {
         candle: p.candle ? { ...s.candle, ...p.candle } : s.candle,
         krxBook: p.krxBook ? { ...s.krxBook, ...p.krxBook } : s.krxBook,
         krxTrade: p.krxTrade ? { ...s.krxTrade, ...p.krxTrade } : s.krxTrade,
+        tape: p.tape ? { ...s.tape, ...p.tape } : s.tape,
       }))
     })
   }
@@ -50,7 +65,7 @@ function queue(patch: (p: typeof pending) => void) {
 
 // ───────── Hyperliquid ─────────
 
-type Sub = { type: 'l2Book' | 'activeAssetCtx'; coin: string } | { type: 'candle'; coin: string; interval: string }
+type Sub = { type: 'l2Book' | 'activeAssetCtx' | 'trades'; coin: string } | { type: 'candle'; coin: string; interval: string }
 
 const subKey = (s: Sub) => JSON.stringify(s)
 const refs = new Map<string, number>()
@@ -99,6 +114,15 @@ function connect() {
               t: Date.now(),
             }),
         )
+        break
+      }
+      case 'trades': {
+        const list = msg.data as { coin: string; side: 'B' | 'A'; px: string; sz: string; time: number }[]
+        if (!list.length) break
+        const trades = list
+          .map((x) => ({ px: +x.px, sz: +x.sz, buy: x.side === 'B', t: x.time }))
+          .sort((a, b) => b.t - a.t)
+        queue((p) => pushTape(p, list[0].coin, trades))
         break
       }
       case 'candle': {
@@ -169,7 +193,10 @@ export function subscribeKrx(asset: string, code: string): () => void {
     })
     es.addEventListener('trade', (ev) => {
       const d = JSON.parse((ev as MessageEvent).data)
-      queue((p) => ((p.krxTrade ??= {})[code] = { price: d.price, volume: d.volume, t: d.t }))
+      queue((p) => {
+        ;(p.krxTrade ??= {})[code] = { price: d.price, volume: d.volume, t: d.t }
+        pushTape(p, code, [{ px: d.price, sz: d.volume, buy: d.side == null ? null : d.side === 'buy', t: d.t }])
+      })
     })
     s = { es, refs: 0 }
     krxStreams.set(code, s)
