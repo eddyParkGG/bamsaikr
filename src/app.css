@@ -1765,3 +1765,55 @@
 .stats dd.down {
   color: var(--down);
 }
+
+/* Order book price is a button: pick the price into the order form */
+button.ob2__px {
+  width: 100%;
+  cursor: pointer;
+  text-align: center;
+}
+button.ob2__px:active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--text-2);
+}
+
+/* Order form: price field with −/+ tick stepper, flash when filled from the book */
+.field-row {
+  display: flex;
+  gap: 6px;
+}
+.field-row .field {
+  flex: 1;
+  min-width: 0;
+}
+.stepper {
+  display: flex;
+  border-radius: var(--r-btn);
+  background: var(--fill);
+  overflow: hidden;
+}
+.stepper button {
+  width: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+}
+.stepper button:hover {
+  background: var(--fill-hover);
+  color: var(--text);
+}
+.field--flash {
+  animation: field-flash 0.8s ease-out;
+}
+@keyframes field-flash {
+  from {
+    box-shadow: inset 0 0 0 1.5px var(--key);
+    background: rgba(255, 235, 0, 0.08);
+  }
+}
+.stepper button {
+  width: 34px;
+}

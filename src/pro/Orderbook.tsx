@@ -5,6 +5,8 @@ import { fmtPct, fmtPrice, fmtUsd, fmtUsdCompact, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, useLive, type Level, type Trade } from '../lib/live'
 import { useQuery } from '../lib/query'
 import type { PerpQuote } from '../components/AssetSearch'
+import { toast } from '../components/Toast'
+import { useTicket } from './ticket'
 
 type Tab = 'perp' | 'krx'
 const ROWS = 20
@@ -29,6 +31,7 @@ function Book({
   sizeFmt,
   session,
   centerKey,
+  onPick,
 }: {
   asks: Level[]
   bids: Level[]
@@ -40,6 +43,7 @@ function Book({
   sizeFmt: (v: number) => string
   session: string
   centerKey: string
+  onPick?: (px: number) => void
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const midRef = useRef<HTMLDivElement>(null)
@@ -63,10 +67,15 @@ function Book({
   const px = (l: Level, side: 'ask' | 'bid') => {
     const chg = ref0 ? (l.px / ref0 - 1) * 100 : 0
     return (
-      <div className={`ob2__px ob2__px--${side} ${tone(chg)} ${near(l.px, allLv) ? 'ob2__px--last' : ''}`}>
+      <button
+        type="button"
+        className={`ob2__px ob2__px--${side} ${tone(chg)} ${near(l.px, allLv) ? 'ob2__px--last' : ''}`}
+        onClick={() => onPick?.(l.px)}
+        title="누르면 이 가격으로 주문창에 입력돼요"
+      >
         <b data-fit>{fmt(l.px)}</b>
         <span>{fmtPct(chg)}</span>
-      </div>
+      </button>
     )
   }
   const tapeRows = tape.slice(0, Math.max(6, b.length * 2 - 2))
@@ -143,6 +152,7 @@ const SESSION_TEXT = { regular: '정규장', nxt: '넥스트레이드', closed: 
 
 function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const krxOk = hasKrx(asset)
+  const pickPrice = useTicket((s) => s.pickPrice)
   const [tab, setTab] = useState<Tab>('perp')
   const [unit, setUnit] = useState<'krw' | 'usd'>('krw')
   useEffect(() => setTab('perp'), [asset.id])
@@ -229,6 +239,7 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
               sizeFmt={(v) => v.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}
               session="24시간 거래"
               centerKey={`perp:${asset.id}`}
+              onPick={(px) => pickPrice('perp', px)}
             />
           ) : (
             <div className="skeleton" style={{ height: 440, margin: '0 12px' }} />
@@ -245,6 +256,7 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
             sizeFmt={(v) => v.toLocaleString('ko-KR')}
             session={arb ? SESSION_TEXT[arb.session] : ''}
             centerKey={`krx:${asset.id}`}
+            onPick={(px) => (asset.kind === 'stock' ? pickPrice('krx', px) : toast('이 종목은 국내 주문을 지원하지 않아요'))}
           />
         ) : first.error ? (
           <p className="notice" style={{ margin: '0 12px' }}>

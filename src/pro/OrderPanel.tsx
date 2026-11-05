@@ -1,4 +1,5 @@
-import { memo, useEffect, useState } from 'react'
+import { forwardRef, memo, useEffect, useRef, useState } from 'react'
+import { krxTick, perpTick, snap, useTicket } from './ticket'
 import type { ArbSnapshot } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import type { HlNetwork } from '../../shared/hlOrder'
@@ -9,13 +10,66 @@ import { post } from '../lib/query'
 type Tab = 'perp' | 'krx' | 'pair'
 type Side = 'buy' | 'sell'
 
-function Field({ value, onChange, unit, placeholder }: { value: string; onChange: (v: string) => void; unit?: string; placeholder?: string }) {
+/** 1261000 → 1,261,000; keeps whatever is typed after the decimal point */
+const withCommas = (v: string) => {
+  if (!v) return v
+  const [i, f] = v.split('.')
+  return (i ? Number(i).toLocaleString('en-US') : '0') + (f != null ? `.${f}` : '')
+}
+
+const Field = forwardRef<HTMLInputElement, { value: string; onChange: (v: string) => void; unit?: string; placeholder?: string; flash?: number; step?: number }>(function Field(
+  { value, onChange, unit, placeholder, flash, step },
+  ref,
+) {
+  const bump = (dir: 1 | -1) => {
+    const v = Number(value) || 0
+    onChange(String(Math.max(0, snap(v + dir * (step ?? 1), step ?? 1))))
+  }
   return (
-    <div className="field">
-      <input inputMode="decimal" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ''))} />
-      {unit && <span className="field__unit">{unit}</span>}
+    <div className="field-row">
+      <div className={`field ${flash ? 'field--flash' : ''}`} key={flash}>
+        <input
+          ref={ref}
+          inputMode="decimal"
+          value={withCommas(value)}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ''))}
+          onKeyDown={(e) => {
+            if (!step) return
+            if (e.key === 'ArrowUp') (e.preventDefault(), bump(1))
+            if (e.key === 'ArrowDown') (e.preventDefault(), bump(-1))
+          }}
+        />
+        {unit && <span className="field__unit">{unit}</span>}
+      </div>
+      {step != null && (
+        <div className="stepper">
+          <button type="button" aria-label="내리기" onClick={() => bump(-1)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+              <path d="M5 12h14" />
+            </svg>
+          </button>
+          <button type="button" aria-label="올리기" onClick={() => bump(1)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   )
+})
+
+/** Apply a price picked in the order book: limit order, that price, cursor to quantity */
+function usePicked(market: 'perp' | 'krx', onPick: (price: number) => void) {
+  const pick = useTicket((s) => s.pick)
+  // A form mounted by the same click (tab switch) still applies that pick
+  const seen = useRef(pick && Date.now() - pick.t < 1000 ? -1 : (pick?.n ?? 0))
+  useEffect(() => {
+    if (!pick || pick.market !== market || pick.n === seen.current) return
+    seen.current = pick.n
+    onPick(pick.price)
+  }, [pick, market]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -75,6 +129,14 @@ function PerpForm({ asset }: { asset: Asset }) {
   const [master, setMaster] = useState<`0x${string}` | null>(null)
   const [hasAgent, setHasAgent] = useState(false)
   const { busy, out, err, run } = useRunner()
+  const sizeRef = useRef<HTMLInputElement>(null)
+  const [flash, setFlash] = useState(0)
+  usePicked('perp', (px) => {
+    setKind('limit')
+    setPrice(String(px))
+    setFlash((f) => f + 1)
+    requestAnimationFrame(() => sizeRef.current?.focus())
+  })
   const input = { side, size: Number(size), price: kind === 'limit' && price ? Number(price) : undefined, leverage: lev }
   const sideBtn = side === 'buy' ? 'btn--buy' : 'btn--sell'
 
@@ -101,11 +163,11 @@ function PerpForm({ asset }: { asset: Asset }) {
               시장가
             </button>
           </div>
-          {kind === 'limit' && <Field value={price} onChange={setPrice} unit="USDC" placeholder="가격 입력" />}
+          {kind === 'limit' && <Field value={price} onChange={setPrice} unit="USDC" placeholder="가격 입력" flash={flash} step={perpTick(Number(price))} />}
         </div>
       </Row>
       <Row label="수량">
-        <Field value={size} onChange={setSize} unit="계약" />
+        <Field ref={sizeRef} value={size} onChange={setSize} unit="계약" />
       </Row>
       <Row label="레버리지">
         <div className="pct-chips">
@@ -223,6 +285,14 @@ function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
   const [qty, setQty] = useState('1')
   const [price, setPrice] = useState('')
   const { busy, out, err, run } = useRunner()
+  const qtyRef = useRef<HTMLInputElement>(null)
+  const [flash, setFlash] = useState(0)
+  usePicked('krx', (px) => {
+    setKind('limit')
+    setPrice(String(px))
+    setFlash((f) => f + 1)
+    requestAnimationFrame(() => qtyRef.current?.focus())
+  })
   const send = (dryRun: boolean) =>
     run(() => {
       track(dryRun ? 'order_preview' : 'order_submit', { market: 'krx', side, asset: asset.id })
@@ -241,11 +311,11 @@ function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
               시장가
             </button>
           </div>
-          {kind === 'limit' && <Field value={price} onChange={setPrice} unit="원" placeholder="가격 입력" />}
+          {kind === 'limit' && <Field value={price} onChange={setPrice} unit="원" placeholder="가격 입력" flash={flash} step={krxTick(Number(price))} />}
         </div>
       </Row>
       <Row label="수량">
-        <Field value={qty} onChange={setQty} unit="주" />
+        <Field ref={qtyRef} value={qty} onChange={setQty} unit="주" />
       </Row>
       <div className="row" style={{ gap: 6 }}>
         <button className="btn btn--lg btn--fill" style={{ flex: 1 }} disabled={busy} onClick={() => send(true)}>
@@ -324,6 +394,13 @@ function OrderPanelImpl({ asset, arb, liveKrx }: { asset: Asset; arb: ArbSnapsho
         ]
       : [['perp', '하이퍼리퀴드 주문']]
   useEffect(() => setTab('perp'), [asset.id])
+  // A price picked in the order book opens the matching order tab
+  const pick = useTicket((s) => s.pick)
+  useEffect(() => {
+    if (!pick) return
+    if (pick.market === 'perp') setTab('perp')
+    else if (asset.kind === 'stock') setTab('krx')
+  }, [pick]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <section className="panel">
       <div className="panel__head">

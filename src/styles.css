@@ -433,7 +433,7 @@ p {
 }
 .form-row {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 64px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   font-size: 13px;
