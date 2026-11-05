@@ -74,17 +74,10 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
       <StockLogo id={s.asset} size={36} />
       <div>
         <p className="easy-row__name" data-fit>{a.name}</p>
-        <p className="easy-row__sub" data-fit>
-          {s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff}`}
-          {a.kind === 'adr' && ` · 보통주 ${a.ratio}주 기준`}
-        </p>
+        <p className="easy-row__sub" data-fit>{s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff}`}</p>
       </div>
       <div className="easy-row__right">
-        {a.kind === 'adr' ? (
-          <p className="easy-row__big faint" style={{ fontSize: 14 }}>
-            보통주로 못 바꿔요
-          </p>
-        ) : s.mode === 'gap' ? (
+        {s.mode === 'gap' ? (
           <p className="easy-row__big faint" style={{ fontSize: 14 }}>
             장 열리면 확인
           </p>
@@ -156,7 +149,7 @@ export default function EasyHome() {
         </span>
       </div>
       <section className="panel easy-list">
-        <div className="panel__body">{arb.data ? arb.data.items.map((s) => <ArbRow key={s.asset} s={s} />) : <div className="skeleton" style={{ height: 260, margin: 8 }} />}</div>
+        <div className="panel__body">{arb.data ? arb.data.items.filter((s) => ASSET_BY_ID[s.asset].kind === 'stock').map((s) => <ArbRow key={s.asset} s={s} />) : <div className="skeleton" style={{ height: 260, margin: 8 }} />}</div>
       </section>
 
       <section className="explain">
