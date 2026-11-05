@@ -2530,7 +2530,7 @@ body {
   color: var(--text);
 }
 .issue-inline:hover {
-  background: var(--fill);
+  background: var(--fill-strong);
 }
 .issue-inline__label {
   flex-shrink: 0;
