@@ -53,7 +53,11 @@ export default function App() {
     document.title = t
     const d = asset
       ? `${asset.name}의 하이퍼리퀴드 가격을 원화로 바꿔 국내 가격과 비교하고, 다음 날 장 시작 가격과 시세차익 기회를 보여드려요.`
-      : '국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드에서 거래되는 한국 주식 가격으로 다음 날 장 시작 가격과 시세차익 기회를 보여드려요.'
+      : path === '/about'
+        ? '밤사이가 내일 아침 예상 가격, 오를 확률, 시세차익 기회를 어떻게 계산하는지 예시와 함께 설명해요.'
+        : path === '/developers'
+          ? '밤사이 데이터를 REST API, OpenAPI, MCP로 가져다 쓰는 방법이에요.'
+          : '국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드에서 거래되는 한국 주식 가격으로 다음 날 장 시작 가격과 시세차익 기회를 보여드려요.'
     document.querySelector('meta[name="description"]')?.setAttribute('content', d)
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', `https://bamsai.vercel.app${path}`)
   }, [path, asset])

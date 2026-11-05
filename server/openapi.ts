@@ -32,7 +32,7 @@ export const openapi = {
       get: {
         operationId: 'predictOpen',
         summary: 'Forecast of the next KRX opening price (probability up, expected open, 80% band)',
-        description: 'probUp: probability the open is above the reference close. band80: 80% probability band. Forecast of the domestic re-open (KRX + NXT, 08:00–08:10 average) relative to the 20:00 close. backtest.followRatePct: share of re-opens since 2026-04-13 that moved the way Hyperliquid moved while the domestic market was closed (moves within ±0.05% excluded); coverage80Pct/maePct: accuracy of the expected open (walk-forward).',
+        description: 'probUp: probability the open is above the reference close. band80: 80% probability band. thin: true when Hyperliquid trades under $1M overnight (forecast less reliable). Forecast of the domestic re-open (KRX + NXT, 08:00–08:10 average) relative to the 20:00 close. backtest.followRatePct: share of re-opens since 2026-04-13 that moved the way Hyperliquid moved while the domestic market was closed (moves within ±0.05% excluded); coverage80Pct/maePct: accuracy of the expected open (walk-forward).',
         parameters: [assetOpt],
         responses: ok,
       },
@@ -40,8 +40,8 @@ export const openapi = {
     '/v1/convergence': {
       get: {
         operationId: 'getConvergence',
-        summary: 'Per past open day: gap implied by perp vs actual opening gap, and which side converged',
-        description: 'absorptionPct: actual gap / perp gap (100 = opened exactly as perp implied). meetPoint: 0 = perp moved to the stock, 1 = stock moved to the perp.',
+        summary: 'Per past re-open day (08:00): Hyperliquid move while closed vs actual re-open move, and which side converged',
+        description: 'follow: yes/no/flat (flat = either move within ±0.05%). absorptionPct: actual move / Hyperliquid move (100 = followed exactly). meetPoint over 08:00–09:00: 0 = Hyperliquid moved to the stock, 1 = stock moved to Hyperliquid. nightUsd / nightKrw: Hyperliquid volume 20:00→08:00 (KRW at that night\'s USDC rate). backtest.liquidRatePct: follow rate on nights with at least $1M traded.',
         parameters: [asset, { name: 'limit', in: 'query', schema: { type: 'integer' } }],
         responses: ok,
       },
@@ -49,7 +49,7 @@ export const openapi = {
     '/v1/series': {
       get: {
         operationId: 'getSeries',
-        summary: 'Chart series (perp and KRX candles, FX rate, premium, funding)',
+        summary: 'Chart series (perp and KRX candles, FX rate, premium, funding, Hyperliquid listedAt). Daily perp bars run 20:00→20:00 KST like the domestic day',
         parameters: [asset, { name: 'interval', in: 'query', schema: { type: 'string', enum: ['1m', '5m', '15m', '1h', '1d'] } }],
         responses: ok,
       },

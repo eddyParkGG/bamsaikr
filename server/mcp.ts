@@ -12,7 +12,7 @@ const assetProp = { type: 'string', enum: ASSETS.map((a) => a.id), description: 
 const TOOLS = [
   {
     name: 'get_arbitrage',
-    description: 'Premium between Hyperliquid perp and KRX price, and net arbitrage after costs. All assets if asset is omitted',
+    description: 'Premium between Hyperliquid perp and KRX price, its usual level (5-day regular-session median) and the net left after costs on the gap beyond that level. All assets if asset is omitted',
     inputSchema: { type: 'object', properties: { asset: assetProp } },
     run: async (a: Record<string, string>) => (a.asset && isAssetId(a.asset) ? arbSnapshot(ASSET_BY_ID[a.asset]) : arbAll()),
   },
