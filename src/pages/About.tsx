@@ -9,7 +9,7 @@ export default function About() {
     <div className="easy about">
       <section className="easy-hero">
         <h1>밤사이가 풀려는 문제</h1>
-        <p>국장이 닫힌 사이에 생긴 일이 내일 아침 가격에 어떻게 반영될지, 장 열리기 전에 먼저 보여드려요.</p>
+        <p>국내 시장이 닫힌 사이에 생긴 일이 내일 아침 가격에 어떻게 반영될지, 장 열리기 전에 먼저 보여드려요.</p>
       </section>
 
       <section className="panel about__block">
@@ -18,7 +18,7 @@ export default function About() {
         </div>
         <div className="panel__body about__body">
           <p className="about__lead">
-            국내 주식시장은 일주일 168시간 중 <b>32.5시간</b>만 열려요. 나머지 <b>81%</b>의 시간에 생긴 뉴스가 다음 날 가격에 얼마나 반영될지 개인 투자자는 알 방법이 없어요.
+            국내 시장은 일주일 168시간 중 <b>32.5시간</b>(정규장 기준)만 열려요. 나머지 <b>81%</b>의 시간에 생긴 뉴스가 다음 날 가격에 얼마나 반영될지 개인 투자자는 알 방법이 없어요.
           </p>
           <ul>
             <li>하이퍼리퀴드 같은 해외 거래소에선 삼성전자·SK하이닉스가 밤에도 주말에도 거래돼요. 하이닉스만 하루 약 5억 달러예요.</li>
@@ -56,7 +56,7 @@ export default function About() {
         <div className="panel__body about__body">
           <p className="about__h">H1. 해외 선물 탈중앙 거래소 가격으로 다음 날 장 시작 가격의 방향을 80% 이상 맞힐 수 있다</p>
           <p className="muted" style={{ fontSize: 13 }}>
-            장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 정규장이 시작했는지 봤어요 (2026년 4월 13일~, 종목별 139번. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요).
+            국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요 (정규장 시작 가격 기준, 2026년 4월 13일~, 종목별 139번. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요).
           </p>
           <div className="about__hits">
             {preds.data
