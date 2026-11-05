@@ -425,7 +425,7 @@ export class ChartController {
           if (e.absorptionPct == null || Math.abs(e.gapPct) < 1) continue
           const openMs = Date.UTC(+e.date.slice(0, 4), +e.date.slice(4, 6) - 1, +e.date.slice(6, 8)) // 09:00 KST
           if (openMs < firstT) continue
-          cands.push({ g: Math.abs(e.gapPct), m: { time: ct(openMs), position: e.gapPct >= 0 ? 'aboveBar' : 'belowBar', shape: 'circle', color: c.text3, text: `반영 ${Math.round(e.absorptionPct)}%`, size: 0.4 } })
+          cands.push({ g: Math.abs(e.gapPct), m: { time: ct(openMs), position: e.gapPct >= 0 ? 'aboveBar' : 'belowBar', shape: 'circle', color: c.text3, text: `따라감 ${Math.round(e.absorptionPct)}%`, size: 0.4 } })
         }
         // Keep the 8 biggest gaps so the chart stays readable
         marks.push(...cands.sort((p, q) => q.g - p.g).slice(0, 8).map((x) => x.m))

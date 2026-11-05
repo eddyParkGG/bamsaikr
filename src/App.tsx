@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect } from 'react'
-import type { ArbSnapshot, Status } from '../shared/api'
 import { ASSET_BY_ID, isAssetId } from '../shared/assets'
 import { Boundary } from './components/Boundary'
 import { Header } from './components/Header'
@@ -8,7 +7,7 @@ import { Ticker } from './components/Ticker'
 import { Toaster } from './components/Toast'
 import { LaunchNotify } from './components/LaunchNotify'
 import { usePrefs } from './lib/prefs'
-import { useQuery } from './lib/query'
+import { useArb, useStatus } from './lib/data'
 import { usePath } from './lib/router'
 import EasyHome from './pages/EasyHome'
 
@@ -32,8 +31,8 @@ function DocSkeleton() {
 export default function App() {
   const path = usePath()
   const theme = usePrefs((s) => s.theme)
-  const arb = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 3000)
-  const status = useQuery<Status>('/api/v1/status', 60_000)
+  const arb = useArb()
+  const status = useStatus()
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -43,6 +42,14 @@ export default function App() {
   const id = m?.[1].toUpperCase()
   const asset = id && isAssetId(id) ? ASSET_BY_ID[id] : null
   const isDocs = path === '/developers' || path === '/about'
+
+  // Keep the address honest: unknown or lower-case asset ids (and /market) show the asset actually rendered
+  useEffect(() => {
+    const onMarketPath = path.startsWith('/s/') || path === '/market'
+    if (!onMarketPath) return
+    const want = `/s/${(asset ?? ASSET_BY_ID.SKHX).id}`
+    if (path !== want) history.replaceState(history.state, '', want + location.search)
+  }, [path, asset])
 
   // Per-route title and description (SEO / link previews)
   useEffect(() => {

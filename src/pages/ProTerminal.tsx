@@ -1,16 +1,18 @@
+import { Chevron } from '../components/Icon'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
-import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction, Status } from '../../shared/api'
+import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import { canPredict, hasKrx, type Asset } from '../../shared/assets'
-import { openSearch, type PerpQuote } from '../components/AssetSearch'
+import { openSearch } from '../components/AssetSearch'
+import { useArb, usePerps, usePrediction, useStatus, useUsdcRate } from '../lib/data'
 import { toast } from '../components/Toast'
 import { StockLogo } from '../components/Brand'
 import { NewsSheet } from '../components/NewsSheet'
 import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtWon, fmtWonUnit, tone } from '../lib/format'
-import { probLabel } from '../easy/copy'
+import { fmtKrw, fmtPct, fmtPrice, fmtWon, fmtWonUnit, tone } from '../lib/format'
+import { probLabel } from '../lib/copy'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
@@ -32,7 +34,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
     items: [
       { k: 'bands', label: '장 시간대 배경', help: '정규장·넥스트레이드·휴장 시간을 배경색으로 나눠 보여줘요' },
       { k: 'news', label: '뉴스 말풍선', help: '가격이 크게 움직인 날의 주요 뉴스를 차트 위에 표시해요' },
-      { k: 'convergence', label: '장 시작 반영 %', help: '하이퍼리퀴드가 미리 보여준 차이를 실제 장 시작 가격이 몇 % 따라갔는지 보여줘요' },
+      { k: 'convergence', label: '따라간 정도 %', help: '개장일 봉 위에 표시해요. 장이 닫힌 동안 하이퍼리퀴드가 움직인 폭을 다음 날 국내 시장 시작 가격이 몇 % 따라갔는지예요. 100%면 그대로, 50%면 절반만 따라 시작했어요' },
       { k: 'forecast', label: '정규장 예상 시작 가격 · 80% 구간', help: '다음 정규장(09:00) 시작 가격 예측값과, 10번 중 8번은 들어올 범위를 그려요. 넥스트레이드 가격이 아니에요' },
     ],
   },
@@ -173,13 +175,11 @@ function Range({ low, high, value, isIdx }: { low: number; high: number; value: 
   const pos = high > low ? ((value - low) / (high - low)) * 100 : 50
   return (
     <span className="range num">
-      {fmtPrice(low, isIdx)}
-      {isIdx ? '' : '원'}
+      {fmtKrw(low, isIdx)}
       <span className="range__bar">
         <i style={{ left: `calc(${Math.min(100, Math.max(0, pos)) / 100} * (100% - 4px))` }} />
       </span>
-      {fmtPrice(high, isIdx)}
-      {isIdx ? '' : '원'}
+      {fmtKrw(high, isIdx)}
     </span>
   )
 }
@@ -192,9 +192,7 @@ function AssetName({ asset }: { asset: Asset }) {
       <StockLogo id={asset.id} size={20} />
       {asset.name}
       <span className="stock-head__code">{code}</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M6 9l6 6 6-6" />
-      </svg>
+      <Chevron />
     </button>
   )
 }
@@ -203,18 +201,16 @@ function AssetName({ asset }: { asset: Asset }) {
 function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: asset.perp }), [asset.perp])
   const ctx = useLive((s) => s.ctx[asset.perp])
-  const usdc = useLive((s) => s.usdc)
-  const q = useQuery<{ items: PerpQuote[] }>('/api/v1/perps', 3000)
-  const p = q.data?.items.find((x) => x.asset === asset.id)
-  if (!p || (asset.fx && !usdc)) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
+  const usdcRate = useUsdcRate()
+  const p = usePerps(asset.id).item
+  if (!p || (asset.fx && !usdcRate)) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
-  const rate = asset.fx ? usdc!.rate : 1
-  const usdcKrw = usdc?.rate ?? 0 // contract notional is USDC for every product, index included
+  const rate = asset.fx ? usdcRate! : 1
+  const usdcKrw = usdcRate ?? 0 // contract notional is USDC for every product, index included
   const mid = ctx?.mid ?? p.mid
   const prev = ctx?.prevDay ?? p.prevDay
   const diff = (mid - prev) * rate
   const funding = (ctx?.funding ?? p.fundingHourly) * 100
-  const unit = isIdx ? '' : '원'
   return (
     <div className="stock-head">
       <div className="stock-head__id">
@@ -224,14 +220,12 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         </div>
         <div className="stock-head__price num">
           <b>
-            {fmtPrice(mid * rate, isIdx)}
-            {unit}
+            {fmtKrw(mid * rate, isIdx)}
           </b>
           <span>24시간 전보다</span>
           <span className={tone(diff)}>
             {diff > 0 ? '+' : ''}
-            {fmtPrice(diff, isIdx)}
-            {unit} ({fmtPct(Math.abs((mid / prev - 1) * 100), 2, false)})
+            {fmtKrw(diff, isIdx)} ({fmtPct(Math.abs((mid / prev - 1) * 100), 2, false)})
           </span>
         </div>
       </div>
@@ -243,8 +237,7 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </dd>
           <dt>24시간 전</dt>
           <dd>
-            {fmtPrice(prev * rate, isIdx)}
-            {unit}
+            {fmtKrw(prev * rate, isIdx)}
           </dd>
         </div>
         <div className="stats__group">
@@ -284,15 +277,15 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
 function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: asset.perp }), [asset.perp])
   const ctx = useLive((s) => s.ctx[asset.perp])
-  const usdc = useLive((s) => s.usdc)
+  const usdcRate = useUsdcRate()
   const trade = useLive((s) => s.krxTrade[asset.krxCode])
   if (!arb) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
   // Domestic current price is updated from Toss Securities live trades
   const krxPrice = trade && trade.t > arb.updatedAt - 5000 ? trade.price : arb.krx.price
   const mid = ctx?.mid ?? arb.perp.mid
-  const rate = asset.fx ? (usdc?.rate ?? arb.fx?.rate ?? 0) : 1
-  const usdcKrw = usdc?.rate ?? arb.fx?.rate ?? 0
+  const usdcKrw = usdcRate ?? arb.fx?.rate ?? 0
+  const rate = asset.fx ? usdcKrw : 1
   const perpKrw = mid * rate
   const premium = (perpKrw / krxPrice - 1) * 100
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
@@ -307,14 +300,12 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         </div>
         <div className="stock-head__price num">
           <b>
-            {fmtPrice(krxPrice, isIdx)}
-            {isIdx ? '' : '원'}
+            {fmtKrw(krxPrice, isIdx)}
           </b>
           <span>어제보다</span>
           <span className={tone(diff)}>
             {diff > 0 ? '+' : ''}
-            {fmtPrice(diff, isIdx)}
-            {isIdx ? '' : '원'} ({fmtPct(Math.abs(changePct), 2, false)})
+            {fmtKrw(diff, isIdx)} ({fmtPct(Math.abs(changePct), 2, false)})
           </span>
         </div>
       </div>
@@ -330,8 +321,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         <div className="stats__group">
           <dt>하이퍼리퀴드 환산</dt>
           <dd>
-            {fmtPrice(perpKrw, isIdx)}
-            {isIdx ? '' : '원'}
+            {fmtKrw(perpKrw, isIdx)}
           </dd>
           <dt>{arb.mode === 'live' ? '괴리율' : '종가 대비'}</dt>
           <dd className={tone(premium)}>{fmtPct(premium)}</dd>
@@ -364,9 +354,7 @@ function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnap
   const net = arb ? Math.round(arb.net.netKrwPer10m) : 0
   const pl = p ? probLabel(p.probUp) : null
   const chevron = (
-    <svg className="nbar__chev" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M10 7l5 5-5 5" />
-    </svg>
+    <Chevron dir="right" size={24} className="nbar__chev" />
   )
   return (
     <div className="quick">
@@ -421,14 +409,14 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   const [sideW, setSideW] = useState(readSideWidth)
   const [openNews, setOpenNews] = useState<NewsMarker | null>(null)
 
-  const arbAll = useQuery<{ items: ArbSnapshot[] }>('/api/v1/arb', 3000)
+  const arbAll = useArb()
   const arb = arbAll.data?.items.find((x) => x.asset === asset.id) ?? null
   const series = useQuery<ChartSeries>(`/api/v1/series?asset=${asset.id}&interval=${interval}`, interval === '1d' ? 60_000 : 15_000)
   const news = useQuery<{ items: NewsMarker[] }>(`/api/v1/news?asset=${asset.id}`, 300_000)
   const predictable = canPredict(asset)
   const conv = useQuery<{ events: OpenEvent[] }>(predictable ? `/api/v1/convergence?asset=${asset.id}&limit=500` : null, 300_000)
-  const pred = useQuery<Prediction>(predictable ? `/api/v1/predict?asset=${asset.id}` : null, 15_000)
-  const status = useQuery<Status & { liveKrxOrders?: boolean }>('/api/v1/status', 60_000)
+  const pred = usePrediction(predictable ? asset.id : null)
+  const status = useStatus()
 
   useEffect(() => subscribeUsdc(), [])
   // Funnel events (H2–H4): forecast and spread seen on the stock screen, once per asset

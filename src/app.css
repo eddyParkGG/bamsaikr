@@ -988,6 +988,11 @@ body.is-resizing * {
     height: 360px;
     flex: none;
   }
+  /* One column: nothing sticks, so the chart and the order book never slide over each other */
+  .pro-chart {
+    position: static;
+    height: clamp(420px, 70vh, 640px);
+  }
   .cols3 {
     grid-template-columns: 1fr;
   }
@@ -2317,4 +2322,49 @@ button.ob2__px:active::after {
 .about__period {
   margin-top: 12px;
   cursor: default;
+}
+
+/* Narrow screens: header search collapses, stat strip and notice bars stack */
+@media (max-width: 720px) {
+  .stock-head__id {
+    flex: 1 1 100%;
+  }
+  .stats {
+    row-gap: 8px;
+  }
+  .chart-tools {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .band-legend {
+    display: none;
+  }
+  .search {
+    height: min(600px, calc(100vh - 24px));
+  }
+  .ob2 .ob2__info,
+  .ob2 .ob2__tape {
+    font-size: 11px;
+  }
+}
+
+/* Mobile: keep chart legend rows on one line (scroll sideways inside the chart instead of letter-wrapping),
+   and keep the main menu reachable */
+@media (max-width: 720px) {
+  .chart__legend .row {
+    white-space: nowrap;
+  }
+  .chart__legend {
+    max-width: calc(100% - 80px);
+    overflow: hidden;
+  }
+  .header .nav {
+    display: flex;
+    gap: 14px;
+    font-size: 14px;
+  }
+  .header .logo {
+    font-size: 0;
+    gap: 0;
+  }
 }
