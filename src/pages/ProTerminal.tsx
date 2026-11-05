@@ -528,8 +528,6 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                   하이퍼리퀴드
                 </button>
                 <span className="spacer" />
-                <IndicatorMenu krxAvailable={hasKrx(asset)} />
-                <span className="chart-tools__sep" />
                 <span className="band-legend" aria-label="차트 배경색">
                   <span>
                     <i style={{ background: 'var(--band-open-solid)' }} />
@@ -541,6 +539,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                   </span>
                 </span>
                 <span className="chart-tools__sep" />
+                <IndicatorMenu krxAvailable={hasKrx(asset)} />
                 <button className="icon-btn chart-full" aria-label={full ? '차트 작게 보기' : '차트 크게 보기'} title={full ? '작게 보기 (Esc)' : '크게 보기'} onClick={() => setFull(!full)}>
                   {full ? (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
