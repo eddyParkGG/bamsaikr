@@ -28,7 +28,7 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   vwap: false,
   bands: true,
   news: true,
-  convergence: false,
+  convergence: true,
   forecast: true,
   volume: true,
   premium: true,
