@@ -14,9 +14,10 @@
 - KR200 코스피200, EWY MSCI Korea ETF, KORU 3x Korea ETF: Hyperliquid price only
 
 ## Method (short)
-- Opening gap = α + β × (Hyperliquid-implied gap at 08:59 KST), β shrunk toward 1; σ split into weeknight vs weekend, plus closed-hours volatility
-- Main check: did the KRX open move the way Hyperliquid moved while the market was closed? Every open since the 2026-02-19 listing, ~170 per stock (moves within ±0.05% excluded): 91.2% / 90.8% / 85.5% (Samsung / SK hynix / Hyundai)
-- Expected price (walk-forward): 80% band coverage 78–92%, mean open error ~0.9%p
+- Domestic market = KRX regular + Nextrade, 08:00–20:00 KST. Reference = last print at or before 20:00; target = 08:00–08:10 VWAP on the next trading day
+- Re-open move = α + β × (Hyperliquid-implied move at 08:00 KST), β shrunk toward 1; σ split into weeknight vs weekend, plus closed-hours volatility × hours to open
+- Main check: did the domestic market re-open the way Hyperliquid moved while it was closed? 139 opens per stock since 2026-04-13 (Hyperliquid 1h retention; moves within ±0.05% excluded): 85.8% / 85.4% / 66.7% (Samsung / SK hynix / Hyundai). Hyundai is below the 80% bar
+- Expected price (walk-forward): 80% band coverage 83–89%, mean error 1.1–1.3%p
 
 ## API (no key for reads)
 - [OpenAPI spec](/api/openapi.json)

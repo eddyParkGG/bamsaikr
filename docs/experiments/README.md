@@ -6,7 +6,7 @@ Analytics wiring for every metric is in [ga-events.md](ga-events.md).
 
 | # | Hypothesis | Status | Primary metric | Pass line | Doc |
 |---|---|---|---|---|---|
-| H1 | While the KRX is closed, the KRX opens the way Hyperliquid moved | **Passed** (91.2 / 90.8 / 85.5%) | Hyperliquid-direction rate | ≥ 80% | [H1](H1-hyperliquid-direction.md) |
+| H1 | While the domestic market is closed (20:00 → 08:00), it re-opens the way Hyperliquid moved | **Partly passed** (Samsung 85.8 / SK hynix 85.4%; Hyundai 66.7% fails) | Hyperliquid-direction rate | ≥ 80% | [H1](H1-hyperliquid-direction.md) |
 | H2 | Showing "오를 확률" brings people back before the next open | Planned (community test) | Pre-open return of first-time visitors | ≥ 15% | [H2](H2-preopen-return.md) |
 | H3 | Showing the record makes people trust and act on the forecast | Planned | Evidence-check rate | ≥ 10% | [H3](H3-trust.md) |
 | H4 | Showing the net spread turns viewing into an order intent | Planned | Spread viewed → order button | ≥ 5% | [H4](H4-spread-to-order.md) |
@@ -29,4 +29,5 @@ Append one row per readout. Keep raw exports next to this folder, not in the rep
 
 | Date | Hypothesis | Sample | Result | Decision |
 |---|---|---|---|---|
-| 2026-11-05 | H1 | 170 / 173 / 166 scored opens (2026-02-20 → 11-05) | 91.2% / 90.8% / 85.5% | Pass. Keep Hyperliquid direction as the headline accuracy |
+| 2026-11-05 | H1 (old basis, 15:30 → 09:00) | 170 / 173 / 166 scored opens (2026-02-20 → 11-05) | 91.2% / 90.8% / 85.5% | Superseded: counted Nextrade 15:30–20:00 moves as prediction |
+| 2026-11-05 | H1 (20:00 → 08:00–08:10 VWAP) | 134 / 137 / 135 scored opens (2026-04-13 → 11-05) | 85.8% / 85.4% / 66.7% | Pass for Samsung and SK hynix. Hyundai fails: mark low confidence |
