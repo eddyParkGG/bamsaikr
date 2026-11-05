@@ -92,11 +92,10 @@ export default function Developers() {
       <section className="panel panel__body stack" style={{ marginTop: 16 }}>
         <h2 className="strong" style={{ fontSize: 15, fontWeight: 700 }}>주문 안전장치</h2>
         <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.9, fontSize: 14 }}>
-          <li>모든 주문 API는 기본이 dryRun이에요. 보낼 내용만 돌려주고 실제로는 보내지 않아요.</li>
-          <li>실주문은 서버에 API_TOKEN을 설정하고 Authorization: Bearer 헤더를 넣어야 해요.</li>
-          <li>하이퍼리퀴드는 기본이 테스트넷이에요. 메인넷은 서버에서 따로 열어야 해요.</li>
-          <li>하이퍼리퀴드 주문은 출금 권한이 없는 에이전트 지갑으로만 서명해요.</li>
-          <li>MCP에는 주문 미리보기만 열어뒀어요.</li>
+          <li>주문은 기본이 미리보기예요. 보낼 주문 내용만 돌려주고 실제로 보내지 않아요. 실제로 보내려면 dryRun=false와 발급받은 API 키(Authorization: Bearer 헤더)가 필요해요.</li>
+          <li>하이퍼리퀴드 주문은 기본이 테스트넷(연습용 네트워크)이에요. 실제 돈으로 거래하려면 network=mainnet을 넣어요.</li>
+          <li>하이퍼리퀴드 주문은 출금 권한이 없는 지갑으로 서명해요. 키가 새어도 돈이 빠져나가지 않아요.</li>
+          <li>MCP(AI 에이전트 연결)는 조회와 주문 미리보기만 돼요.</li>
         </ul>
       </section>
     </div>
