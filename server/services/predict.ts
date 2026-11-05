@@ -169,7 +169,7 @@ function closedHoursVol(perp: Candle[], holidays: ReadonlySet<string>) {
   return Math.sqrt(rs.reduce((s, v) => s + (v - m) ** 2, 0) / (rs.length - 1))
 }
 
-/** Hyperliquid listed the Korean stock perps on 2026-02-19 (KST evening); history starts there */
+/** Hyperliquid listed the Korean stock perps on 2026-02-19 20:00 UTC (02-20 05:00 KST); history starts there */
 const HISTORY_FROM = Date.UTC(2026, 1, 18)
 const MIN_TRAIN = 20
 /** Moves smaller than this (in %) count as "no direction" */
@@ -177,7 +177,7 @@ export const FLAT_PCT = 0.05
 
 export function loadHistory(asset: Asset) {
   return cached(`predict:history:${asset.id}`, 10 * 60_000, async () => {
-    // Since the Korean listings on trade.xyz (2026-02-19). The API keeps only the latest 5,000 bars per
+    // Since the Korean listings on trade.xyz (2026-02-20 KST). The API keeps only the latest 5,000 bars per
     // interval; an 08:00 price needs 1h bars, so scored history starts where they do (~7 months back)
     const perp = await getPerpHourlySince(asset.perp, HISTORY_FROM)
     const start = perp[0]?.t ?? Date.now() - 200 * 86400_000
