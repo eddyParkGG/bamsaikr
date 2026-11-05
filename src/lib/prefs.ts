@@ -35,9 +35,14 @@ export const usePrefs = create<Prefs>()(
     }),
     {
       name: 'bamsai-prefs',
-      version: 2,
+      version: 3,
       // v2: dark by default to match Toss PC; chart defaults to 1 year of daily candles
-      migrate: (p) => ({ ...(p as object), theme: 'dark', interval: '1d' }) as Prefs,
+      // v3: 따라간 정도 markers off by default (they crowd the chart)
+      migrate: (p, v) => {
+        const prev = p as Prefs
+        const next = v < 2 ? { ...prev, theme: 'dark', interval: '1d' } : prev
+        return { ...next, chart: { ...next.chart, convergence: false } } as Prefs
+      },
       merge: (persisted, current) => {
         const p = persisted as Partial<Prefs>
         return { ...current, ...p, chart: { ...DEFAULT_SETTINGS, ...(p?.chart ?? {}) }, params: { ...DEFAULT_PARAMS, ...(p?.params ?? {}) } }
