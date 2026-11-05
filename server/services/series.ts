@@ -9,7 +9,7 @@ import { getUsdcKrwCandles, rateAt, type UpbitUnit } from '../sources/upbit.js'
 export type ChartInterval = '1m' | '5m' | '15m' | '1h' | '1d'
 
 // 국내 분봉은 토스 API 1회 200개라 구간이 길면 호출이 많아짐 → 1시간봉은 3주까지
-const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 2, '5m': 5, '15m': 10, '1h': 21, '1d': 400 }
+const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 2, '5m': 5, '15m': 10, '1h': 20, '1d': 400 }
 const STEP: Record<ChartInterval, number> = { '1m': 60_000, '5m': 300_000, '15m': 900_000, '1h': 3600_000, '1d': 86400_000 }
 const UPBIT_UNIT: Record<ChartInterval, UpbitUnit> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 'day' }
 

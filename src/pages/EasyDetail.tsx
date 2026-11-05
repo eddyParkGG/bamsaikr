@@ -8,6 +8,7 @@ import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
 import { SessionBadge } from '../components/SessionBadge'
 import { StockLogo } from '../components/Brand'
+import { TodayIssue } from '../components/TodayIssue'
 
 function Spark({ data, isIdx }: { data: ChartSeries; isIdx: boolean }) {
   // 최근 이틀 15분봉. 국내 시세는 장 열린 시간만 있어서 선이 끊겨 보임
@@ -84,7 +85,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
             {arb && <SessionBadge session={arb.session} />}
           </div>
           {arb ? (
-            <p className="num" style={{ marginTop: 2, fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>
+            <p className="num" style={{ marginTop: 2, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
               {fmtPrice(arb.krx.price, isIdx)}
               {unit} <span className={tone(arb.krx.changePct)} style={{ fontSize: 14, fontWeight: 600 }}>{fmtPct(arb.krx.changePct)}</span>
             </p>
@@ -97,7 +98,34 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
       {/* 질문 1: 오를까 내릴까 */}
       <section className="panel q-card">
         <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 시가, 오를까요?` : '다음 시가, 오를까요?'}</p>
-        {p ? (
+        {p && p.status === 'in-session' ? (
+          <>
+            <p className="q-card__a">지금은 장이 열려 있어요</p>
+            <p className="q-card__reason">
+              국내 시장과 해외 시장이 같이 열려 있을 때는 해외 가격이 국내 주가를 바로 따라가요. 그래서 지금은 내일 시가를 미리 알려줄 정보가 거의 없어요. 오늘 15:30에 장이
+              끝나면 그때부터 예측을 보여드릴게요.
+            </p>
+            <button
+              className="trust"
+              onClick={() => {
+                if (!why) track('model_explain_open', { asset: asset.id, hit_rate: p.backtest.hitRatePct ?? 0 })
+                setWhy(!why)
+              }}
+              aria-expanded={why}
+            >
+              <span>
+                지난 {p.backtest.tested}번 개장 중 <b>{Math.round(((p.backtest.hitRatePct ?? 0) * p.backtest.tested) / 100)}번</b> 방향을 맞혔어요
+              </span>
+              <span className="faint">{why ? '접기' : '어떻게 계산하나요'}</span>
+            </button>
+            {why && (
+              <div className="notice" style={{ marginTop: 8 }}>
+                장이 닫혀 있는 동안 {PERP_PLAIN} 가격을 원/USDC 환율로 바꿔서, 마지막 종가와 얼마나 벌어졌는지 봐요. 지난 {p.model.n}번의 개장에서 이 차이가 실제 시가에
+                얼마나 반영됐는지 학습해서 확률을 내요.
+              </div>
+            )}
+          </>
+        ) : p ? (
           <>
             <p className={`q-card__a ${verdict(p.probUp).tone}`}>{verdict(p.probUp).text}</p>
             <div className="big-prob">
@@ -124,10 +152,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
               </div>
             </dl>
             <p className="q-card__reason">
-              {p.status === 'in-session'
-                ? `지금은 장이 열려 있어서 ${p.hoursToOpen < 24 ? '내일' : '다음'} 시가는 아직 많이 바뀔 수 있어요. 장이 끝난 뒤에 다시 보면 더 정확해요.`
-                : `${PERP_PLAIN}에서 ${asset.short} 가격이 ${p.regime === 'weekend' ? '지난 종가' : '오늘 종가'}보다 ${fmtPct(p.perpGapPct, 1)} ${p.perpGapPct >= 0 ? '높게' : '낮게'} 거래되고 있어요.`}
-              {p.auction && ` 지금 동시호가 예상 체결가는 ${fmtPrice(p.auction.price)}원이에요.`}
+              {`${PERP_PLAIN}에서 ${asset.short} 가격이 ${p.regime === 'weekend' ? '지난 종가' : '오늘 종가'}보다 ${fmtPct(p.perpGapPct, 1)} ${p.perpGapPct >= 0 ? '높게' : '낮게'} 거래되고 있어요.`}
             </p>
             <button
               className="trust"
@@ -205,6 +230,8 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
       </section>
 
       <section className="panel" style={{ padding: 20 }}>{series.data && series.data.asset === asset.id ? <Spark data={series.data} isIdx={isIdx} /> : <div className="skeleton" style={{ height: 170 }} />}</section>
+
+      <TodayIssue asset={asset.id} limit={2} />
 
       <button
         className="btn btn--lg btn--fill btn--block"

@@ -22,10 +22,11 @@ export function BrandMark({ size = 30 }: { size?: number }) {
           <stop offset="0.5" stopColor="#fff" stopOpacity="0.75" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
-        <clipPath id="bm-clip">
-          <circle cx="24" cy="14" r="12" />
-          <path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" />
-        </clipPath>
+        {/* 빛은 달(초승달 모양 그대로)과 구름 안에서만 */}
+        <mask id="bm-shape">
+          <circle cx="24" cy="14" r="12" fill="#fff" mask="url(#bm-cut)" />
+          <path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" fill="#fff" />
+        </mask>
       </defs>
       {/* 초승달 */}
       <circle cx="24" cy="14" r="12" fill="url(#bm-moon)" mask="url(#bm-cut)" />
@@ -33,11 +34,12 @@ export function BrandMark({ size = 30 }: { size?: number }) {
       <path d="M6.6 36.2a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29.6 29.2a3.5 3.5 0 0 1-.8 7z" fill="#000" opacity="0.22" />
       <path d="M6 35a5.5 5.5 0 0 1 .5-11 7.5 7.5 0 0 1 14.2-2A6 6 0 0 1 29 28a3.5 3.5 0 0 1-.8 7z" fill="url(#bm-cloud)" />
       {/* 호버: 빛 */}
-      <g clipPath="url(#bm-clip)">
+      <g mask="url(#bm-shape)">
         <rect className="brand__shine" x="-30" y="0" width="18" height="40" fill="url(#bm-shine)" transform="skewX(-20)" />
       </g>
-      {/* 호버: 노란 화살표 (Z 모양, 오른쪽 끝이 위로) */}
-      <path className="brand__bolt" d="M5 27 L15 21 L20 26 L35 9 M28 9 H35 V16" fill="none" stroke="#FFEB00" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+      {/* 호버: 노란 화살표. 왼쪽 아래에서 시작해 오른쪽 위로 그려지고, 끝에 화살촉 */}
+      <path className="brand__bolt" pathLength={100} d="M4 31 L14.5 22.5 L20 27.5 L34.5 11" fill="none" stroke="#FFEB00" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path className="brand__head" d="M27 9.5 L36.5 8.5 L35.5 18 Z" fill="#FFEB00" stroke="#FFEB00" strokeWidth="2" strokeLinejoin="round" />
     </svg>
   )
 }

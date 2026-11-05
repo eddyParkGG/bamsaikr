@@ -504,15 +504,32 @@ p {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 .brand__bolt {
-  stroke-dasharray: 60;
-  stroke-dashoffset: 60;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
   opacity: 0;
-  transition: stroke-dashoffset 0.45s cubic-bezier(0.3, 0.7, 0.2, 1) 0.12s, opacity 0.1s 0.12s;
+  transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s, opacity 0s 0.15s;
+}
+.brand__head {
+  opacity: 0;
+  transform: scale(0.3);
+  transform-origin: 34.5px 11px;
+  transition: opacity 0.12s 0.5s, transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1) 0.5s;
 }
 .logo:hover .brand__bolt,
 .logo:focus-visible .brand__bolt {
   stroke-dashoffset: 0;
   opacity: 1;
+}
+.logo:hover .brand__head,
+.logo:focus-visible .brand__head {
+  opacity: 1;
+  transform: scale(1);
+}
+/* 손을 떼면 바로 사라지게 (되감기 모션 없이) */
+.logo:not(:hover) .brand__bolt,
+.logo:not(:hover) .brand__head {
+  transition-duration: 0s;
+  transition-delay: 0s;
 }
 .logo:hover .brand__shine {
   animation: brand-shine 0.7s ease-out;
@@ -526,7 +543,8 @@ p {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .brand__bolt {
+  .brand__bolt,
+  .brand__head {
     transition: none;
   }
   .logo:hover .brand__shine {

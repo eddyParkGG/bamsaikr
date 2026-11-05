@@ -21,11 +21,13 @@ interface LiveState {
   candle: Record<string, LiveCandle>
   usdc: { rate: number; bid: number; ask: number; t: number } | null
   hlConnected: boolean
+  krxBook: Record<string, { asks: Level[]; bids: Level[]; t: number }>
+  krxTrade: Record<string, { price: number; volume: number; t: number }>
 }
 
-export const useLive = create<LiveState>(() => ({ ctx: {}, book: {}, candle: {}, usdc: null, hlConnected: false }))
+export const useLive = create<LiveState>(() => ({ ctx: {}, book: {}, candle: {}, usdc: null, hlConnected: false, krxBook: {}, krxTrade: {} }))
 
-let pending: Partial<LiveState> & { ctx?: LiveState['ctx']; book?: LiveState['book']; candle?: LiveState['candle'] } = {}
+let pending: Partial<LiveState> = {}
 let raf = 0
 function queue(patch: (p: typeof pending) => void) {
   patch(pending)
@@ -39,6 +41,8 @@ function queue(patch: (p: typeof pending) => void) {
         ctx: p.ctx ? { ...s.ctx, ...p.ctx } : s.ctx,
         book: p.book ? { ...s.book, ...p.book } : s.book,
         candle: p.candle ? { ...s.candle, ...p.candle } : s.candle,
+        krxBook: p.krxBook ? { ...s.krxBook, ...p.krxBook } : s.krxBook,
+        krxTrade: p.krxTrade ? { ...s.krxTrade, ...p.krxTrade } : s.krxTrade,
       }))
     })
   }
@@ -148,5 +152,34 @@ export function subscribeUsdc(): () => void {
   return () => {
     upbitRefs--
     if (!upbitRefs) upbit?.close()
+  }
+}
+
+// ───────── 국내 실시간 (토스증권 웹소켓 → 서버 중계 SSE) ─────────
+
+const krxStreams = new Map<string, { es: EventSource; refs: number }>()
+
+export function subscribeKrx(asset: string, code: string): () => void {
+  let s = krxStreams.get(code)
+  if (!s) {
+    const es = new EventSource(`/api/v1/stream/krx?asset=${asset}`)
+    es.addEventListener('book', (ev) => {
+      const d = JSON.parse((ev as MessageEvent).data)
+      queue((p) => ((p.krxBook ??= {})[code] = { asks: d.asks, bids: d.bids, t: d.t }))
+    })
+    es.addEventListener('trade', (ev) => {
+      const d = JSON.parse((ev as MessageEvent).data)
+      queue((p) => ((p.krxTrade ??= {})[code] = { price: d.price, volume: d.volume, t: d.t }))
+    })
+    s = { es, refs: 0 }
+    krxStreams.set(code, s)
+  }
+  s.refs++
+  return () => {
+    const cur = krxStreams.get(code)
+    if (!cur) return
+    if (--cur.refs > 0) return
+    cur.es.close()
+    krxStreams.delete(code)
   }
 }

@@ -23,7 +23,7 @@ export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnaps
       </span>
       {items?.map((s) => (
         <span key={s.asset}>
-          <span className="faint">{s.name} perp</span> {fmtPrice(s.perpKrw, s.asset === 'KR200')}{' '}
+          <span className="faint">{s.name} perp</span> {fmtPrice(s.perpKrw)}{' '}
           <span className={s.perp.changePct >= 0 ? 'up' : 'down'}>{fmtPct(s.perp.changePct)}</span>
         </span>
       ))}

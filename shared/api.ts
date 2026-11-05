@@ -10,7 +10,8 @@ export interface Status {
   session: 'regular' | 'nxt' | 'closed'
   nextOpen: number
   prevClose: number
-  krxSource: 'kis' | 'naver'
-  kis: boolean
+  krxSource: 'toss'
+  toss: boolean
+  liveKrxOrders: boolean
   hlAgent: boolean
 }

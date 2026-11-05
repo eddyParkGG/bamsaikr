@@ -10,7 +10,6 @@ import {
   type IChartApi,
   type IPriceLine,
   type ISeriesApi,
-  type LogicalRange,
   type SeriesMarker,
   type Time,
   type UTCTimestamp,
@@ -54,8 +53,10 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   const legend = useRef<HTMLDivElement>(null)
   const tip = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const seriesRef = useRef<{ perp?: ISeriesApi<'Candlestick' | 'Line'>; perpIsCandle?: boolean }>({})
-  const rangeRef = useRef<LogicalRange | null>(null)
+  const seriesRef = useRef<{ perp?: ISeriesApi<'Candlestick' | 'Line'>; perpIsCandle?: boolean; krx?: ISeriesApi<'Candlestick'> | null }>({})
+  // 사용자가 옮겨둔 화면(시간 범위). 지표·시장 토글로 차트를 다시 만들어도 그대로 복원
+  const viewRef = useRef<{ from: number; to: number } | null>(null)
+  const restoreRef = useRef(false)
   const newsRef = useRef(news)
   newsRef.current = news
   const onNewsRef = useRef(onNews)
@@ -132,7 +133,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
         ? chart.addSeries(CandlestickSeries, { ...kCandle, title: 'perp' }, 0)
         : chart.addSeries(LineSeries, { color: perpC, lineWidth: 2, title: 'perp', priceLineVisible: true, priceLineStyle: LineStyle.Dotted, crosshairMarkerRadius: 4, crosshairMarkerBorderColor: css('--bg') }, 0)
       : null
-    seriesRef.current = { perp: perp as ISeriesApi<'Candlestick' | 'Line'>, perpIsCandle }
+    seriesRef.current = { perp: perp as ISeriesApi<'Candlestick' | 'Line'>, perpIsCandle, krx }
     const host = (krx ?? perp) as ISeriesApi<'Candlestick' | 'Line'> | null
 
     // 배경 · 뉴스 핀
@@ -276,9 +277,18 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const step = STEP_MS[interval]
       const first = Math.min(d.perp[0]?.t ?? Infinity, d.krx[0]?.t ?? Infinity)
       const barOf = (ms: number) => (interval === '1d' ? Math.floor((ms + 9 * 3600_000) / step) * step : Math.floor(ms / step) * step)
+      const L = lookup.current
       pins.set(
-        settings.news ? nw.filter((n) => n.t >= first).map((n) => ({ time: ct(barOf(n.t)), id: n.date + n.title })) : [],
-        { fill: '#FFEB00', ink: '#060B11', line: css('--line-strong') },
+        settings.news
+          ? nw
+              .filter((n) => n.t >= first)
+              .flatMap((n) => {
+                const time = ct(barOf(n.t)) as number
+                const bar = (settings.showKrx ? L.krx.get(time) : undefined) ?? L.perp.get(time)
+                return bar ? [{ time, price: bar.h, id: n.date + n.title }] : []
+              })
+          : [],
+        { fill: '#FFEB00', ink: '#060B11' },
       )
 
       // 개장 수렴: 개장 봉 위에 '주식이 perp 갭을 몇 % 따라갔는지'
@@ -370,8 +380,10 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       setCard({ x: param.point.x, y: param.point.y, t: param.time as number })
     })
 
-    if (rangeRef.current) chart.timeScale().setVisibleLogicalRange(rangeRef.current)
-    chart.timeScale().subscribeVisibleLogicalRangeChange((r) => (rangeRef.current = r))
+    restoreRef.current = !!viewRef.current
+    chart.timeScale().subscribeVisibleTimeRangeChange((r) => {
+      if (r && !restoreRef.current) viewRef.current = { from: r.from as number, to: r.to as number }
+    })
     setReady((x) => x + 1)
 
     return () => {
@@ -388,7 +400,12 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     if (!chart?.__apply) return
     chart.__apply(data, base, spans, news, events, prediction)
     ;(chart as unknown as { __legend?: (t: null) => void }).__legend?.(null)
-    if (firstApply.current || !rangeRef.current) {
+    const ts0 = (chart as unknown as IChartApi).timeScale()
+    if (restoreRef.current && viewRef.current) {
+      ts0.setVisibleRange({ from: viewRef.current.from as UTCTimestamp, to: viewRef.current.to as UTCTimestamp })
+      restoreRef.current = false
+      firstApply.current = false
+    } else if (firstApply.current || !viewRef.current) {
       firstApply.current = false
       const lastT = Math.max(data.perp.at(-1)?.t ?? 0, data.krx.at(-1)?.t ?? 0)
       // 일봉은 최근 1년 전체, 분봉은 하루~이틀
@@ -400,7 +417,8 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   }, [data, base, spans, news, events, prediction, ready, interval])
 
   useEffect(() => {
-    rangeRef.current = null
+    viewRef.current = null
+    restoreRef.current = false
     firstApply.current = true
     setCard(null)
   }, [asset.id, interval])
@@ -431,6 +449,32 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       }
     })
   }, [asset, interval, data.perp, arb?.fx?.rate])
+
+  // 실시간: 국내 최신 봉을 토스증권 체결로 갱신
+  const krxLast = useRef<Bar | null>(null)
+  useEffect(() => {
+    krxLast.current = data.krx.at(-1) ? { ...data.krx.at(-1)! } : null
+  }, [data.krx])
+  useEffect(() => {
+    const step = STEP_MS[interval]
+    return useLive.subscribe((s, prev) => {
+      const tr = s.krxTrade[asset.krxCode]
+      if (!tr || tr === prev.krxTrade[asset.krxCode]) return
+      const series = seriesRef.current.krx
+      if (!series) return
+      // 일봉은 KST 날짜 시작, 분봉은 구간 시작
+      const t = interval === '1d' ? Math.floor((tr.t + 9 * 3600_000) / 86400_000) * 86400_000 : Math.floor(tr.t / step) * step
+      const last = krxLast.current
+      if (last && t < last.t) return
+      const bar: Bar = last && last.t === t ? { ...last, h: Math.max(last.h, tr.price), l: Math.min(last.l, tr.price), c: tr.price, v: last.v + tr.volume } : { t, o: tr.price, h: tr.price, l: tr.price, c: tr.price, v: tr.volume }
+      krxLast.current = bar
+      try {
+        series.update({ time: ct(bar.t), open: bar.o, high: bar.h, low: bar.l, close: bar.c })
+      } catch {
+        // 데이터 교체 직후 시간 역전은 무시
+      }
+    })
+  }, [asset.krxCode, interval])
 
   return (
     <div className="chart">

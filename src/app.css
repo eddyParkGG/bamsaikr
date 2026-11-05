@@ -25,103 +25,114 @@
   filter: brightness(1.06);
 }
 
-/* ───── 앱 셸: 본문 + 우측 관심 패널 + 하단 띠 ───── */
+/* ───── 앱 셸 ───── */
 .shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 0;
-  min-height: calc(100vh - var(--header-h));
-  padding-bottom: 36px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 4px 24px 60px;
 }
-.shell__main {
-  min-width: 0;
-  padding: 4px 16px 16px 24px;
-}
-.shell__side {
-  border-left: 1px solid var(--line);
-  padding: 0 20px;
-  position: sticky;
-  top: var(--header-h);
-  height: calc(100vh - var(--header-h) - 36px);
-  overflow-y: auto;
+.shell--pro {
+  max-width: none;
 }
 
-/* 관심 패널 */
-.watch__head {
+/* 상단 지표 (토스 홈: 장 상태 줄 + 미니 차트 카드) */
+.ind-strip {
+  background: var(--bg);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-panel);
+  padding: 14px 20px 16px;
+  margin: 8px 0 4px;
+}
+.ind-strip__head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 52px;
-}
-.watch__head h2 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-}
-.watch__news {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 0 14px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 8px;
-}
-.watch__news-tag {
-  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
+  font-size: 14px;
+  flex-wrap: wrap;
 }
-.dot-key {
+.ind-strip__head b {
+  color: var(--text);
+  font-weight: 600;
+}
+.ind-strip__head .faint {
+  font-size: 12px;
+  font-weight: 500;
+}
+.dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--key);
-  display: inline-block;
+  background: var(--text-3);
 }
-.watch__news-title {
+.dot--on {
+  background: #00b37e;
+}
+.ind-strip__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 14px;
+}
+.ind {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  border-left: 1px solid var(--line);
+}
+.ind:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+.ind__name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+.ind__value {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ind__value span {
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.spark-mini {
+  flex-shrink: 0;
+}
+
+/* 오늘의 이슈 */
+.issue__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 4px 6px;
+}
+.issue__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-item);
+  text-align: left;
+}
+.issue__row:hover {
+  background: var(--fill);
+}
+.issue__title {
+  flex: 1;
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
   line-height: 1.45;
 }
-.watch__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.watch__row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  margin: 0 -12px;
-  border-radius: var(--r-item);
-  min-height: 60px;
-}
-.watch__row:hover,
-.watch__row[aria-current='page'] {
-  background: var(--fill);
-}
-.watch__name {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-}
-.watch__nums {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-.watch__nums .faint {
+.issue__date {
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* 하단 띠 */
@@ -186,7 +197,7 @@
   color: var(--text-2);
 }
 .stock-head__price b {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.4px;
@@ -201,7 +212,7 @@
 .stats__group {
   display: grid;
   grid-template-columns: auto auto;
-  gap: 4px 14px;
+  gap: 2px 10px;
   padding: 0 18px;
   border-left: 1px solid var(--line);
 }
@@ -216,30 +227,34 @@
 .stats dd {
   margin: 0;
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .range {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 500;
 }
 .range__bar {
   position: relative;
-  width: 64px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--fill-strong);
+  width: 46px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--fill);
+  box-shadow: inset 0 0 0 1px var(--fill);
 }
 .range__bar i {
   position: absolute;
-  top: -2px;
-  width: 7px;
-  height: 7px;
-  margin-left: -3.5px;
-  border-radius: 50%;
-  background: var(--text);
+  top: 0;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 99px;
+  background: #009169;
+  box-shadow: inset 0 0 0 0.75px #57c28d;
 }
 
 /* ───── 프로 모드 본문 ───── */
@@ -744,7 +759,7 @@
   text-align: right;
 }
 .easy-row__big {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
 }
 .prob-mini {
@@ -813,7 +828,7 @@
   margin-bottom: 6px;
 }
 .q-card__a {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.4px;
@@ -832,9 +847,8 @@
   margin-bottom: 12px;
 }
 .big-prob .num {
-  font-size: 40px;
-  font-weight: 800;
-  letter-spacing: -1px;
+  font-size: 18px;
+  font-weight: 700;
 }
 .q-facts {
   display: grid;
@@ -888,12 +902,6 @@
 }
 
 @media (max-width: 1100px) {
-  .shell {
-    grid-template-columns: 1fr;
-  }
-  .shell__side {
-    display: none;
-  }
   .pro-grid {
     grid-template-columns: 1fr;
   }
@@ -902,8 +910,16 @@
   }
 }
 @media (max-width: 720px) {
-  .shell__main {
-    padding: 4px 12px 12px;
+  .shell {
+    padding: 4px 12px 60px;
+  }
+  .ind-strip__cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .ind {
+    border-left: none;
+    padding: 0;
   }
   .q-facts {
     grid-template-columns: 1fr;
@@ -931,32 +947,3 @@
   color: var(--down);
 }
 
-/* 접힌 관심 패널 (토스 우측 레일) */
-.shell--collapsed {
-  grid-template-columns: minmax(0, 1fr) 64px;
-}
-.shell--collapsed .shell__side {
-  padding: 0 8px;
-}
-.rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding-top: 8px;
-}
-.rail__item {
-  width: 48px;
-  padding: 8px 0 6px;
-  border-radius: var(--r-item);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.rail__item:hover,
-.rail__item[aria-current='page'] {
-  background: var(--fill);
-}

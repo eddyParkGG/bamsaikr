@@ -4,7 +4,7 @@ import { isTradingDay, isWeekend, kstDateKey, kstToMs } from '../../shared/sessi
 import { cached } from '../lib/cache.js'
 import type { Candle } from './hyperliquid.js'
 import { regularSessions } from './krxSessions.js'
-import { tossCalendar, tossCandles, tossOrderbook, tossPrices } from './toss.js'
+import { tossCalendar, tossCandles, tossMinutes, tossOrderbook, tossPrices } from './toss.js'
 
 export const krxSource = () => 'toss' as const
 
@@ -60,7 +60,7 @@ export async function krxDaily(a: Asset, from: string, _to?: string): Promise<Da
 
 /** 1분봉 (통합 시세라 08:00~20:00 넥스트레이드 포함). 토스는 봉 끝 시각이라 시작 시각으로 1분 당김 */
 export async function krxMinutes(a: Asset, since: number): Promise<Candle[]> {
-  const rows = await tossCandles(a.krxCode, '1m', since)
+  const rows = await tossMinutes(a.krxCode, since)
   return rows.filter((k) => k.v > 0).map((k) => ({ ...k, t: k.t - 60_000 }))
 }
 

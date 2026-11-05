@@ -119,6 +119,38 @@ export function tossCandlesBefore(code: string, interval: '1m' | '1d', before: n
   })
 }
 
+/**
+ * 기간 분봉. 하루(08:00~20:00, 약 720개)씩 나눠 날짜끼리 병렬로 받음
+ * 지난 날짜는 바뀌지 않으므로 하루 단위로 오래 캐시
+ */
+export async function tossMinutes(code: string, since: number): Promise<TossCandle[]> {
+  const KST = 9 * 3600_000
+  const days: number[] = []
+  for (let d = Math.floor((since + KST) / 86400_000); d <= Math.floor((Date.now() + KST) / 86400_000); d++) days.push(d)
+  const oneDay = (d: number) => {
+    const dayStart = d * 86400_000 - KST // 해당 KST 날짜 00:00
+    const isPast = dayStart + 86400_000 < Date.now()
+    return cached(`toss:minday:${code}:${d}`, isPast ? 24 * 3600_000 : 15_000, async () => {
+      const out: TossCandle[] = []
+      let before = Math.min(Date.now(), dayStart + 20 * 3600_000 + 60_000)
+      for (let i = 0; i < 5; i++) {
+        const iso = new Date(before + KST).toISOString().replace('Z', '+09:00')
+        const r = await call<{ candles: RawCandle[]; nextBefore: string | null }>(`/api/v1/candles?symbol=${code}&interval=1m&count=200&before=${encodeURIComponent(iso)}`)
+        const rows = r.candles.map(mapCandle).filter((k) => k.t >= dayStart)
+        out.push(...rows)
+        if (rows.length < r.candles.length || !r.nextBefore) break
+        before = Date.parse(r.nextBefore)
+        if (before < dayStart + 8 * 3600_000) break
+      }
+      return out
+    })
+  }
+  const all: TossCandle[] = []
+  // 차트 API 초당 20회 한도 → 4일씩
+  for (let i = 0; i < days.length; i += 4) all.push(...(await Promise.all(days.slice(i, i + 4).map(oneDay))).flat())
+  return all.filter((k) => k.t >= since).sort((a, b) => a.t - b.t)
+}
+
 export function tossIndicatorPrices(symbols: string[]) {
   return cached(`toss:ind:${symbols.join(',')}`, 2000, async () => {
     const r = await call<Record<string, unknown>[]>(`/api/v1/market-indicators/prices?symbols=${symbols.join(',')}`)

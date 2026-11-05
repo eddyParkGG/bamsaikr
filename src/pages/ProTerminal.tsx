@@ -3,10 +3,11 @@ import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Pr
 import type { Asset } from '../../shared/assets'
 import { StockLogo } from '../components/Brand'
 import { NewsSheet } from '../components/NewsSheet'
+import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
 import { fmtPct, fmtPrice, fmtUsd, fmtUsdCompact, kstDay, tone, untilText } from '../lib/format'
-import { subscribeHl, subscribeUsdc, useLive } from '../lib/live'
+import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
 import { Orderbook } from '../pro/Orderbook'
@@ -128,14 +129,18 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: asset.perp }), [asset.perp])
   const ctx = useLive((s) => s.ctx[asset.perp])
   const usdc = useLive((s) => s.usdc)
+  const trade = useLive((s) => s.krxTrade[asset.krxCode])
   if (!arb) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
+  // 국내 현재가는 토스증권 실시간 체결로 갱신
+  const krxPrice = trade && trade.t > arb.updatedAt - 5000 ? trade.price : arb.krx.price
   const mid = ctx?.mid ?? arb.perp.mid
   const rate = asset.fx ? (usdc?.rate ?? arb.fx?.rate ?? 0) : 1
   const perpKrw = mid * rate
-  const premium = (perpKrw / arb.krx.price - 1) * 100
+  const premium = (perpKrw / krxPrice - 1) * 100
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
-  const diff = arb.krx.price - arb.krx.prevClose
+  const diff = krxPrice - arb.krx.prevClose
+  const changePct = (diff / arb.krx.prevClose) * 100
   return (
     <div className="stock-head">
       <div className="stock-head__id">
@@ -147,21 +152,21 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         </div>
         <div className="stock-head__price num">
           <b>
-            {fmtPrice(arb.krx.price, isIdx)}
+            {fmtPrice(krxPrice, isIdx)}
             {isIdx ? '' : '원'}
           </b>
           <span>어제보다</span>
           <span className={tone(diff)}>
             {diff > 0 ? '+' : ''}
             {fmtPrice(diff, isIdx)}
-            {isIdx ? '' : '원'} ({fmtPct(Math.abs(arb.krx.changePct), 2, false)})
+            {isIdx ? '' : '원'} ({fmtPct(Math.abs(changePct), 2, false)})
           </span>
         </div>
       </div>
       <dl className="stats">
         <div className="stats__group">
           <dt>1일 범위</dt>
-          <dd>{arb.krx.high ? <Range low={arb.krx.low} high={arb.krx.high} value={arb.krx.price} isIdx={isIdx} /> : '-'}</dd>
+          <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
           <dt>perp 범위</dt>
           <dd>
             <Range low={Math.min(arb.perp.mid, ctx?.prevDay ?? arb.perp.mid) * rate} high={Math.max(arb.perp.mid, ctx?.prevDay ?? arb.perp.mid) * rate} value={perpKrw} isIdx={isIdx} />
@@ -213,8 +218,8 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
         </span>
       </div>
       <div className="panel__body">
-        <div className="row" style={{ alignItems: 'baseline', marginBottom: 8 }}>
-          <span className={`num ${up ? 'up' : 'down'}`} style={{ fontSize: 24, fontWeight: 800 }}>
+        <div className="row" style={{ alignItems: 'baseline', marginBottom: 8, opacity: p.status === 'in-session' ? 0.45 : 1 }}>
+          <span className={`num ${up ? 'up' : 'down'}`} style={{ fontSize: 18, fontWeight: 700 }}>
             {Math.round((up ? p.probUp : 1 - p.probUp) * 100)}%
           </span>
           <span className="muted" style={{ fontSize: 13, fontWeight: 600 }}>
@@ -229,7 +234,7 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
           <i className="prob__up" style={{ width: `${p.probUp * 100}%` }} />
         </div>
         <p className="faint num" style={{ fontSize: 12, marginTop: 8 }}>
-          80% 구간 {fmtPrice(p.band80.low, isIdx)} ~ {fmtPrice(p.band80.high, isIdx)} · 과거 적중 {p.backtest.hitRatePct}%
+          {p.status === 'in-session' ? '장중 잠정치 · 15:30 마감 후부터 의미 있어요' : `80% 구간 ${fmtPrice(p.band80.low, isIdx)} ~ ${fmtPrice(p.band80.high, isIdx)} · 과거 적중 ${p.backtest.hitRatePct}%`}
         </p>
       </div>
     </section>
@@ -249,9 +254,10 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   const news = useQuery<{ items: NewsMarker[] }>(`/api/v1/news?asset=${asset.id}`, 300_000)
   const conv = useQuery<{ events: OpenEvent[] }>(`/api/v1/convergence?asset=${asset.id}&limit=500`, 300_000)
   const pred = useQuery<Prediction>(`/api/v1/predict?asset=${asset.id}`, 15_000)
-  const status = useQuery<Status>('/api/v1/status', 60_000)
+  const status = useQuery<Status & { liveKrxOrders?: boolean }>('/api/v1/status', 60_000)
 
   useEffect(() => subscribeUsdc(), [])
+  useEffect(() => subscribeKrx(asset.id, asset.krxCode), [asset.id, asset.krxCode])
   useEffect(() => subscribeHl({ type: 'candle', coin: asset.perp, interval }), [asset.perp, interval])
 
   const onNews = useCallback(
@@ -373,14 +379,15 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                 휴장 · perp만 거래
               </span>
               <span className="spacer" />
-              <span>perp는 업비트 원/USDC로 환산 · 국내 {series.data?.krxSource === 'kis' ? '한국투자증권' : '공개 시세(임시)'}</span>
+              <span>국내 토스증권 통합 시세 · perp는 업비트 원/USDC로 환산</span>
             </div>
           </section>
 
           <div className="pro-col">
+            <TodayIssue asset={asset.id} limit={1} onOpen={onNews} />
             <NextOpenMini p={pred.data ?? null} asset={asset} />
-            <Orderbook asset={asset} krxAvailable={!!status.data?.kis} />
-            <OrderPanel asset={asset} arb={arb} />
+            <Orderbook asset={asset} />
+            <OrderPanel asset={asset} arb={arb} liveKrx={!!status.data?.liveKrxOrders} />
           </div>
         </div>
       )}

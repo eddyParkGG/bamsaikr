@@ -40,17 +40,6 @@ function SideTabs({ side, setSide }: { side: Side; setSide: (s: Side) => void })
   )
 }
 
-function useToken() {
-  const [token, setToken] = useState(() => sessionStorage.getItem('bamsai-token') ?? '')
-  return [
-    token,
-    (t: string) => {
-      sessionStorage.setItem('bamsai-token', t)
-      setToken(t)
-    },
-  ] as const
-}
-
 function Result({ value, error }: { value: unknown; error: string }) {
   if (error) return <p className="notice down">{error}</p>
   if (!value) return null
@@ -85,7 +74,6 @@ function PerpForm({ asset }: { asset: Asset }) {
   const [via, setVia] = useState<'wallet' | 'api'>('wallet')
   const [master, setMaster] = useState<`0x${string}` | null>(null)
   const [hasAgent, setHasAgent] = useState(false)
-  const [token] = useToken()
   const { busy, out, err, run } = useRunner()
   const input = { side, size: Number(size), price: kind === 'limit' && price ? Number(price) : undefined, leverage: lev }
   const sideBtn = side === 'buy' ? 'btn--buy' : 'btn--sell'
@@ -206,12 +194,12 @@ function PerpForm({ asset }: { asset: Asset }) {
           <button
             className={`btn btn--lg ${sideBtn}`}
             style={{ flex: 1.4 }}
-            disabled={busy || !token}
-            title={token ? '' : 'API 토큰을 넣어야 실주문할 수 있어요'}
+            disabled={busy || network === 'mainnet'}
+            title={network === 'mainnet' ? '메인넷은 내 지갑으로만 주문할 수 있어요' : ''}
             onClick={() =>
               run(() => {
                 track('order_submit', { market: 'perp', side, asset: asset.id, network, via })
-                return post(`/api/v1/orders/perp?asset=${asset.id}`, { ...input, network, dryRun: false }, token)
+                return post(`/api/v1/orders/perp?asset=${asset.id}`, { ...input, network, dryRun: false })
               })
             }
           >
@@ -229,19 +217,17 @@ function PerpForm({ asset }: { asset: Asset }) {
   )
 }
 
-function KrxForm({ asset }: { asset: Asset }) {
+function KrxForm({ asset, live }: { asset: Asset; live: boolean }) {
   const [side, setSide] = useState<Side>('buy')
   const [kind, setKind] = useState<'limit' | 'market'>('limit')
   const [qty, setQty] = useState('1')
   const [price, setPrice] = useState('')
-  const [token] = useToken()
   const { busy, out, err, run } = useRunner()
   const send = (dryRun: boolean) =>
     run(() => {
       track(dryRun ? 'order_preview' : 'order_submit', { market: 'krx', side, asset: asset.id })
-      return post(`/api/v1/orders/krx?asset=${asset.id}`, { side, qty: Number(qty), price: kind === 'limit' && price ? Number(price) : undefined, dryRun }, dryRun ? undefined : token)
+      return post(`/api/v1/orders/krx?asset=${asset.id}`, { side, qty: Number(qty), price: kind === 'limit' && price ? Number(price) : undefined, dryRun })
     })
-  if (asset.kind === 'index') return <p className="notice">지수는 직접 살 수 없어요. KODEX 200 같은 ETF로 대신 주문해 주세요.</p>
   return (
     <div className="stack" style={{ gap: 10 }}>
       <SideTabs side={side} setSide={setSide} />
@@ -265,29 +251,29 @@ function KrxForm({ asset }: { asset: Asset }) {
         <button className="btn btn--lg btn--fill" style={{ flex: 1 }} disabled={busy} onClick={() => send(true)}>
           미리보기
         </button>
-        <button className={`btn btn--lg ${side === 'buy' ? 'btn--buy' : 'btn--sell'}`} style={{ flex: 1.4 }} disabled={busy || !token} onClick={() => send(false)}>
-          {side === 'buy' ? '매수하기' : '매도하기'}
-        </button>
+        {live && (
+          <button className={`btn btn--lg ${side === 'buy' ? 'btn--buy' : 'btn--sell'}`} style={{ flex: 1.4 }} disabled={busy} onClick={() => send(false)}>
+            {side === 'buy' ? '매수하기' : '매도하기'}
+          </button>
+        )}
       </div>
       <p className="faint" style={{ fontSize: 12 }}>
-        한국투자증권 계좌로 주문해요. 서버가 모의투자 설정이면 모의계좌로 나가요.
+        {live ? '토스증권 계좌로 바로 주문돼요. 모의투자가 없어서 실제 돈이 나가요.' : '토스증권은 모의투자가 없어서 이 화면에서는 주문 내용만 확인해요. 실제 주문은 서버 주인이 켜야 돼요.'}
       </p>
       <Result value={out} error={err} />
     </div>
   )
 }
 
-function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
+function PairForm({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot | null; live: boolean }) {
   const [amount, setAmount] = useState('10000000')
-  const [token] = useToken()
   const { busy, out, err, run } = useRunner()
   const dir = arb?.net.direction ?? 'perp_short_stock_long'
   const send = (dryRun: boolean) =>
     run(() => {
       track(dryRun ? 'order_preview' : 'order_submit', { market: 'pair', asset: asset.id })
-      return post(`/api/v1/orders/pair?asset=${asset.id}`, { notionalKrw: Number(amount), direction: dir, network: 'testnet', dryRun }, dryRun ? undefined : token)
+      return post(`/api/v1/orders/pair?asset=${asset.id}`, { notionalKrw: Number(amount), direction: dir, network: 'testnet', dryRun })
     })
-  if (asset.kind === 'index') return <p className="notice">페어 주문은 개별 종목만 돼요.</p>
   return (
     <div className="stack" style={{ gap: 10 }}>
       {arb && (
@@ -313,9 +299,11 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         <button className="btn btn--lg btn--fill" style={{ flex: 1 }} disabled={busy} onClick={() => send(true)}>
           미리보기
         </button>
-        <button className="btn btn--lg btn--key" style={{ flex: 1.4 }} disabled={busy || !token} onClick={() => send(false)}>
-          두 주문 동시에
-        </button>
+        {live && (
+          <button className="btn btn--lg btn--key" style={{ flex: 1.4 }} disabled={busy} onClick={() => send(false)}>
+            두 주문 동시에
+          </button>
+        )}
       </div>
       <p className="faint" style={{ fontSize: 12 }}>
         두 주문은 동시에 나가지만 한쪽만 체결될 수 있어요. 미체결 쪽은 직접 확인해 주세요.
@@ -325,10 +313,8 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
+function OrderPanelImpl({ asset, arb, liveKrx }: { asset: Asset; arb: ArbSnapshot | null; liveKrx: boolean }) {
   const [tab, setTab] = useState<Tab>('perp')
-  const [token, setToken] = useToken()
-  const [showToken, setShowToken] = useState(false)
   const tabs: [Tab, string][] = [
     ['perp', 'perp 주문'],
     ['krx', '주식 주문'],
@@ -342,20 +328,11 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null 
             {label}
           </button>
         ))}
-        <span className="spacer" />
-        <button className="chip" onClick={() => setShowToken(!showToken)} title="실주문용 API 토큰">
-          {token ? '토큰 ✓' : '토큰'}
-        </button>
       </div>
       <div className="panel__body">
-        {showToken && (
-          <div className="field" style={{ marginBottom: 10 }}>
-            <input type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="서버 API_TOKEN" />
-          </div>
-        )}
         {tab === 'perp' && <PerpForm asset={asset} />}
-        {tab === 'krx' && <KrxForm asset={asset} />}
-        {tab === 'pair' && <PairForm asset={asset} arb={arb} />}
+        {tab === 'krx' && <KrxForm asset={asset} live={liveKrx} />}
+        {tab === 'pair' && <PairForm asset={asset} arb={arb} live={liveKrx} />}
       </div>
     </section>
   )

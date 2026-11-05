@@ -48,14 +48,6 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
               <b>{Math.round(p.probUp * 100)}%</b>
             </dd>
           </div>
-          {p.auction && (
-            <div className="kv">
-              <dt>동시호가 예상체결가</dt>
-              <dd>
-                {fmtPrice(p.auction.price)} ({fmtPct(p.auction.changePct)})
-              </dd>
-            </div>
-          )}
         </dl>
         </div>
       </section>

@@ -7,6 +7,7 @@ import { fmtPct, fmtPrice, fmtWon, kstDay, openDayText, untilText } from '../lib
 import { useQuery } from '../lib/query'
 import { Link } from '../lib/router'
 import { StockLogo } from '../components/Brand'
+import { TodayIssue } from '../components/TodayIssue'
 
 function StatusLine({ s }: { s?: Status }) {
   if (!s) return <div className="skeleton" style={{ width: 280, height: 18 }} />
@@ -27,6 +28,21 @@ function PredictRow({ p }: { p: Prediction }) {
   const a = ASSET_BY_ID[p.asset]
   const pl = probLabel(p.probUp)
   const v = verdict(p.probUp)
+  if (p.status === 'in-session')
+    return (
+      <Link href={`/s/${p.asset}`} className="easy-row">
+        <StockLogo id={p.asset} size={36} />
+        <div>
+          <p className="easy-row__name">{a.name}</p>
+          <p className="easy-row__sub">지금은 국내 시장이 열려 있어요</p>
+        </div>
+        <div className="easy-row__right">
+          <p className="easy-row__big faint" style={{ fontSize: 14 }}>
+            15:30 마감 후 예측
+          </p>
+        </div>
+      </Link>
+    )
   return (
     <Link href={`/s/${p.asset}`} className="easy-row" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
       <StockLogo id={p.asset} size={36} />
@@ -88,13 +104,17 @@ export default function EasyHome() {
   }, [!!preds.data, !!status.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const day = status.data ? openDayText(status.data.nextOpen) : '다음'
+  const inSession = status.data?.session === 'regular'
 
   return (
     <div className="easy">
       <section className="easy-hero">
-        <h1>{day} 아침 시가, 오를까요?</h1>
+        <h1>{inSession ? '장이 끝나면 내일 시가를 알려드려요' : `${day} 아침 시가, 오를까요?`}</h1>
         <StatusLine s={status.data} />
       </section>
+
+      <TodayIssue limit={3} />
+      <div style={{ height: 8 }} />
 
       <section className="panel easy-list">
         <div className="panel__head">
