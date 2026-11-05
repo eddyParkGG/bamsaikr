@@ -85,6 +85,14 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+}
+/* Scrollbars: thin, transparent track (same values as a brokerage PC web app) */
+:root {
+  scrollbar-color: rgba(224, 224, 255, 0.27) transparent;
+}
+:root[data-theme='light'] {
+  scrollbar-color: rgba(0, 29, 58, 0.18) transparent;
 }
 body {
   margin: 0;
