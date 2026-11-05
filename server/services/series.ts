@@ -2,7 +2,7 @@
 import type { Asset } from '../../shared/assets.js'
 import { kstDateKey, kstToMs, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
-import { getFundingHistory, getPerpCandles, type Candle, type HlInterval } from '../sources/hyperliquid.js'
+import { getFundingHistory, getPerpCandles, getPerpListedAt, type Candle, type HlInterval } from '../sources/hyperliquid.js'
 import { krxDaily, krxHolidays, krxMinutes, krxSource } from '../sources/krx.js'
 import { getUsdcKrwCandles, rateAt, type UpbitUnit } from '../sources/upbit.js'
 
@@ -31,6 +31,8 @@ export interface ChartSeries {
   premium: (SeriesPoint & { live: boolean })[] // live=false while domestic market is closed (gap vs last close)
   funding: SeriesPoint[]
   holidays: string[]
+  /** First Hyperliquid trade for this asset (ms) */
+  listedAt: number | null
 }
 
 function bucketize(minutes: Candle[], step: number): Candle[] {
@@ -105,6 +107,7 @@ export function chartSeries(asset: Asset, interval: ChartInterval): Promise<Char
       premium,
       funding: funding.map((f) => ({ t: f.t, v: f.rate * 100 })), // % per hour
       holidays: [...holidays],
+      listedAt: await getPerpListedAt(asset.perp).catch(() => null),
     }
   })
 }

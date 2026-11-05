@@ -81,6 +81,11 @@ export function getPerpCandles(coin: string, interval: HlInterval, startTime = 0
   })
 }
 
+/** When the perp started trading: the first 4h bar (4h bars still reach back to the Feb 2026 listings) */
+export function getPerpListedAt(coin: string): Promise<number | null> {
+  return cached(`hl:listed:${coin}`, 24 * 3600_000, async () => (await getPerpCandles(coin, '4h', 0))[0]?.t ?? null)
+}
+
 /**
  * Full 1h history since `fromMs`. One candleSnapshot call returns at most 5,000 candles
  * (about 208 days of 1h bars), so walk forward in 5,000-hour windows.

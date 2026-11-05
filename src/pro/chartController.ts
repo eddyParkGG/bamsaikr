@@ -16,7 +16,7 @@ import {
 } from 'lightweight-charts'
 import type { ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import { bollinger, ichimoku, macd, RIBBON, rsi, sma, vwap, type Bar, type Pt } from './indicators'
-import { NewsPins, SessionBands, type Span } from './primitives'
+import { NewsPins, SessionBands, VLine, type Span } from './primitives'
 import type { ChartSettings, IndicatorParams } from './settings'
 
 const KST = 9 * 3600
@@ -80,6 +80,8 @@ export class ChartController {
   readonly chart: IChartApi
   readonly bands = new SessionBands()
   readonly pins = new NewsPins()
+  /** Day the asset listed on Hyperliquid, drawn on the premium pane (the gap only exists from then on) */
+  readonly listing = new VLine()
   lookup: Lookup = { krx: new Map(), perp: new Map(), prem: new Map() }
   private series = new Map<string, AnySeries>()
   private settings: ChartSettings
@@ -207,6 +209,7 @@ export class ChartController {
         create: (ch, p) => {
           const se = ch.addSeries(HistogramSeries, { priceFormat: { type: 'custom', formatter: (v: number) => `${v.toFixed(2)}%` }, priceLineVisible: false, title: '가격 차이' }, p)
           se.createPriceLine({ price: 0, color: c.line, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: false })
+          se.attachPrimitive(this.listing)
           return se
         },
         // Strong colour while KRX is open (actionable), faded for closed-hours gaps
@@ -443,6 +446,13 @@ export class ChartController {
         : [],
       { fill: '#FFEB00', ink: '#060B11' },
     )
+
+    // Hyperliquid listing day on the premium pane, snapped to the bar it falls in
+    const listedAt = d.listedAt
+    if (listedAt != null) {
+      const day = new Date(barOf(listedAt) + (interval === '1d' ? 0 : 9 * 3600_000))
+      this.listing.set(ct(barOf(listedAt)), `하이퍼리퀴드 상장 ${day.getUTCMonth() + 1}/${day.getUTCDate()}`, c.text2)
+    } else this.listing.set(null, '', c.text2)
 
     const host = this.host
     if (host) {

@@ -1,4 +1,4 @@
-// lightweight-charts series primitives: session background bands, news bubble pins
+// lightweight-charts series primitives: session background bands, news bubble pins, a labelled vertical line
 import type { IChartApi, IPrimitivePaneRenderer, IPrimitivePaneView, ISeriesApi, ISeriesPrimitive, SeriesAttachedParameter, SeriesType, Time, UTCTimestamp } from 'lightweight-charts'
 import type { CanvasRenderingTarget2D } from 'fancy-canvas'
 
@@ -187,5 +187,47 @@ export class NewsPins extends Base {
       },
     }
     return [{ zOrder: () => 'top' as const, renderer: () => renderer }]
+  }
+}
+
+/** One labelled vertical line across its pane (e.g. the day an asset listed on Hyperliquid) */
+export class VLine extends Base {
+  private time: number | null = null
+  private label = ''
+  private color = ''
+
+  set(time: number | null, label: string, color: string) {
+    this.time = time
+    this.label = label
+    this.color = color
+    this.request?.()
+  }
+
+  paneViews() {
+    const self = this
+    const renderer: IPrimitivePaneRenderer = {
+      draw(target: CanvasRenderingTarget2D) {
+        const chart = self.chart
+        if (!chart || self.time == null) return
+        const x = chart.timeScale().timeToCoordinate(self.time as UTCTimestamp)
+        if (x == null) return
+        target.useMediaCoordinateSpace(({ context: ctx, mediaSize }) => {
+          if (x < 0 || x > mediaSize.width) return
+          ctx.strokeStyle = self.color
+          ctx.lineWidth = 1
+          ctx.setLineDash([4, 3])
+          ctx.beginPath()
+          ctx.moveTo(Math.round(x) + 0.5, 0)
+          ctx.lineTo(Math.round(x) + 0.5, mediaSize.height)
+          ctx.stroke()
+          ctx.setLineDash([])
+          ctx.fillStyle = self.color
+          ctx.font = "600 11px 'Pretendard Variable', Pretendard, -apple-system, sans-serif"
+          ctx.textBaseline = 'top'
+          ctx.fillText(self.label, Math.round(x) + 5, 4)
+        })
+      },
+    }
+    return [{ renderer: () => renderer }]
   }
 }
