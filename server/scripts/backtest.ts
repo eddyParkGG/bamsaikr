@@ -1,9 +1,11 @@
-// Run: npx tsx server/scripts/backtest.ts
-import { ASSETS } from '../../shared/assets.js'
+// Run: npx tsx --env-file=.env.local server/scripts/backtest.ts
+// Prints followRatePct (H1: open moved the way Hyperliquid moved) and the expected-open accuracy per stock
+import { PREDICTABLE } from '../../shared/assets.js'
 import { loadHistory, predictOpen } from '../services/predict.js'
 import { arbSnapshot } from '../services/arb.js'
 
-for (const a of ASSETS) {
+// Only KRX stocks have a domestic counterpart to score against
+for (const a of PREDICTABLE) {
   const h = await loadHistory(a)
   const wk = h.events.filter((e) => e.regime === 'weekend')
   console.log(a.id, 'events', h.events.length, 'weekend', wk.length, h.backtest, 'model', { ...h.model, sigma: h.model.sigma })

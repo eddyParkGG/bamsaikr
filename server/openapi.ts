@@ -27,11 +27,12 @@ export const openapi = {
         responses: ok,
       },
     },
+    '/v1/perps': { get: { operationId: 'listPerps', summary: 'Hyperliquid state for every listed Korean product (mid, 24h-ago price, hourly funding, open interest, 24h volume, max leverage)', responses: { '200': { description: 'OK' } } } },
     '/v1/predict': {
       get: {
         operationId: 'predictOpen',
         summary: 'Forecast of the next KRX opening price (probability up, expected open, 80% band)',
-        description: 'probUp: probability the open is above the reference close. band80: 80% probability band. backtest: historical walk-forward hit rate/error.',
+        description: 'probUp: probability the open is above the reference close. band80: 80% probability band. backtest.followRatePct: share of opens since the 2026-02-19 listing that moved the way Hyperliquid moved while the KRX was closed (moves within ±0.05% excluded); coverage80Pct/maePct: accuracy of the expected open (walk-forward).',
         parameters: [assetOpt],
         responses: ok,
       },
@@ -86,7 +87,7 @@ export const openapi = {
         responses: ok,
       },
     },
-    '/v1/account/krx': { get: { operationId: 'krxAccount', summary: 'KIS balance', security: auth, responses: ok } },
+    '/v1/account/krx': { get: { operationId: 'krxAccount', summary: 'Domestic brokerage balance (only when live orders are enabled)', security: auth, responses: ok } },
     '/v1/account/perp': { get: { operationId: 'perpAccount', summary: 'HL positions and open orders (xyz dex)', parameters: [{ name: 'user', in: 'query', schema: { type: 'string' } }, { name: 'network', in: 'query', schema: { enum: ['testnet', 'mainnet'] } }], responses: ok } },
   },
 }

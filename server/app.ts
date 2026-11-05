@@ -31,7 +31,7 @@ export const app = new Hono().basePath('/api')
 
 app.use('*', cors())
 
-// For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in Vercel logs)
+// For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in the server logs)
 app.use('*', async (c, next) => {
   await next()
   if (c.req.header('sec-fetch-site') === 'same-origin') return
