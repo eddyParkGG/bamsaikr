@@ -13,4 +13,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://bamsai.vercel.app/sitemap.xml
+Sitemap: https://bamsai.kr/sitemap.xml

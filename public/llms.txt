@@ -1,5 +1,7 @@
 # 밤사이 (Bamsai)
 
+https://bamsai.kr
+
 > 국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드(trade.xyz HIP-3)에서 거래되는 한국 주식 무기한 선물 가격을 업비트 원/USDC로 환산해, 다음 날 장 시작 가격의 상승 확률·예상 범위와 비용을 뺀 시세차익 기회를 보여주는 웹앱이에요.
 > Bamsai shows Korean stocks' overnight and weekend prices from Hyperliquid perpetuals, converted to KRW with Upbit KRW-USDC, to forecast the next KRX opening price and the net spread after costs.
 

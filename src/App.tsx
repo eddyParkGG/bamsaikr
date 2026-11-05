@@ -61,7 +61,7 @@ export default function App() {
           ? '밤사이 데이터를 REST API, OpenAPI, MCP로 가져다 쓰는 방법이에요.'
           : '국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드에서 거래되는 한국 주식 가격으로 다음 날 장 시작 가격과 시세차익 기회를 보여드려요.'
     document.querySelector('meta[name="description"]')?.setAttribute('content', d)
-    document.querySelector('link[rel="canonical"]')?.setAttribute('href', `https://bamsai.vercel.app${path}`)
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', `https://bamsai.kr${path}`)
   }, [path, asset])
 
   let page
