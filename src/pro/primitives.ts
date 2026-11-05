@@ -92,7 +92,7 @@ export class NewsPins extends Base {
   }
 
   hit(x: number, y: number): string | null {
-    for (const h of this.hitboxes) if (Math.abs(h.x - x) <= 12 && y >= h.y - 4 && y <= h.y + 22) return h.id
+    for (const h of this.hitboxes) if (Math.abs(h.x - x) <= 12 && y >= h.y - 2 && y <= h.y + 24) return h.id
     return null
   }
 
@@ -108,16 +108,16 @@ export class NewsPins extends Base {
           for (const p of self.pins) {
             const x = ts.timeToCoordinate(p.time as UTCTimestamp)
             if (x == null || x < 0 || x > mediaSize.width) continue
-            const y = 8
+            const y = mediaSize.height - 26
             self.hitboxes.push({ id: p.id, x, y })
             const active = self.hover === p.id
             // 점선 가이드
             ctx.save()
             ctx.strokeStyle = self.line
-            ctx.setLineDash([2, 3])
+            ctx.setLineDash([2, 4])
             ctx.beginPath()
-            ctx.moveTo(Math.round(x) + 0.5, y + 20)
-            ctx.lineTo(Math.round(x) + 0.5, mediaSize.height)
+            ctx.moveTo(Math.round(x) + 0.5, 0)
+            ctx.lineTo(Math.round(x) + 0.5, y)
             ctx.stroke()
             ctx.restore()
             // 말풍선 (꼬리가 아래를 향함)
@@ -126,17 +126,19 @@ export class NewsPins extends Base {
             const left = x - w / 2
             ctx.fillStyle = self.fill
             ctx.beginPath()
-            ctx.roundRect(left, y, w, h, 5)
-            ctx.moveTo(x - 3, y + h - 0.5)
-            ctx.lineTo(x, y + h + 4)
-            ctx.lineTo(x + 3, y + h - 0.5)
+            // 꼬리가 위(해당 봉)를 가리킴
+            ctx.roundRect(left, y + 4, w, h, 5)
+            ctx.moveTo(x - 3, y + 4.5)
+            ctx.lineTo(x, y)
+            ctx.lineTo(x + 3, y + 4.5)
             ctx.fill()
             // 신문 아이콘: 가로줄 세 개
             ctx.fillStyle = self.ink
             const gx = x - 5
-            ctx.fillRect(gx, y + h / 2 - 4, 10, 1.6)
-            ctx.fillRect(gx, y + h / 2 - 0.8, 10, 1.6)
-            ctx.fillRect(gx, y + h / 2 + 2.4, 6, 1.6)
+            const cy = y + 4 + h / 2
+            ctx.fillRect(gx, cy - 4, 10, 1.6)
+            ctx.fillRect(gx, cy - 0.8, 10, 1.6)
+            ctx.fillRect(gx, cy + 2.4, 6, 1.6)
           }
         })
       },

@@ -61,6 +61,9 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   const onNewsRef = useRef(onNews)
   onNewsRef.current = onNews
   const [ready, setReady] = useState(0)
+  const [card, setCard] = useState<{ x: number; y: number; t: number } | null>(null)
+  // 시각(차트 초) → 봉. 레전드·클릭 카드가 React 렌더 없이 바로 찾음
+  const lookup = useRef<{ krx: Map<number, Bar>; perp: Map<number, Bar & { usd: number }>; prem: Map<number, { v: number; live: boolean }> }>({ krx: new Map(), perp: new Map(), prem: new Map() })
 
   const holidays = useMemo(() => new Set(data.holidays), [data.holidays])
 
@@ -86,7 +89,6 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   // 차트 생성 (레이아웃 바뀔 때만 다시 만듦)
   useEffect(() => {
     const el = box.current!
-    const text = css('--text')
     const text2 = css('--text-3')
     const lineC = css('--line')
     const up = css('--up')
@@ -99,14 +101,18 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       layout: {
         background: { color: 'transparent' },
         textColor: text2,
-        fontFamily: "'Noto Sans KR', system-ui, sans-serif",
+        fontFamily: "'Pretendard Variable', Pretendard, -apple-system, sans-serif",
         fontSize: 11,
         attributionLogo: false,
         panes: { separatorColor: lineC, separatorHoverColor: css('--fill-strong'), enableResize: true },
       },
-      grid: { vertLines: { visible: false }, horzLines: { color: lineC } },
-      crosshair: { mode: CrosshairMode.Normal, vertLine: { labelBackgroundColor: text }, horzLine: { labelBackgroundColor: text } },
-      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.08 } },
+      grid: { vertLines: { color: lineC }, horzLines: { color: lineC } },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: { color: text2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: css('--bg-float') },
+        horzLine: { color: text2, width: 1, style: LineStyle.Dashed, labelBackgroundColor: css('--bg-float') },
+      },
+      rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.16, bottom: 0.12 }, textColor: css('--text-2') },
       timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffset: 6, minBarSpacing: 1 },
       localization: {
         locale: 'ko-KR',
@@ -116,7 +122,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     chartRef.current = chart
 
     let pane = 0
-    const kCandle = { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false, priceLineVisible: false, lastValueVisible: true }
+    const kCandle = { upColor: up, downColor: down, wickUpColor: up, wickDownColor: down, borderVisible: false, priceLineVisible: true, priceLineStyle: LineStyle.Dotted, lastValueVisible: true }
 
     // ── 가격 ──
     const krx = settings.showKrx ? chart.addSeries(CandlestickSeries, { ...kCandle, title: 'KRX' }, 0) : null
@@ -124,7 +130,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     const perp = settings.showPerp
       ? perpIsCandle
         ? chart.addSeries(CandlestickSeries, { ...kCandle, title: 'perp' }, 0)
-        : chart.addSeries(LineSeries, { color: perpC, lineWidth: 2, title: 'perp', priceLineVisible: false, crosshairMarkerRadius: 3 }, 0)
+        : chart.addSeries(LineSeries, { color: perpC, lineWidth: 2, title: 'perp', priceLineVisible: true, priceLineStyle: LineStyle.Dotted, crosshairMarkerRadius: 4, crosshairMarkerBorderColor: css('--bg') }, 0)
       : null
     seriesRef.current = { perp: perp as ISeriesApi<'Candlestick' | 'Line'>, perpIsCandle }
     const host = (krx ?? perp) as ISeriesApi<'Candlestick' | 'Line'> | null
@@ -148,8 +154,8 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     if (settings.ma) {
       ;[
         [5, '#f5a623'],
-        [20, '#ff3c3c'],
-        [60, '#00a86b'],
+        [20, '#f04251'],
+        [60, '#00b37e'],
         [120, '#8b95a1'],
       ].forEach(([n, c]) => addLine(`ma${n}`, c as string))
     }
@@ -175,8 +181,8 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       pane++
       if (settings.showKrx) volKrx = chart.addSeries(HistogramSeries, { priceScaleId: 'vk', priceFormat: { type: 'volume' }, priceLineVisible: false, lastValueVisible: false, title: 'KRX' }, pane)
       if (settings.showPerp) volPerp = chart.addSeries(HistogramSeries, { priceScaleId: 'vp', priceFormat: { type: 'volume' }, color: perpC + '99', priceLineVisible: false, lastValueVisible: false, title: 'perp' }, pane)
-      chart.priceScale('vk', pane).applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
-      chart.priceScale('vp', pane).applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
+      if (volKrx) chart.priceScale('vk', pane).applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
+      if (volPerp) chart.priceScale('vp', pane).applyOptions({ scaleMargins: { top: 0.1, bottom: 0 }, visible: false })
     }
 
     // ── 괴리율 ──
@@ -215,6 +221,11 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     // ── 데이터 넣는 함수 (폴링마다 호출) ──
     const apply = (d: ChartSeries, b: Bar[], sp: Span[], nw: NewsMarker[], ev: OpenEvent[], pr: Prediction | null) => {
       const candles = (bars: Bar[]) => bars.map((k) => ({ time: ct(k.t), open: k.o, high: k.h, low: k.l, close: k.c }))
+      lookup.current = {
+        krx: new Map(d.krx.map((k) => [ct(k.t) as number, k])),
+        perp: new Map(d.perpKrw.map((k, i) => [ct(k.t) as number, { ...k, usd: d.perp[i]?.c ?? 0 }])),
+        prem: new Map(d.premium.map((p) => [ct(p.t) as number, { v: p.v, live: p.live }])),
+      }
       krx?.setData(candles(d.krx))
       if (perp) {
         if (perpIsCandle) (perp as ISeriesApi<'Candlestick'>).setData(candles(d.perpKrw))
@@ -310,19 +321,34 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     ;(chart as unknown as { __apply: typeof apply }).__apply = apply
 
     // 레전드 · 뉴스 호버 (React 렌더 없이 DOM 직접 갱신)
-    chart.subscribeCrosshairMove((param) => {
+    const isIdx = asset.kind === 'index'
+    const f = (v: number) => fmtPrice(v, isIdx)
+    const renderLegend = (time: number | null) => {
       const lg = legend.current
-      if (lg) {
-        const k = krx && (param.seriesData.get(krx) as { close?: number } | undefined)
-        const p = perp && (param.seriesData.get(perp) as { close?: number; value?: number } | undefined)
-        const pv = p?.close ?? p?.value
-        const kv = k?.close
-        const fmt = (v: number) => fmtPrice(v, asset.kind === 'index')
-        const gap = kv && pv ? fmtPct((pv / kv - 1) * 100) : ''
-        lg.innerHTML = param.time
-          ? `${kv ? `<span><i style="background:${krxC}"></i>KRX <b>${fmt(kv)}</b></span>` : ''}${pv ? `<span><i style="background:${perpC}"></i>perp <b>${fmt(pv)}</b></span>` : ''}${gap ? `<span>괴리 <b>${gap}</b></span>` : ''}`
-          : ''
-      }
+      if (!lg) return
+      const L = lookup.current
+      const lastT = (m: Map<number, unknown>) => [...m.keys()].at(-1) ?? 0
+      const t = time ?? Math.max(lastT(L.krx), lastT(L.perp))
+      const k = settings.showKrx ? (L.krx.get(t) ?? (time == null ? L.krx.get(lastT(L.krx)) : undefined)) : undefined
+      const p = settings.showPerp ? L.perp.get(t) : undefined
+      const pr = L.prem.get(t)
+      const cls = (v: number, ref: number) => (v > ref ? 'up' : v < ref ? 'down' : '')
+      const rows: string[] = []
+      if (k)
+        rows.push(
+          `<div class="row"><i class="lg-dot" style="background:${krxC}"></i><span>KRX</span><span class="k">시작</span><b class="${cls(k.o, k.o)}">${f(k.o)}</b><span class="k">고가</span><b class="${cls(k.h, k.o)}">${f(k.h)}</b><span class="k">저가</span><b class="${cls(k.l, k.o)}">${f(k.l)}</b><span class="k">종가</span><b class="${cls(k.c, k.o)}">${f(k.c)}</b></div>`,
+        )
+      if (p)
+        rows.push(
+          `<div class="row"><i class="lg-dot" style="background:${perpC}"></i><span>perp 환산</span><b>${f(p.c)}</b>${asset.fx ? `<span class="k">$${p.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>` : ''}${pr ? `<span class="k">${pr.live ? '괴리' : '종가 대비'}</span><b class="${pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}">${fmtPct(pr.v)}</b>` : ''}</div>`,
+        )
+      if (settings.ma) rows.push(`<div class="row"><span class="k">이동평균선</span>${[['5', '#f5a623'], ['20', '#f04251'], ['60', '#00b37e'], ['120', '#8b95a1']].map(([n, c]) => `<span style="color:${c}">${n}</span>`).join('')}</div>`)
+      lg.innerHTML = rows.join('')
+    }
+    ;(chart as unknown as { __legend: typeof renderLegend }).__legend = renderLegend
+
+    chart.subscribeCrosshairMove((param) => {
+      renderLegend(param.time == null ? null : (param.time as number))
       const t = tip.current
       if (!t) return
       const id = param.point ? pins.hit(param.point.x, param.point.y) : null
@@ -339,7 +365,9 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       if (!param.point) return
       const id = pins.hit(param.point.x, param.point.y)
       const n = id ? newsRef.current.find((x) => x.date + x.title === id) : null
-      if (n) onNewsRef.current(n)
+      if (n) return onNewsRef.current(n)
+      if (param.time == null) return setCard(null)
+      setCard({ x: param.point.x, y: param.point.y, t: param.time as number })
     })
 
     if (rangeRef.current) chart.timeScale().setVisibleLogicalRange(rangeRef.current)
@@ -359,12 +387,14 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     const chart = chartRef.current as unknown as { __apply?: (...a: unknown[]) => void; timeScale: IChartApi['timeScale'] } | null
     if (!chart?.__apply) return
     chart.__apply(data, base, spans, news, events, prediction)
+    ;(chart as unknown as { __legend?: (t: null) => void }).__legend?.(null)
     if (firstApply.current || !rangeRef.current) {
       firstApply.current = false
       const lastT = Math.max(data.perp.at(-1)?.t ?? 0, data.krx.at(-1)?.t ?? 0)
-      const show = interval === '1d' ? 120 : interval === '1h' ? 24 * 7 : interval === '15m' ? 96 * 2 : interval === '5m' ? 288 : 600
+      // 일봉은 최근 1년 전체, 분봉은 하루~이틀
+      const spanMs = interval === '1d' ? 365 * 86400_000 : interval === '1h' ? 10 * 86400_000 : interval === '15m' ? 3 * 86400_000 : interval === '5m' ? 86400_000 : 8 * 3600_000
       const ts = (chart as unknown as IChartApi).timeScale()
-      ts.setVisibleRange({ from: ct(lastT - show * STEP_MS[interval]), to: ct(lastT) })
+      ts.setVisibleRange({ from: ct(lastT - spanMs), to: ct(lastT) })
       ts.scrollToRealTime()
     }
   }, [data, base, spans, news, events, prediction, ready, interval])
@@ -372,7 +402,15 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   useEffect(() => {
     rangeRef.current = null
     firstApply.current = true
+    setCard(null)
   }, [asset.id, interval])
+
+  useEffect(() => {
+    if (!card) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setCard(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [card])
 
   // 실시간: perp 최신 봉을 WS 로 갱신 (원화 환산은 업비트 실시간 환율)
   useEffect(() => {
@@ -399,6 +437,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       <div ref={box} className="chart__canvas" />
       <div ref={legend} className="chart__legend num" />
       <div ref={tip} className="chart__tip" hidden />
+      {card && <BarCard card={card} asset={asset} interval={interval} lookup={lookup.current} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} />}
       {!data.krx.length && settings.showKrx && <div className="chart__empty">이 구간에는 국내 시세가 없어요. 휴장 중이거나 분봉 보관 기간이 지났어요.</div>}
     </div>
   )
@@ -408,4 +447,98 @@ export const Chart = memo(ChartImpl)
 
 export function volumeText(v: number) {
   return fmtKoreanUnit(v)
+}
+
+const KST_S = 9 * 3600
+function cardTitle(t: number, interval: ChartInterval) {
+  const d = new Date(t * 1000) // 차트 시간은 이미 KST 로 밀려 있음
+  const day = `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${String(d.getUTCDate()).padStart(2, '0')}`
+  return interval === '1d' ? day : `${day} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
+}
+
+function BarCard({
+  card,
+  asset,
+  interval,
+  lookup,
+  news,
+  onClose,
+  boxW,
+}: {
+  card: { x: number; y: number; t: number }
+  asset: Asset
+  interval: ChartInterval
+  lookup: { krx: Map<number, Bar>; perp: Map<number, Bar & { usd: number }>; prem: Map<number, { v: number; live: boolean }> }
+  news: NewsMarker[]
+  onClose: () => void
+  boxW: number
+}) {
+  const isIdx = asset.kind === 'index'
+  const k = lookup.krx.get(card.t)
+  const p = lookup.perp.get(card.t)
+  const pr = lookup.prem.get(card.t)
+  const dayKey = cardTitle(card.t, '1d').replace(/\./g, '')
+  const n = news.find((x) => x.date === dayKey)
+  const realMs = (card.t - KST_S) * 1000
+  const left = card.x + 16 + 248 > boxW ? card.x - 264 : card.x + 16
+  return (
+    <div className="chart__card num" style={{ left: Math.max(8, left), top: Math.max(8, card.y - 60) }} role="dialog" aria-label="봉 정보">
+      <h4>
+        {cardTitle(card.t, interval)}
+        <button className="faint" onClick={onClose} aria-label="닫기">
+          ✕
+        </button>
+      </h4>
+      {k && (
+        <>
+          <div className="kv">
+            <dt>KRX 시작 · 종가</dt>
+            <dd>
+              {fmtPrice(k.o, isIdx)} → {fmtPrice(k.c, isIdx)}
+            </dd>
+          </div>
+          <div className="kv">
+            <dt>KRX 고가 · 저가</dt>
+            <dd>
+              {fmtPrice(k.h, isIdx)} / {fmtPrice(k.l, isIdx)}
+            </dd>
+          </div>
+          <div className="kv">
+            <dt>KRX 거래량</dt>
+            <dd>{fmtKoreanUnit(k.v)}주</dd>
+          </div>
+        </>
+      )}
+      {p && (
+        <>
+          <div className="kv">
+            <dt>perp 환산 종가</dt>
+            <dd>{fmtPrice(p.c, isIdx)}</dd>
+          </div>
+          <div className="kv">
+            <dt>perp 거래량</dt>
+            <dd>{fmtKoreanUnit(p.v)}계약</dd>
+          </div>
+        </>
+      )}
+      {pr && (
+        <div className="kv">
+          <dt>{pr.live ? '괴리율' : '직전 종가 대비'}</dt>
+          <dd className={pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}>{fmtPct(pr.v)}</dd>
+        </div>
+      )}
+      {interval !== '1d' && (
+        <div className="kv">
+          <dt>시간대</dt>
+          <dd>{(() => {
+            const h = new Date(card.t * 1000).getUTCHours() * 60 + new Date(card.t * 1000).getUTCMinutes()
+            const wd = new Date(realMs + KST_S * 1000).getUTCDay()
+            if (wd === 0 || wd === 6) return '주말 · perp만 거래'
+            return h >= 540 && h < 930 ? '정규장' : (h >= 480 && h < 540) || (h >= 930 && h < 1200) ? '넥스트레이드' : '휴장 · perp만 거래'
+          })()}</dd>
+        </div>
+      )}
+      {n && <p className="chart__card-news">{n.title}</p>}
+    </div>
+  )
 }
