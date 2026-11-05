@@ -66,6 +66,7 @@ export type GaEvent =
   | 'prediction_detail_open'
   | 'model_explain_open' // opened the forecast detail or the prediction record (trust hypothesis)
   | 'arb_view'
+  | 'arb_cta_click' // '시세차익 내기' on the chart: opens the spread order tab
   | 'chart_market_toggle' // market, on
   | 'chart_indicator_toggle'
   | 'chart_interval_change'

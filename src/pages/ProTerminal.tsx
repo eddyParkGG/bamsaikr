@@ -572,7 +572,10 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                       selectTab('predict')
                       track('model_explain_open', { asset: asset.id, tab: 'predict', from: 'chart' })
                     }}
-                    onArb={() => void window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))}
+                    onArb={() => {
+                      track('arb_cta_click', { asset: asset.id, from: 'chart', net_pct: arb?.net.netPct })
+                      window.dispatchEvent(new CustomEvent('bamsai:order-tab', { detail: 'pair' }))
+                    }}
                   />
                 </Suspense>
               ) : series.error ? (

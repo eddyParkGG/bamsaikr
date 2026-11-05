@@ -20,9 +20,10 @@ the default automatic page view is off.
 |---|---|---|---|---|
 | `prediction_view` | Forecasts load on home / a stock detail | `pages/EasyHome.tsx`, `pages/ProTerminal.tsx` | `from` (`home`/`stock`), `asset`, `session`, `prob_up`, `ready` | H2 activation, H3 denominator |
 | `prediction_detail_open` | A stock row on home is clicked | `pages/EasyHome.tsx` | `asset`, `from` | H2 activation |
-| `model_explain_open` | 개장 예측 or 예측 기록 tab opened, or the 내일 예측 bar clicked | `pages/ProTerminal.tsx` | `asset`, `tab` (`predict`/`conv`), `from` | H3 |
+| `model_explain_open` | 개장 예측 or 예측 기록 tab opened, or 자세히 on the chart's 내일 아침 예상 note | `pages/ProTerminal.tsx` | `asset`, `tab` (`predict`/`conv`), `from` (`chart` for the note) | H3 |
 | `convergence_view` | 예측 기록 tab opened | `pages/ProTerminal.tsx` | `asset` | H3 detail |
 | `arb_view` | Spread data shown on a stock detail | `pages/ProTerminal.tsx` | `asset`, `net_pct`, `mode` | H4 step 1 |
+| `arb_cta_click` | 시세차익 내기 on the chart's spread note (only shown when there is a spread to take) | `pages/ProTerminal.tsx` | `asset`, `from` (`chart`), `net_pct` | H4 |
 | `order_submit` | Any order button (orders not live; opens the launch sheet) | `pro/OrderPanel.tsx` | `market`, `side`, `asset`, `kind`, `leverage` | H4 step 2 |
 | `launch_notify_signup` | Valid email submitted on the launch sheet (not stored) | `components/LaunchNotify.tsx` | `what` | H4 step 3 (key event) |
 | `asset_switch` | Asset picked in the search | `components/AssetSearch.tsx` | `asset`, `query` (`typed`/`list`) | navigation |
