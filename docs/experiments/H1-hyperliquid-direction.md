@@ -1,7 +1,7 @@
 # H1 — The domestic market re-opens the way Hyperliquid moved
 
 **Claim.** While the whole domestic market is closed (KRX regular session and Nextrade, 20:00 → next trading day 08:00 KST),
-the trade.xyz perp on Hyperliquid moves. When the domestic market re-opens at 08:00, it goes the same direction at least 80% of the time.
+the trade.xyz perp on Hyperliquid moves. On nights it trades at least $1M (notional), When the domestic market re-opens at 08:00, it goes the same direction at least 80% of the time.
 This is the product's premise: closed-hours Hyperliquid prices are worth looking at.
 
 ## Why this basis
@@ -24,6 +24,9 @@ For each domestic trading day:
 
 Rate = `yes / (yes + no)`; `flat` days are shown but excluded.
 
+Liquidity condition: `nightUsd` = Hyperliquid notional (Σ volume × close of 1h bars, 20:00 → 08:00) ≥ `THIN_USD` ($1M).
+Below that a handful of orders can move the price. API: `backtest.liquidRatePct`, `liquidScored`, `liquidYes`; per day `events[].nightUsd`.
+
 ## Data window
 
 - 2026-04-13 → today, 139 opens per stock. Hyperliquid keeps only the latest 5,000 candles per interval, so 1h bars
@@ -39,8 +42,20 @@ Rate = `yes / (yes + no)`; `flat` days are shown but excluded.
 | SK hynix | 137 | 117 | **85.4%** | 2 |
 | Hyundai Motor | 135 | 90 | **66.7%** | 4 |
 
-Pass line 80% → **passed for Samsung and SK hynix, failed for Hyundai.**
-Hyundai has thin Hyperliquid volume and small overnight moves, so the signal is weak.
+With the liquidity condition (the H1 line):
+
+| Asset | Liquid nights scored | Same direction | Rate |
+|---|---|---|---|
+| Samsung Electronics | 119 | 105 | **88.2%** |
+| SK hynix | 130 | 111 | **85.4%** |
+| Hyundai Motor | 7 | 5 | n/a (too few) |
+
+Pass line 80% → **passed for Samsung and SK hynix; Hyundai undecided** (median overnight notional $0.23M, so almost every night is thin).
+
+Why $1M (all three pooled): below $1M 67.3% (101/150), at or above 86.3% (221/256); thresholds $0.5M / $2M give 84.8% / 87.1%.
+Within an asset, busier nights follow more often: Samsung 78.8% → 92.6%, SK hynix 81.2% → 89.7% (below / above own median).
+The line was chosen after seeing the data; re-check it on new nights.
+Live flag (`prediction.thin`): max(tonight's notional so far, median of the last 20 nights) < $1M.
 
 Which outcome price to score against (same window):
 

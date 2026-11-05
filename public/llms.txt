@@ -16,7 +16,7 @@
 ## Method (short)
 - Domestic market = KRX regular + Nextrade, 08:00–20:00 KST. Reference = last print at or before 20:00; target = 08:00–08:10 VWAP on the next trading day
 - Re-open move = α + β × (Hyperliquid-implied move at 08:00 KST), β shrunk toward 1; σ split into weeknight vs weekend, plus closed-hours volatility × hours to open
-- Main check: did the domestic market re-open the way Hyperliquid moved while it was closed? 139 opens per stock since 2026-04-13 (Hyperliquid 1h retention; moves within ±0.05% excluded): 85.8% / 85.4% / 66.7% (Samsung / SK hynix / Hyundai). Hyundai is below the 80% bar
+- Main check: on nights with at least $1M traded on Hyperliquid while the domestic market is closed, did it re-open the way Hyperliquid moved? Since 2026-04-13 (moves within ±0.05% excluded): Samsung 88.2% (119 nights), SK hynix 85.4% (130); Hyundai undecided (7 such nights; 66.7% over all nights). Thin nights: 67.3% vs 86.3% pooled. Forecasts on thin nights carry `thin: true`
 - Expected price (walk-forward): 80% band coverage 83–89%, mean error 1.1–1.3%p
 
 ## API (no key for reads)
