@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
+import { arbText } from '../lib/arb'
 import { IN_SESSION, InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
 import { probLabel, verdict, PERP_PLAIN } from '../lib/copy'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtWon, openDayText } from '../lib/format'
+import { fmtPct, fmtPrice, openDayText } from '../lib/format'
 import { SessionLine } from '../lib/market'
 import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
@@ -69,25 +70,23 @@ function PredictRow({ p }: { p: Prediction }) {
 
 function ArbRow({ s }: { s: ArbSnapshot }) {
   const a = ASSET_BY_ID[s.asset]
-  const net = s.net.netKrwPer10m
+  const t = arbText(s)
   const diff = `${fmtPct(Math.abs(s.premiumPct), 2, false)} ${s.premiumPct >= 0 ? '비싸요' : '싸요'}`
   return (
     <Link href={`/s/${s.asset}`} className="easy-row">
       <StockLogo id={s.asset} size={36} />
       <div>
         <p className="easy-row__name" data-fit>{a.name}</p>
-        <p className="easy-row__sub" data-fit>{s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff}`}</p>
+        <p className="easy-row__sub" data-fit>
+          {s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff} · 평소 ${fmtPct(s.normalPremiumPct)}`}
+        </p>
       </div>
       <div className="easy-row__right">
-        {s.mode === 'gap' ? (
-          <p className="easy-row__big faint" style={{ fontSize: 14 }}>
-            장 열리면 확인
-          </p>
-        ) : net > 0 && s.net.executable ? (
-          <p className="easy-row__big up num" data-fit>+{fmtWon(net)}원</p>
+        {t.kind === 'go' ? (
+          <p className="easy-row__big up num" data-fit>{t.short}</p>
         ) : (
           <p className="easy-row__big faint" style={{ fontSize: 14 }}>
-            비용이 더 커요
+            {t.short}
           </p>
         )}
         <p className="easy-row__sub" data-fit>1천만원 기준</p>

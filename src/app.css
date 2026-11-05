@@ -642,7 +642,7 @@ body.is-resizing * {
 }
 .pair-box {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 6px 12px;
   padding: 12px;
   border-radius: var(--r-item);

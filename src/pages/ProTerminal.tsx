@@ -1,5 +1,6 @@
 import { Chevron } from '../components/Icon'
 import { Help } from '../components/Help'
+import { arbKind, arbText } from '../lib/arb'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
@@ -310,10 +311,13 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
             {fmtKrw(perpKrw, isIdx)}
           </dd>
           <dt>{arb.mode === 'live' ? '가격 차이' : '종가 대비'}</dt>
-          <dd className={tone(premium)}>{fmtPct(premium)}</dd>
+          <dd className={tone(premium)}>
+            {fmtPct(premium)}
+            {arb.mode === 'live' && <span className="faint"> 평소 {fmtPct(arb.normalPremiumPct)}</span>}
+          </dd>
         </div>
         <div className="stats__group">
-          <dt>순차익</dt>
+          <dt title="가격 차이가 평소 수준으로 돌아온다고 볼 때, 수수료·세금·환전·펀딩비를 빼고 남는 비율">비용 뺀 수익</dt>
           <dd className={tone(arb.net.netPct)}>{fmtPct(arb.net.netPct)}</dd>
           <dt>USDC</dt>
           <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
@@ -374,12 +378,12 @@ function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnap
             '불러오는 중'
           ) : arb.mode === 'gap' ? (
             '장 열리면 확인할 수 있어요'
-          ) : net > 0 && arb.net.executable ? (
+          ) : arbKind(arb) === 'go' ? (
             <>
-              1천만원 기준 <b className="up">약 {fmtWon(net)}원</b> 남아요 · 실행하기
+              평소보다 {fmtPct(Math.abs(arb.deviationPct), 2, false)} 더 벌어졌어요 · 1천만원 기준 <b className="up">약 {fmtWon(net)}원</b> 남아요 · 실행하기
             </>
           ) : (
-            <>지금은 비용이 더 커요 · 비용 뺀 수익 {fmtPct(arb.net.netPct)}</>
+            arbText(arb).text
           )}
         </span>
         {chevron}

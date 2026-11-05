@@ -211,7 +211,11 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
             <b className={tone(arb.premiumPct)} data-fit>{fmtPct(arb.premiumPct)}</b>
           </div>
           <div>
-            <span className="muted">비용 뺀 순차익</span>
+            <span className="muted">평소 차이</span>
+            <b data-fit>{fmtPct(arb.normalPremiumPct)}</b>
+          </div>
+          <div>
+            <span className="muted">비용 뺀 수익</span>
             <b className={tone(arb.net.netPct)} data-fit>{fmtPct(arb.net.netPct)}</b>
           </div>
           <p>{dir === 'perp_short_stock_long' ? '하이퍼리퀴드 매도 + 주식 매수' : '하이퍼리퀴드 매수 + 주식 매도'}</p>

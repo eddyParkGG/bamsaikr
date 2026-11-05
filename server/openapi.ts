@@ -22,7 +22,7 @@ export const openapi = {
       get: {
         operationId: 'getArbitrage',
         summary: 'Premium between the two markets and net arbitrage after costs',
-        description: 'premiumPct>0 means the perp is more expensive. net.netPct is the expected net return (%) after fees, taxes, FX and funding. mode=gap means the domestic market is closed and the value is relative to the last close.',
+        description: 'premiumPct>0 means the perp is more expensive. The premium reverts to a usual level, not 0: normalPremiumPct is the median regular-session premium over the last 5 trading days and deviationPct = premiumPct − normalPremiumPct. net.netPct is the expected net return (%) on that deviation after fees, taxes, FX and funding. mode=gap means the domestic market is closed and the value is relative to the last close.',
         parameters: [assetOpt, bps('stockFeeBps', 'Broker fee, one way, bp (default 1.5)'), bps('stockTaxBps', 'Sell-side tax bp (default 20)'), bps('perpFeeBps', 'HL taker bp (default 0.9)'), bps('fxFeeBps', 'Upbit fee bp (default 5)'), bps('leverage', 'Perp margin multiple (default 2)'), bps('holdHours', 'Expected holding hours (default 1)')],
         responses: ok,
       },
