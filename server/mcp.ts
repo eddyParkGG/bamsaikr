@@ -18,13 +18,13 @@ const TOOLS = [
   },
   {
     name: 'predict_open',
-    description: 'Forecast of the next KRX opening price: probability of rising (probUp), expected open, 80% band, and how often the open followed the Hyperliquid direction (backtest.followRatePct)',
+    description: 'Forecast of the next domestic re-open (08:00–08:10 average on KRX/NXT, vs the 20:00 close): probability of rising (probUp), expected price, 80% band, and how often the re-open followed the Hyperliquid direction (backtest.followRatePct)',
     inputSchema: { type: 'object', properties: { asset: assetProp }, required: ['asset'] },
     run: async (a: Record<string, string>) => predictOpen(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID]),
   },
   {
     name: 'get_convergence_history',
-    description: 'Prediction record per open day since the 2026-02-19 listing: Hyperliquid-implied gap, actual opening gap, follow (yes/no/flat), and where the prices met',
+    description: 'Prediction record per re-open day since 2026-04-13: Hyperliquid move while closed (20:00→08:00), actual re-open move, follow (yes/no/flat), and where the prices met',
     inputSchema: { type: 'object', properties: { asset: assetProp, limit: { type: 'number' } }, required: ['asset'] },
     run: async (a: Record<string, string>) => {
       const h = await loadHistory(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID])

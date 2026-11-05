@@ -81,21 +81,22 @@ export function Countdown({ session }: { session: Exclude<Session, 'closed'> }) 
  * What the market is doing now, as one line. `clock` ticks H:MM:SS (bottom bar);
  * `words` says '2시간 10분' (sentences). Same facts on every page.
  */
-export function SessionLine({ status, style }: { status: Pick<Status, 'session' | 'nextOpen'>; style: 'clock' | 'words' }) {
+export function SessionLine({ status, style }: { status: Pick<Status, 'session' | 'nextOpen' | 'nextRegularOpen'>; style: 'clock' | 'words' }) {
   const now = useNow(style === 'clock' ? 1000 : 30_000)
   const s = status.session
   const left = (sess: Exclude<Session, 'closed'>) => (style === 'clock' ? hms(sessionCloseAt(sess, now) - now) : hoursMinutes(sessionCloseAt(sess, now) - now))
-  const open = style === 'clock' ? `${kstDay(status.nextOpen)} 09:00` : `${kstDay(status.nextOpen)} 오전 9시`
+  const at = (ms: number, hh: string, word: string) => (style === 'clock' ? `${kstDay(ms)} ${hh}` : `${kstDay(ms)} ${word}`)
   if (s === 'regular') return <>장 마감까지 <span className="num">{left('regular')}</span></>
   if (s === 'nxt')
     return (
       <>
-        {style === 'words' ? '넥스트레이드 ' : ''}마감까지 <span className="num">{left('nxt')}</span> · 정규장 {open}
+        {style === 'words' ? '넥스트레이드 ' : ''}마감까지 <span className="num">{left('nxt')}</span>
+        {kstMinutes(now) < 540 && <> · 정규장 {at(status.nextRegularOpen, '09:00', '오전 9시')}</>}
       </>
     )
   return (
     <>
-      다음 개장 {open} ({untilText(status.nextOpen)})
+      다음 개장 {at(status.nextOpen, '08:00', '오전 8시')} ({untilText(status.nextOpen)})
     </>
   )
 }

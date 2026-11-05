@@ -55,16 +55,16 @@ export default function About() {
         <div className="panel__body about__body">
           <p className="about__h">
             H1. 국내 시장이 닫힌 동안 해외 선물 탈중앙 거래소(하이퍼리퀴드) 가격이 움직인 방향대로, 다음 날 국내 시장도 80% 이상 같은 방향으로 시작한다
-            <span className="about__status about__status--done">통과</span>
+            <span className="about__status about__status--done">삼성전자·SK하이닉스 통과</span>
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요. 시작 가격은 정규장 09:00 기준이고, 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요.
+            국내 시장(정규장·넥스트레이드)이 모두 닫힌 저녁 8시부터 다음 날 아침 8시까지 하이퍼리퀴드가 오르거나 내린 방향대로, 아침 8시~8시 10분 국내 평균 가격이 움직였는지 봤어요. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요.
           </p>
           <div className="nbar about__period">
             <span className="nbar__label">기간</span>
             <i className="nbar__sep" />
             <span className="nbar__text">
-              하이퍼리퀴드에 한국 종목이 <b>처음 상장된 2026년 2월 19일 이후</b>의 모든 개장일
+              하이퍼리퀴드가 아침 8시 가격을 남겨 둔 <b>2026년 4월 13일 이후</b>의 모든 개장일 (그 이전은 1시간 단위 가격이 없어요)
             </span>
           </div>
           <div className="about__hits">
@@ -75,7 +75,8 @@ export default function About() {
                     <span className="strong">{p.name}</span>
                     <span className="spacer" />
                     <span className="faint num" style={{ fontSize: 12 }}>
-                      상장 후 {p.backtest.followScored}번 중 {p.backtest.followYes}번
+                      {p.backtest.followScored}번 중 {p.backtest.followYes}번
+                      {(p.backtest.followRatePct ?? 0) < 80 && ' · 80% 미만'}
                     </span>
                     <b className="num" data-fit>
                       {p.backtest.followRatePct?.toFixed(1)}%

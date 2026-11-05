@@ -6,13 +6,13 @@ import { useStatus } from '../lib/data'
 import { kstDay, untilText } from '../lib/format'
 import { SessionLine } from '../lib/market'
 
-/** During regular hours both markets trade and perp just tracks KRX, so there is no signal yet */
+/** While KRX or NXT trades, the domestic price itself is the answer; the forecast starts after the 20:00 close */
 export const predictionReady = (p: Prediction | null | undefined) => !!p && p.status !== 'in-session'
 
 export const IN_SESSION = {
   title: '지금은 국내 시장이 열려 있어요',
-  short: '15:30 마감 후 예측',
-  body: '두 시장이 같이 열려 있을 땐 해외 가격이 국내 주가를 바로 따라가서, 다음 날 가격을 미리 알려줄 정보가 거의 없어요. 15:30에 장이 끝나면 예측을 보여드려요.',
+  short: '저녁 8시 이후 예측',
+  body: '국내 시장(넥스트레이드 포함)이 열려 있을 땐 지금 국내 가격이 곧 답이에요. 저녁 8시에 모두 닫히면 내일 아침 가격을 예측해 보여드려요.',
 }
 
 /** Notice shown wherever a prediction would be. `compact` for list rows and small panels */
@@ -34,11 +34,11 @@ export function InSessionNotice({ compact = false }: { compact?: boolean }) {
 /** "When" line next to a forecast: time left to today's close during the regular session, else the next open */
 export function NextOpenWhen({ at, long = false }: { at: number; long?: boolean }) {
   const status = useStatus().data
-  // During the regular session the forecast waits for the close; show that countdown
-  if (status?.session === 'regular') return <SessionLine status={status} style="words" />
+  // While the domestic market trades the forecast waits for the close; show that countdown
+  if (status && status.session !== 'closed') return <SessionLine status={status} style="words" />
   return (
     <>
-      {kstDay(at)} {long ? '오전 9시 개장' : '09:00'} · {untilText(at)}
+      {kstDay(at)} {long ? '오전 8시 개장' : '08:00'} · {untilText(at)}
     </>
   )
 }

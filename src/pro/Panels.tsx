@@ -2,82 +2,103 @@ import { Chevron } from '../components/Icon'
 import { memo, useEffect, useRef, useState } from 'react'
 import type { OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
-import { fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
+import { fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
+import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
 import { useArb } from '../lib/data'
 import { InSessionNotice, predictionReady } from '../components/NextOpenState'
 
+const HELP = {
+  ref: '국내 시장(넥스트레이드 포함)에서 마지막으로 거래된 가격이에요. 저녁 8시 종가예요.',
+  perp: '국내 시장이 닫힌 동안 하이퍼리퀴드에서 거래된 지금 가격을 원화로 바꾼 값이에요.',
+  expected: '내일 아침 8시 국내 시장이 다시 열렸을 때(8시~8시 10분 평균) 예상되는 가격이에요.',
+  band: '10번 중 8번은 이 범위 안에서 시작한다는 뜻이에요. 장 열리기까지 시간이 많이 남을수록 넓어져요.',
+  up: '기준 가격보다 높게 시작할 확률이에요.',
+  dist: '내일 아침 국내 시장이 기준 가격보다 몇 % 오르거나 내려서 시작할지, 구간별 확률이에요. 막대가 길수록 그 구간일 가능성이 커요.',
+  follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
+  coverage: '예상 범위(80% 구간) 안에서 실제로 시작한 비율이에요. 80%에 가까울수록 범위를 정직하게 잡은 거예요.',
+  mae: '예상 시작 가격과 실제 시작 가격이 평균 몇 %p 차이 났는지예요.',
+  naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 했을 때의 평균 차이예요. 이보다 작아야 의미가 있어요.',
+}
+
+function Row({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+  return (
+    <div className="kv">
+      <dt>
+        {label} <Help text={help} />
+      </dt>
+      <dd data-fit>{children}</dd>
+    </div>
+  )
+}
+
 export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Prediction | null; asset: Asset }) {
   if (!p) return <div className="skeleton" style={{ height: 260, marginTop: 8 }} />
   const isIdx = asset.kind === 'index'
   const maxP = Math.max(...p.distribution.map((d) => d.p))
+  const bt = p.backtest
   return (
     <div className="cols3">
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">다음 장 시작 가격</span>
+          <span className="panel__title">내일 아침 가격</span>
           <span className="spacer" />
           <span className="faint" style={{ fontSize: 12 }}>
             <NextOpenWhen at={p.targetOpenAt} />
           </span>
         </div>
         <div className="panel__body">
-        {!predictionReady(p) ? <InSessionNotice /> : (
-        <dl>
-          <div className="kv">
-            <dt>기준 종가</dt>
-            <dd data-fit>{fmtPrice(p.refClose, isIdx)}</dd>
-          </div>
-          <div className="kv">
-            <dt>하이퍼리퀴드 원화 환산</dt>
-            <dd data-fit>
-              {fmtPrice(p.perpKrw, isIdx)} <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
-            </dd>
-          </div>
-          <div className="kv">
-            <dt>예상 시작 가격</dt>
-            <dd data-fit>
-              <b>{fmtPrice(p.expectedOpen, isIdx)}</b> <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct)}</span>
-            </dd>
-          </div>
-          <div className="kv">
-            <dt>80% 구간</dt>
-            <dd data-fit>
-              {fmtPrice(p.band80.low, isIdx)} ~ {fmtPrice(p.band80.high, isIdx)}
-            </dd>
-          </div>
-          <div className="kv">
-            <dt>상승 확률</dt>
-            <dd className={p.probUp >= 0.5 ? 'up' : 'down'}>
-              <b>{Math.round(p.probUp * 100)}%</b>
-            </dd>
-          </div>
-        </dl>
-        )}
+          {!predictionReady(p) ? (
+            <InSessionNotice />
+          ) : (
+            <dl>
+              <Row label="기준 가격" help={HELP.ref}>
+                {fmtKrw(p.refClose, isIdx)}
+              </Row>
+              <Row label="하이퍼리퀴드 지금" help={HELP.perp}>
+                {fmtKrw(p.perpKrw, isIdx)} <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
+              </Row>
+              <Row label="예상 시작 가격" help={HELP.expected}>
+                <b>{fmtKrw(p.expectedOpen, isIdx)}</b> <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct)}</span>
+              </Row>
+              <Row label="80% 구간" help={HELP.band}>
+                {fmtPrice(p.band80.low, isIdx)} ~ {fmtKrw(p.band80.high, isIdx)}
+              </Row>
+              <Row label="오를 확률" help={HELP.up}>
+                <b className={p.probUp >= 0.5 ? 'up' : 'down'}>{Math.round(p.probUp * 100)}%</b>
+              </Row>
+            </dl>
+          )}
         </div>
       </section>
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">시작 가격 차이 분포</span>
+          <span className="panel__title">
+            몇 % 움직여 시작할까 <Help text={HELP.dist} />
+          </span>
         </div>
         <div className="panel__body">
-        {!predictionReady(p) ? <InSessionNotice /> : (<>
-        <div className="dist">
-          {p.distribution.map((d, i) => (
-            <div className="dist__row" key={d.label}>
-              <span className="muted">{d.label}</span>
-              <span className="dist__bar">
-                <i style={{ width: `${(d.p / maxP) * 100}%`, background: i < 2 ? 'var(--down)' : i > 2 ? 'var(--up)' : 'var(--text-3)' }} />
-              </span>
-              <span className="num">{Math.round(d.p * 100)}%</span>
-            </div>
-          ))}
-        </div>
-        <p className="faint" style={{ fontSize: 12, marginTop: 10 }}>
-          {p.regime === 'weekend' ? '주말·연휴 구간' : '평일 밤 구간'} · 남은 시간 {p.hoursToOpen}시간만큼 불확실성을 더했어요
-        </p>
-        </>)}
+          {!predictionReady(p) ? (
+            <InSessionNotice />
+          ) : (
+            <>
+              <div className="dist">
+                {p.distribution.map((d, i) => (
+                  <div className="dist__row" key={d.label}>
+                    <span className="muted">{d.label}</span>
+                    <span className="dist__bar">
+                      <i style={{ width: `${(d.p / maxP) * 100}%`, background: i < 2 ? 'var(--down)' : i > 2 ? 'var(--up)' : 'var(--text-3)' }} />
+                    </span>
+                    <span className="num">{Math.round(d.p * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+              <p className="faint" style={{ fontSize: 12, marginTop: 12 }}>
+                {p.regime === 'weekend' ? '주말·연휴를 건너는 밤' : '평일 밤'} · 장 열리기까지 {p.hoursToOpen}시간 남아서 그만큼 범위를 넓혔어요
+              </p>
+            </>
+          )}
         </div>
       </section>
       <section className="panel">
@@ -85,36 +106,28 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           <span className="panel__title">얼마나 맞았나</span>
         </div>
         <div className="panel__body">
-        <dl>
-          <div className="kv kv--key">
-            <dt>하이퍼리퀴드 방향대로 열림</dt>
-            <dd data-fit>
-              <b>{p.backtest.followRatePct}%</b>{' '}
-              <span className="faint">
-                ({p.backtest.followScored}번 중 {p.backtest.followYes}번)
-              </span>
-            </dd>
-          </div>
-          <div className="kv">
-            <dt>80% 구간 실제 포함</dt>
-            <dd data-fit>{p.backtest.coverage80Pct}%</dd>
-          </div>
-          <div className="kv">
-            <dt>평균 오차</dt>
-            <dd data-fit>{p.backtest.maePct}%p</dd>
-          </div>
-          <div className="kv">
-            <dt>하이퍼리퀴드 가격 그대로 썼을 때</dt>
-            <dd data-fit>{p.backtest.perpRawMaePct}%p</dd>
-          </div>
-          <div className="kv">
-            <dt>전일 종가 그대로 썼을 때</dt>
-            <dd data-fit>{p.backtest.naiveMaePct}%p</dd>
-          </div>
-        </dl>
-        <p className="faint" style={{ fontSize: 12, marginTop: 6 }}>
-          방향대로 열림은 하이퍼리퀴드에 한국 종목이 처음 상장된 2026년 2월 19일 이후 모든 개장({p.backtest.opens}번)을 봤고, 둘 중 하나라도 ±0.05% 안쪽이었던 {p.backtest.followFlat}번은 뺐어요. 예상 가격과 80% 구간은 그날 이전 데이터로만 계산한 결과예요. 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
-        </p>
+          <dl>
+            <div className="kv kv--key">
+              <dt>
+                하이퍼리퀴드 방향대로 열림 <Help text={HELP.follow} />
+              </dt>
+              <dd data-fit>
+                <b>{bt.followRatePct?.toFixed(1)}%</b> <span className="faint">({bt.followScored}번 중 {bt.followYes}번)</span>
+              </dd>
+            </div>
+            <Row label="80% 구간 안에서 시작" help={HELP.coverage}>
+              {bt.coverage80Pct?.toFixed(1)}%
+            </Row>
+            <Row label="예상 가격과의 차이" help={HELP.mae}>
+              평균 {bt.maePct}%p
+            </Row>
+            <Row label="어제 마지막 가격 그대로라면" help={HELP.naive}>
+              평균 {bt.naiveMaePct}%p
+            </Row>
+          </dl>
+          <p className="faint" style={{ fontSize: 12, marginTop: 8 }}>
+            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요.
+          </p>
         </div>
       </section>
     </div>

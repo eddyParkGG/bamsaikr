@@ -32,7 +32,7 @@ export const openapi = {
       get: {
         operationId: 'predictOpen',
         summary: 'Forecast of the next KRX opening price (probability up, expected open, 80% band)',
-        description: 'probUp: probability the open is above the reference close. band80: 80% probability band. backtest.followRatePct: share of opens since the 2026-02-19 listing that moved the way Hyperliquid moved while the KRX was closed (moves within ±0.05% excluded); coverage80Pct/maePct: accuracy of the expected open (walk-forward).',
+        description: 'probUp: probability the open is above the reference close. band80: 80% probability band. Forecast of the domestic re-open (KRX + NXT, 08:00–08:10 average) relative to the 20:00 close. backtest.followRatePct: share of re-opens since 2026-04-13 that moved the way Hyperliquid moved while the domestic market was closed (moves within ±0.05% excluded); coverage80Pct/maePct: accuracy of the expected open (walk-forward).',
         parameters: [assetOpt],
         responses: ok,
       },

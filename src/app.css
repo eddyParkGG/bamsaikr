@@ -2368,3 +2368,25 @@ button.ob2__px:active::after {
     gap: 0;
   }
 }
+
+/* Prediction panels: '?' sits a little apart from its label; lists start flush with the panel body
+   (the default <dl> margin pushed the record panel lower than the others) */
+.kv dt,
+.panel__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.kv .help,
+.panel__title .help {
+  margin-left: 0;
+}
+.panel__body > dl {
+  margin: 0;
+}
+.panel__body > dl > .kv:first-child {
+  padding-top: 0;
+}
+.dist {
+  margin-top: 2px;
+}

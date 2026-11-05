@@ -414,21 +414,20 @@ export class ChartController {
       { fill: '#FFEB00', ink: '#060B11' },
     )
 
-    // Open convergence: how much of the perp-implied gap the stock actually opened at
+    // How much of the closed-hours Hyperliquid move the domestic re-open (08:00) followed.
+    // Shown on every re-open where Hyperliquid moved 1% or more (smaller moves make the ratio noise)
     if (this.markers) {
       const marks: SeriesMarker<Time>[] = []
       if (s.convergence) {
         const firstT = (s.showKrx ? d.krx : d.perpKrw)[0]?.t ?? 0
-        const cands: { m: SeriesMarker<Time>; g: number }[] = []
         for (const e of events) {
-          // Ratios on tiny gaps are noise
           if (e.absorptionPct == null || Math.abs(e.gapPct) < 1) continue
-          const openMs = Date.UTC(+e.date.slice(0, 4), +e.date.slice(4, 6) - 1, +e.date.slice(6, 8)) // 09:00 KST
-          if (openMs < firstT) continue
-          cands.push({ g: Math.abs(e.gapPct), m: { time: ct(openMs), position: e.gapPct >= 0 ? 'aboveBar' : 'belowBar', shape: 'circle', color: c.text3, text: `따라감 ${Math.round(e.absorptionPct)}%`, size: 0.4 } })
+          const reopen = Date.UTC(+e.date.slice(0, 4), +e.date.slice(4, 6) - 1, +e.date.slice(6, 8)) - 3600_000 // 08:00 KST
+          // Daily bars are keyed by date; intraday bars by their start time
+          const t = interval === '1d' ? reopen + 3600_000 : Math.floor(reopen / step) * step
+          if (t < firstT) continue
+          marks.push({ time: ct(t), position: e.gapPct >= 0 ? 'aboveBar' : 'belowBar', shape: 'circle', color: c.text3, text: `따라감 ${Math.round(e.absorptionPct)}%`, size: 0.4 })
         }
-        // Keep the 8 biggest gaps so the chart stays readable
-        marks.push(...cands.sort((p, q) => q.g - p.g).slice(0, 8).map((x) => x.m))
       }
       this.markers.setMarkers(marks.sort((p, q) => (p.time as number) - (q.time as number)))
     }
@@ -439,7 +438,7 @@ export class ChartController {
       this.priceLines = []
       if (s.forecast && prediction && prediction.status === 'pre-open') {
         this.priceLines = [
-          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '정규장 예상' }),
+          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '내일 아침 예상' }),
           host.createPriceLine({ price: prediction.band80.high, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '80%' }),
           host.createPriceLine({ price: prediction.band80.low, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '80%' }),
         ]

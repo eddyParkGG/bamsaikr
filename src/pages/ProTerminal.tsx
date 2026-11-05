@@ -1,4 +1,5 @@
 import { Chevron } from '../components/Icon'
+import { Help } from '../components/Help'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { NextOpenWhen, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
@@ -34,8 +35,8 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
     items: [
       { k: 'bands', label: '장 시간대 배경', help: '정규장·넥스트레이드·휴장 시간을 배경색으로 나눠 보여줘요' },
       { k: 'news', label: '뉴스 말풍선', help: '가격이 크게 움직인 날의 주요 뉴스를 차트 위에 표시해요' },
-      { k: 'convergence', label: '따라간 정도 %', help: '개장일 봉 위에 표시해요. 장이 닫힌 동안 하이퍼리퀴드가 움직인 폭을 다음 날 국내 시장 시작 가격이 몇 % 따라갔는지예요. 100%면 그대로, 50%면 절반만 따라 시작했어요' },
-      { k: 'forecast', label: '정규장 예상 시작 가격 · 80% 구간', help: '다음 정규장(09:00) 시작 가격 예측값과, 10번 중 8번은 들어올 범위를 그려요. 넥스트레이드 가격이 아니에요' },
+      { k: 'convergence', label: '따라간 정도 %', help: '장이 닫힌 밤에 하이퍼리퀴드가 1% 이상 움직인 날, 다음 날 아침 8시 봉 위에 표시해요. 그 움직임을 국내 시장이 몇 % 따라 시작했는지예요. 100%면 그대로, 50%면 절반만 따라갔어요' },
+      { k: 'forecast', label: '내일 아침 예상 가격 · 80% 구간', help: '국내 시장이 닫힌 밤에, 내일 아침 8시 국내 시장이 다시 열릴 때 예상 가격과 10번 중 8번은 들어올 범위를 그려요' },
     ],
   },
   {
@@ -66,21 +67,6 @@ function paramText(k: ParamKey, p: ReturnType<typeof usePrefs.getState>['params'
   if (k === 'bb') return `${p.bb.period}, ${p.bb.mult}`
   if (k === 'rsi') return `${p.rsi.period}`
   return `${p.macd.fast}, ${p.macd.slow}, ${p.macd.signal}`
-}
-
-function Help({ text }: { text: string }) {
-  return (
-    <span className="help" tabIndex={0} aria-label={text} onClick={(e) => e.stopPropagation()}>
-      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-        <circle cx="12" cy="12" r="10" fill="currentColor" />
-        <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2-2.4 3.6" fill="none" stroke="var(--bg-float)" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="12" cy="17" r="1.2" fill="var(--bg-float)" />
-      </svg>
-      <span className="help__tip" role="tooltip">
-        {text}
-      </span>
-    </span>
-  )
 }
 
 function IndicatorMenu({ krxAvailable }: { krxAvailable: boolean }) {
@@ -392,7 +378,7 @@ function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnap
               1천만원 기준 <b className="up">약 {fmtWon(net)}원</b> 남아요 · 실행하기
             </>
           ) : (
-            <>지금은 비용이 더 커요 · 비용 뺀 {fmtPct(arb.net.netPct)}</>
+            <>지금은 비용이 더 커요 · 비용 뺀 수익 {fmtPct(arb.net.netPct)}</>
           )}
         </span>
         {chevron}

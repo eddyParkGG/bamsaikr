@@ -105,7 +105,7 @@ export default function EasyHome() {
   }, [!!preds.data, !!status.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const day = status.data ? openDayText(status.data.nextOpen) : '다음'
-  const inSession = status.data?.session === 'regular'
+  const inSession = !!status.data && status.data.session !== 'closed'
 
   return (
     <div className="easy">
@@ -158,7 +158,7 @@ export default function EasyHome() {
           <h2>어떻게 미리 알 수 있나요?</h2>
         </div>
         <p>
-          국내 주식시장은 오후 3시 30분에 닫히지만, 하이퍼리퀴드에서는 삼성전자·SK하이닉스 가격을 밤에도 주말에도 사고팔아요. 이 가격을 원화로
+          국내 시장은 넥스트레이드까지 저녁 8시면 닫히지만, 하이퍼리퀴드에서는 삼성전자·SK하이닉스 가격을 밤에도 주말에도 사고팔아요. 이 가격을 원화로
           바꿔서 다음 날 장이 어떤 가격에서 시작할지 계산해요.
         </p>
         <p>
