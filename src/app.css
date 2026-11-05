@@ -2503,6 +2503,8 @@ body {
   background: linear-gradient(to bottom, transparent, var(--bg));
 }
 @media (max-width: 1100px) {
+  /* 1px in from the panel's edge: the panel border is an inset shadow that the sticky header's background would paint over */
+  margin: 0 1px 1px;
   .panel--fill {
     height: auto !important;
   }
