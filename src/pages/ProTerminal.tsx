@@ -360,6 +360,7 @@ function QuickAnswer({ p, arb, onPredict }: { p: Prediction | null; arb: ArbSnap
                 {pl!.label} {pl!.value}%
               </b>{' '}
               · 예상 {fmtPrice(p.expectedOpen)}원 <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct, 1)}</span>
+              {p.thin && <span className="faint"> · 거래 적어 덜 정확</span>}
             </>
           )}
         </span>

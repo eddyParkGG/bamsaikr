@@ -2382,3 +2382,19 @@ button.ob2__px:active::after {
 .dow--weekend {
   color: var(--up);
 }
+
+/* Forecast flag when Hyperliquid trades too little at night: neutral, not a price colour */
+.thin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
+}

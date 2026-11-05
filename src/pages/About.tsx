@@ -54,11 +54,11 @@ export default function About() {
         </div>
         <div className="panel__body about__body">
           <p className="about__h">
-            H1. 국내 시장이 닫힌 동안 해외 선물 탈중앙 거래소(하이퍼리퀴드) 가격이 움직인 방향대로, 다음 날 국내 시장도 80% 이상 같은 방향으로 시작한다
+            H1. 국내 시장이 닫힌 동안 해외 선물 탈중앙 거래소(하이퍼리퀴드)에서 충분히 거래됐다면, 그 가격이 움직인 방향대로 다음 날 국내 시장도 80% 이상 같은 방향으로 시작한다
             <span className="about__status about__status--done">삼성전자·SK하이닉스 통과</span>
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            국내 시장(정규장·넥스트레이드)이 모두 닫힌 저녁 8시부터 다음 날 아침 8시까지 하이퍼리퀴드가 오르거나 내린 방향대로, 아침 8시~8시 10분 국내 평균 가격이 움직였는지 봤어요. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요.
+            국내 시장(정규장·넥스트레이드)이 모두 닫힌 저녁 8시부터 다음 날 아침 8시까지 하이퍼리퀴드가 오르거나 내린 방향대로, 아침 8시~8시 10분 국내 평균 가격이 움직였는지 봤어요. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요. 밤사이 하이퍼리퀴드 거래가 <b className="strong">100만 달러 이상</b>인 날만 셌어요. 거래가 적으면 몇 건의 주문에도 가격이 흔들려서, 실제로 그런 밤은 방향대로 시작한 비율이 67%에 그쳤어요.
           </p>
           <div className="nbar about__period">
             <span className="nbar__label">기간</span>
@@ -75,11 +75,11 @@ export default function About() {
                     <span className="strong">{p.name}</span>
                     <span className="spacer" />
                     <span className="faint num" style={{ fontSize: 12 }}>
-                      {p.backtest.followScored}번 중 {p.backtest.followYes}번
-                      {(p.backtest.followRatePct ?? 0) < 80 && ' · 80% 미만'}
+                      {p.backtest.liquidScored < 30 ? `거래 충분한 밤 ${p.backtest.liquidScored}번뿐` : `${p.backtest.liquidScored}번 중 ${p.backtest.liquidYes}번`}
+                      {' · '}전체 {p.backtest.followRatePct?.toFixed(1)}%
                     </span>
                     <b className="num" data-fit>
-                      {p.backtest.followRatePct?.toFixed(1)}%
+                      {p.backtest.liquidScored < 30 ? '판단 보류' : `${p.backtest.liquidRatePct?.toFixed(1)}%`}
                     </b>
                   </div>
                 ))

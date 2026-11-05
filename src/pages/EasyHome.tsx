@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { IN_SESSION, InSessionNotice, predictionReady } from '../components/NextOpenState'
+import { IN_SESSION, InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
 import { probLabel, verdict, PERP_PLAIN } from '../lib/copy'
@@ -47,7 +47,9 @@ function PredictRow({ p }: { p: Prediction }) {
     <Link href={`/s/${p.asset}`} className="easy-row" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
       <StockLogo id={p.asset} size={36} />
       <div>
-        <p className="easy-row__name" data-fit>{a.name}</p>
+        <p className="easy-row__name" data-fit>
+          {a.name} <ThinTag p={p} help={false} />
+        </p>
         <p className="easy-row__sub num" data-fit>
           예상 시작 가격 {fmtPrice(p.expectedOpen, a.kind === 'index')}
           {a.kind === 'stock' ? '원' : ''} <span className={p.expectedGapPct >= 0 ? 'up' : 'down'}>{fmtPct(p.expectedGapPct, 1)}</span>

@@ -2,6 +2,7 @@
 // Every surface (home list, stock detail bars and tabs) uses this, so the in-session behaviour
 // and copy can never drift between pages.
 import type { Prediction } from '../../shared/api'
+import { Help } from './Help'
 import { useStatus } from '../lib/data'
 import { kstDay, untilText } from '../lib/format'
 import { SessionLine } from '../lib/market'
@@ -40,5 +41,18 @@ export function NextOpenWhen({ at, long = false }: { at: number; long?: boolean 
     <>
       {kstDay(at)} {long ? '오전 8시 개장' : '08:00'} · {untilText(at)}
     </>
+  )
+}
+
+export const THIN_HELP =
+  '밤사이 하이퍼리퀴드 거래가 100만 달러보다 적으면 몇 건의 주문에도 가격이 흔들려요. 이런 밤에는 하이퍼리퀴드 방향대로 시작한 비율이 낮았어요.'
+
+/** Tag on a forecast when Hyperliquid trades too little at night for its price to mean much */
+export function ThinTag({ p, help = true }: { p: Prediction; help?: boolean }) {
+  if (!p.thin) return null
+  return (
+    <span className="thin-tag">
+      거래 적어 덜 정확{help && <Help text={THIN_HELP} />}
+    </span>
   )
 }

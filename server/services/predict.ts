@@ -10,6 +10,8 @@
 //   a = α + β·g + ε,  ε ~ N(0, σ_regime²)   regime = weeknight / weekend·holiday
 // If time remains until the re-open, Hyperliquid can still move, so add variance
 //   σ_t² = σ_regime² + β²·(hourly Hyperliquid volatility while closed)²·hours remaining
+// Thin nights: when under THIN_USD traded on Hyperliquid 20:00 → 08:00, its price says little
+// (scored history: 86% follow at ≥ $1M vs 66% below, mostly Hyundai). Such forecasts are flagged
 import type { Asset } from '../../shared/assets.js'
 import { domesticTrading, kstToMs, nextDomesticOpen, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
@@ -22,11 +24,14 @@ const H = 3600_000
 const LONG_GAP_HOURS = 20 // close-to-open over 20h is treated as weekend/holiday
 const Z80 = 1.2816
 const PRIOR_N = Number(process.env.PREDICT_PRIOR_N ?? 60)
+/** Overnight Hyperliquid notional (USD) below which a night counts as thin */
+export const THIN_USD = 1_000_000
 
 export interface OpenEvent {
   date: string // re-open day YYYYMMDD
   regime: 'overnight' | 'weekend'
   closedHours: number // 20:00 close → 08:00 re-open
+  nightUsd: number // Hyperliquid notional traded while closed (USD)
   prevClose: number // domestic close at 20:00 (NXT)
   perpRefKrw: number // Hyperliquid price at 08:00 in KRW
   open: number // 08:00–08:10 average domestic price
@@ -99,6 +104,13 @@ function candleAt(candles: Candle[], t: number): Candle | undefined {
   return undefined
 }
 
+/** USD traded in 1h bars starting in [from, to) */
+function notional(perp: Candle[], from: number, to: number) {
+  let usd = 0
+  for (const b of perp) if (b.t >= from && b.t < to) usd += b.v * b.c
+  return usd
+}
+
 function buildEvents(asset: Asset, days: DomesticDay[], perp: Candle[], fx: FxPoint[]): OpenEvent[] {
   const out: OpenEvent[] = []
   const krw = (px: number, t: number) => (asset.fx ? (rateAt(fx, t) ?? NaN) * px : px)
@@ -116,7 +128,9 @@ function buildEvents(asset: Asset, days: DomesticDay[], perp: Candle[], fx: FxPo
     const after = candleAt(perp, tOpen)
     const perpAfterKrw = after && Date.now() > tOpen + H ? krw(after.c, tOpen) : null
 
-    const closedHours = (tOpen - kstToMs(prev.date, '2000')) / H
+    const closeAt = kstToMs(prev.date, '2000')
+    const closedHours = (tOpen - closeAt) / H
+    const nightUsd = notional(perp, closeAt, tOpen)
     const G = Math.log(perpRefKrw / prev.close)
     const S = Math.log(d.reopen / prev.close)
     const P = perpAfterKrw ? Math.log(perpAfterKrw / perpRefKrw) : null
@@ -127,6 +141,7 @@ function buildEvents(asset: Asset, days: DomesticDay[], perp: Candle[], fx: FxPo
       date: d.date,
       regime: closedHours > LONG_GAP_HOURS ? 'weekend' : 'overnight',
       closedHours: Math.round(closedHours * 10) / 10,
+      nightUsd: Math.round(nightUsd),
       prevClose: prev.close,
       perpRefKrw: Math.round(perpRefKrw * 100) / 100,
       open: Math.round(d.reopen * 100) / 100,
@@ -199,10 +214,14 @@ export function loadHistory(asset: Asset) {
     // Hyperliquid-direction check needs no training, so every open is scored
     let followYes = 0
     let followNo = 0
+    let liquidYes = 0
+    let liquidNo = 0
     for (const e of events) {
       e.follow = Math.abs(e.openGapPct) < FLAT_PCT || Math.abs(e.gapPct) < FLAT_PCT ? 'flat' : Math.sign(e.gapPct) === Math.sign(e.openGapPct) ? 'yes' : 'no'
       if (e.follow === 'yes') followYes++
       if (e.follow === 'no') followNo++
+      if (e.nightUsd >= THIN_USD && e.follow === 'yes') liquidYes++
+      if (e.nightUsd >= THIN_USD && e.follow === 'no') liquidNo++
     }
     const model = fit(events, vol)
     const r2 = (x: number) => Math.round(x * 100) / 100
@@ -215,6 +234,11 @@ export function loadHistory(asset: Asset) {
         followScored: followYes + followNo,
         followYes,
         followFlat: events.length - followYes - followNo,
+        /** Same, only nights with at least THIN_USD traded on Hyperliquid (the H1 condition) */
+        liquidRatePct: liquidYes + liquidNo ? r2((liquidYes / (liquidYes + liquidNo)) * 100) : null,
+        liquidScored: liquidYes + liquidNo,
+        liquidYes,
+        thinUsd: THIN_USD,
         opens: events.length,
         since: events[0]?.date ?? null,
         tested,
@@ -258,6 +282,13 @@ export async function predictOpen(asset: Asset) {
   const sigma = Math.sqrt(model.sigma[regime] ** 2 + model.beta ** 2 * model.perpHourlyVol ** 2 * hoursToOpen)
   const pUp = normCdf(mu / sigma)
 
+  // Live liquidity. Daytime Hyperliquid volume runs far above the night's, so judge by nights only:
+  // tonight so far, or a typical recent night (median of the last 20), whichever is larger
+  const tonight = await getPerpHourlySince(asset.perp, refCloseAt - H)
+  const tonightUsd = notional(tonight, refCloseAt, now)
+  const recentNights = events.slice(-20).map((e) => e.nightUsd).sort((a, b) => a - b)
+  const typicalNightUsd = recentNights.length ? recentNights[recentNights.length >> 1] : 0
+
   const bucket = (lo: number, hi: number) => normCdf((hi - mu) / sigma) - normCdf((lo - mu) / sigma)
   const r = (x: number) => Math.round(x * 10000) / 10000
 
@@ -275,6 +306,10 @@ export async function predictOpen(asset: Asset) {
     expectedGapPct: r(mu * 100),
     band80: { low: Math.round(refClose * (1 + mu - Z80 * sigma)), high: Math.round(refClose * (1 + mu + Z80 * sigma)) },
     probUp: r(pUp),
+    /** Hyperliquid trades too little at night (under THIN_USD) for its price to say much */
+    thin: Math.max(tonightUsd, typicalNightUsd) < THIN_USD,
+    tonightUsd: Math.round(tonightUsd),
+    typicalNightUsd: Math.round(typicalNightUsd),
     probDown: r(1 - pUp),
     distribution: [
       { label: '-3% 이하', p: r(normCdf((-0.03 - mu) / sigma)) },

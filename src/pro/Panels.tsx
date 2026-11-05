@@ -7,7 +7,7 @@ import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
 import { useArb } from '../lib/data'
-import { InSessionNotice, predictionReady } from '../components/NextOpenState'
+import { InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
 
 const HELP = {
   ref: '국내 시장(넥스트레이드 포함)에서 마지막으로 거래된 가격이에요. 저녁 8시 종가예요.',
@@ -17,6 +17,7 @@ const HELP = {
   up: '기준 가격보다 높게 시작할 확률이에요.',
   dist: '내일 아침 국내 시장이 기준 가격보다 몇 % 오르거나 내려서 시작할지, 구간별 확률이에요. 막대가 길수록 그 구간일 가능성이 커요.',
   follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
+  liquid: '밤사이 하이퍼리퀴드에서 100만 달러 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
   coverage: '예상 범위(80% 구간) 안에서 실제로 시작한 비율이에요. 80%에 가까울수록 범위를 정직하게 잡은 거예요.',
   mae: '예상 시작 가격과 실제 시작 가격이 평균 몇 %p 차이 났는지예요.',
   naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 했을 때의 평균 차이예요. 이보다 작아야 의미가 있어요.',
@@ -53,6 +54,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
       <section className="panel">
         <div className="panel__head">
           <span className="panel__title">내일 아침 가격</span>
+          {predictionReady(p) && <ThinTag p={p} />}
           <span className="spacer" />
           <span className="faint" style={{ fontSize: 12 }}>
             <NextOpenWhen at={p.targetOpenAt} />
@@ -125,6 +127,15 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
                 <b>{bt.followRatePct?.toFixed(1)}%</b> <span className="faint">({bt.followScored}번 중 {bt.followYes}번)</span>
               </dd>
             </div>
+            <Row label="거래 충분한 밤만" help={HELP.liquid}>
+              {bt.liquidScored < 30 ? (
+                <span className="faint">{bt.liquidScored}번뿐이라 아직 판단 어려워요</span>
+              ) : (
+                <>
+                  {bt.liquidRatePct?.toFixed(1)}% <span className="faint">({bt.liquidScored}번 중 {bt.liquidYes}번)</span>
+                </>
+              )}
+            </Row>
             <Row label="80% 구간 안에서 시작" help={HELP.coverage}>
               {bt.coverage80Pct?.toFixed(1)}%
             </Row>
