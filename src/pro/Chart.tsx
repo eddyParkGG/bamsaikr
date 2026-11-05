@@ -4,7 +4,7 @@ import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Pr
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
 import { SESSION_LABEL, venueAt } from '../lib/market'
-import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit } from '../lib/format'
+import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit, tone } from '../lib/format'
 import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
 import { predictionReady } from '../components/NextOpenState'
@@ -302,7 +302,7 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
         <div ref={fcEl} className="cnote" hidden>
           <span className="cnote__label">내일 아침 예상</span>
           <span>
-            {fmtPrice(fc.expectedOpen)}원 · 오를 확률 <b>{Math.round(fc.probUp * 100)}%</b>
+            {fmtPrice(fc.expectedOpen)}원 <b className={tone(fc.expectedGapPct)}>{fmtPct(fc.expectedGapPct)}</b>
           </span>
           <button className="cnote__btn" onClick={onPredict}>
             자세히
