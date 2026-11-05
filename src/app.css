@@ -247,12 +247,16 @@
 
 /* ───── Pro mode body ───── */
 .pro-grid {
-  /* Fills the screen under the top menu and the compact bar (8px gaps + bottom bar) */
-  --chart-h: max(480px, calc(100vh - var(--header-h) - var(--compact-h) - 60px));
+  /* Fills the screen under the top menu and the compact bar: 8px gap above, the page's 60px bottom padding (bottom bar + margin) below.
+     At the end of the scroll the boxes then sit exactly under the compact bar instead of sliding beneath it */
+  --chart-h: max(480px, calc(100vh - var(--header-h) - var(--compact-h) - 8px - 60px));
   display: grid;
   grid-template-columns: minmax(0, 1fr) 8px var(--side-w, 340px);
   align-items: start;
   margin-top: 8px;
+  /* Room for the pinned chart and order book to slide down under the compact bar.
+     Sticky boxes only move within their container's content box; without this they had none and slid beneath the bar */
+  min-height: calc(var(--chart-h) + var(--compact-h));
 }
 .pro-chart {
   position: sticky;
@@ -331,6 +335,8 @@ body.is-resizing * {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  /* Full row height, so the pinned order book has room to slide down like the chart */
+  align-self: stretch;
 }
 .chart-tools {
   display: flex;
@@ -970,6 +976,7 @@ body.is-resizing * {
   .pro-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+    min-height: 0;
   }
   .split {
     display: none;
@@ -2410,7 +2417,7 @@ button.ob2__px:active::after {
 
 /* Compact stock bar: pinned under the top menu once the stock head scrolls away */
 :root {
-  --compact-h: 52px;
+  --compact-h: 108px;
 }
 .pcompact {
   position: fixed;
@@ -2420,8 +2427,9 @@ button.ob2__px:active::after {
   z-index: 19;
   height: var(--compact-h);
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
   padding: 0 24px;
   background: var(--bg-screen);
   border-bottom: 1px solid var(--line);
@@ -2458,17 +2466,55 @@ button.ob2__px:active::after {
   font-weight: 700;
   color: var(--text);
 }
-.pcompact__stat {
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
+.pcompact__row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+.pcompact__id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+/* Stats in the compact bar: most important first, groups that do not fit wrap out of sight */
+.stats--compact {
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  height: 40px;
+  overflow: hidden;
+}
+.stats--compact .stats__group,
+.stats--compact .stats__group:first-child {
+  border-left: 1px solid var(--line);
+  padding: 0 18px;
+}
+.stats--compact .stats__group:nth-child(2) {
+  order: 1;
+}
+.stats--compact .stats__group:nth-child(3) {
+  order: 2;
+}
+.stats--compact .stats__group:nth-child(1) {
+  order: 3;
+}
+.stats--compact .stats__group:nth-child(4) {
+  order: 4;
+}
+.stats--compact .stats__group:nth-child(5) {
+  order: 5;
 }
 @media (max-width: 720px) {
+  :root {
+    --compact-h: 60px;
+  }
   .pcompact {
     padding: 0 12px;
-    gap: 12px;
   }
-  .pcompact__stat,
+  .stats--compact,
   .pcompact .ptabs {
     display: none;
   }

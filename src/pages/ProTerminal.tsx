@@ -281,8 +281,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const live = useStockLive(asset, arb)
   if (!arb || !live) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
-  const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium, diff, changePct } = live
-  const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
+  const { krxPrice, diff, changePct } = live
   return (
     <div className="stock-head">
       <div className="stock-head__id">
@@ -301,50 +300,61 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </span>
         </div>
       </div>
-      <dl className="stats">
-        <div className="stats__group">
-          <dt>1일 범위</dt>
-          <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
-          <dt>하이퍼리퀴드 범위</dt>
-          <dd>
-            <Range low={Math.min(arb.perp.mid, ctx?.prevDay ?? arb.perp.mid) * rate} high={Math.max(arb.perp.mid, ctx?.prevDay ?? arb.perp.mid) * rate} value={perpKrw} isIdx={isIdx} />
-          </dd>
-        </div>
-        <div className="stats__group">
-          <dt>하이퍼리퀴드 환산</dt>
-          <dd>
-            {fmtKrw(perpKrw, isIdx)}
-          </dd>
-          <dt>{arb.mode === 'live' ? '가격 차이' : '종가 대비'}</dt>
-          <dd className={tone(premium)}>
-            {fmtPct(premium)}
-            {arb.mode === 'live' && <span className="faint"> 평소 {fmtPct(arb.normalPremiumPct)}</span>}
-          </dd>
-        </div>
-        <div className="stats__group">
-          <dt title="가격 차이가 평소 수준으로 돌아온다고 볼 때, 수수료·세금·환전·펀딩비를 빼고 남는 비율이에요">비용 뺀 수익</dt>
-          <dd className={tone(arb.net.netPct)}>{fmtPct(arb.net.netPct)}</dd>
-          <dt>USDC</dt>
-          <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
-        </div>
-        <div className="stats__group">
-          <dt>펀딩 (1시간)</dt>
-          <dd className={tone(funding)}>{funding.toFixed(4)}%</dd>
-          <dt>미결제약정</dt>
-          <dd>{fmtWonUnit(arb.perp.openInterest * mid * usdcKrw)}원</dd>
-        </div>
-        <div className="stats__group">
-          <dt>하이퍼리퀴드 거래대금</dt>
-          <dd>{fmtWonUnit(arb.perp.volume24hUsd * usdcKrw)}원</dd>
-          <dt>최대 레버리지</dt>
-          <dd>{arb.perp.maxLeverage}배</dd>
-        </div>
-      </dl>
+      <StockStats asset={asset} arb={arb} live={live} />
     </div>
   )
 }
 
-/** One-line bar pinned under the top menu once the stock head has scrolled away: name, price, gap, tabs */
+/** The stock stats strip. In the compact bar the groups are reordered by importance and the ones that do not fit drop out */
+function StockStats({ asset, arb, live, compact = false }: { asset: Asset; arb: ArbSnapshot; live: NonNullable<ReturnType<typeof useStockLive>>; compact?: boolean }) {
+  const isIdx = asset.kind === 'index'
+  const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium } = live
+  const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
+  return (
+    <dl className={compact ? 'stats stats--compact' : 'stats'}>
+      <div className="stats__group">
+        <dt>1일 범위</dt>
+        <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
+        <dt>하이퍼리퀴드 범위</dt>
+        <dd>
+          <Range low={Math.min(arb.perp.mid, ctx?.prevDay ?? arb.perp.mid) * rate} high={Math.max(arb.perp.mid, ctx?.prevDay ?? arb.perp.mid) * rate} value={perpKrw} isIdx={isIdx} />
+        </dd>
+      </div>
+      <div className="stats__group">
+        <dt>하이퍼리퀴드 환산</dt>
+        <dd>
+          {fmtKrw(perpKrw, isIdx)}
+        </dd>
+        <dt>{arb.mode === 'live' ? '가격 차이' : '종가 대비'}</dt>
+        <dd className={tone(premium)}>
+          {fmtPct(premium)}
+          {arb.mode === 'live' && <span className="faint"> 평소 {fmtPct(arb.normalPremiumPct)}</span>}
+        </dd>
+      </div>
+      <div className="stats__group">
+        <dt title="가격 차이가 평소 수준으로 돌아온다고 볼 때, 수수료·세금·환전·펀딩비를 빼고 남는 비율이에요">비용 뺀 수익</dt>
+        <dd className={tone(arb.net.netPct)}>{fmtPct(arb.net.netPct)}</dd>
+        <dt>USDC</dt>
+        <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
+      </div>
+      <div className="stats__group">
+        <dt>펀딩 (1시간)</dt>
+        <dd className={tone(funding)}>{funding.toFixed(4)}%</dd>
+        <dt>미결제약정</dt>
+        <dd>{fmtWonUnit(arb.perp.openInterest * mid * usdcKrw)}원</dd>
+      </div>
+      <div className="stats__group">
+        <dt>하이퍼리퀴드 거래대금</dt>
+        <dd>{fmtWonUnit(arb.perp.volume24hUsd * usdcKrw)}원</dd>
+        <dt>최대 레버리지</dt>
+        <dd>{arb.perp.maxLeverage}배</dd>
+      </div>
+    </dl>
+  )
+}
+
+/** Bar pinned under the top menu once the stock head has scrolled away.
+ *  Row 1: name and price (as in the head) with the most important stats that fit; row 2: the tabs, left-aligned as above */
 function CompactBar({ asset, arb, tabs, tab, onTab, show }: { asset: Asset; arb: ArbSnapshot | null; tabs: [Tab, string][]; tab: Tab; onTab: (t: Tab) => void; show: boolean }) {
   const live = useStockLive(asset, arb)
   const perp = usePerps(asset.id).item
@@ -365,20 +375,18 @@ function CompactBar({ asset, arb, tabs, tab, onTab, show }: { asset: Asset; arb:
   }
   return (
     <div className={`pcompact ${show ? 'is-on' : ''}`} aria-hidden={!show}>
-      <AssetName asset={asset} />
-      {price != null && (
-        <span className="pcompact__price num">
-          <b>{fmtKrw(price, isIdx)}</b>
-          <span className={tone(diff)}>{fmtPct(pct)}</span>
-        </span>
-      )}
-      {asset.kind === 'stock' && live && arb && (
-        <span className="pcompact__stat num">
-          <span className="faint">{arb.mode === 'live' ? '가격 차이' : '종가 대비'}</span> <b className={tone(live.premium)}>{fmtPct(live.premium)}</b>
-          {arb.mode === 'live' && <span className="faint"> 평소 {fmtPct(arb.normalPremiumPct)}</span>}
-        </span>
-      )}
-      <span className="spacer" />
+      <div className="pcompact__row">
+        <div className="pcompact__id">
+          <AssetName asset={asset} />
+          {price != null && (
+            <span className="pcompact__price num">
+              <b>{fmtKrw(price, isIdx)}</b>
+              <span className={tone(diff)}>{fmtPct(pct)}</span>
+            </span>
+          )}
+        </div>
+        {asset.kind === 'stock' && live && arb && <StockStats asset={asset} arb={arb} live={live} compact />}
+      </div>
       <div className="ptabs" role="tablist">
         {tabs.map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} tabIndex={show ? 0 : -1} onClick={() => onTab(k)}>
@@ -495,14 +503,16 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     if (k === 'predict' || k === 'conv') track('model_explain_open', { asset: asset.id, tab: k })
   }
 
-  // Compact bar shows once the tabs have scrolled under the top menu
+  // Compact bar shows once the tabs reach its bottom edge: that is exactly when the chart starts to pin under it,
+  // so no empty band opens up between the tabs and the pinned chart
   const tabsRef = useRef<HTMLDivElement>(null)
   const [compact, setCompact] = useState(false)
   useEffect(() => {
     const el = tabsRef.current
     if (!el) return
-    const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 60
-    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting && e.boundingClientRect.top < headerH), { rootMargin: `-${headerH}px 0px 0px 0px` })
+    const root = getComputedStyle(document.documentElement)
+    const edge = (parseFloat(root.getPropertyValue('--header-h')) || 60) + (parseFloat(root.getPropertyValue('--compact-h')) || 0)
+    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting && e.boundingClientRect.top < edge), { rootMargin: `-${edge}px 0px 0px 0px` })
     io.observe(el)
     return () => io.disconnect()
   }, [])
