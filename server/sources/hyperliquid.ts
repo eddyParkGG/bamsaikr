@@ -17,7 +17,7 @@ export interface PerpCtx {
   midPx: number | null
   oraclePx: number
   prevDayPx: number
-  funding: number // 1시간 펀딩비
+  funding: number // 1-hour funding rate
   openInterest: number
   dayNtlVlm: number
   maxLeverage: number
@@ -51,12 +51,12 @@ export function getPerpCtxs(): Promise<Map<string, PerpCtx>> {
 }
 
 export interface Candle {
-  t: number // 시작 시각 ms
+  t: number // start time ms
   o: number
   h: number
   l: number
   c: number
-  v: number // 수량(perp: 계약 수, KRX: 주)
+  v: number // volume (perp: contracts, KRX: shares)
 }
 
 export type HlInterval = '1m' | '5m' | '15m' | '1h' | '4h' | '1d'

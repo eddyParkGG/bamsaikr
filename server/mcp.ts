@@ -1,5 +1,5 @@
-// MCP (Streamable HTTP, stateless). Claude/Cursor 등에서 URL 하나로 붙일 수 있게 조회 도구만 노출
-// 주문은 실수 위험이 커서 MCP 에서는 dry-run 만 제공
+// MCP (Streamable HTTP, stateless). Exposes read-only tools so Claude/Cursor etc. can connect with a single URL
+// Orders are error-prone, so MCP only offers dry-run
 import { Hono } from 'hono'
 import { ASSET_BY_ID, ASSETS, isAssetId } from '../shared/assets.js'
 import { arbAll, arbSnapshot } from './services/arb.js'
@@ -7,24 +7,24 @@ import { loadHistory, predictOpen } from './services/predict.js'
 import { newsMarkers } from './services/news.js'
 import { placePairOrder } from './services/orders.js'
 
-const assetProp = { type: 'string', enum: ASSETS.map((a) => a.id), description: 'SMSN=삼성전자, SKHX=SK하이닉스, HYUNDAI=현대차, KR200=코스피200' }
+const assetProp = { type: 'string', enum: ASSETS.map((a) => a.id), description: 'SMSN=Samsung Electronics, SKHX=SK hynix, HYUNDAI=Hyundai Motor, KR200=KOSPI 200' }
 
 const TOOLS = [
   {
     name: 'get_arbitrage',
-    description: '하이퍼리퀴드 perp 와 KRX 가격 괴리율, 비용 뺀 순차익. asset 생략 시 전체 종목',
+    description: 'Premium between Hyperliquid perp and KRX price, and net arbitrage after costs. All assets if asset is omitted',
     inputSchema: { type: 'object', properties: { asset: assetProp } },
     run: async (a: Record<string, string>) => (a.asset && isAssetId(a.asset) ? arbSnapshot(ASSET_BY_ID[a.asset]) : arbAll()),
   },
   {
     name: 'predict_open',
-    description: '다음 KRX 개장 시가 예측. 상승 확률(probUp), 예상 시가, 80% 구간, 과거 적중률',
+    description: 'Forecast of the next KRX opening price: probability of rising (probUp), expected open, 80% band, historical hit rate',
     inputSchema: { type: 'object', properties: { asset: assetProp }, required: ['asset'] },
     run: async (a: Record<string, string>) => predictOpen(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID]),
   },
   {
     name: 'get_convergence_history',
-    description: '과거 개장일별로 perp 가 예고한 갭과 실제 시가 갭, 어느 쪽이 맞췄는지',
+    description: 'Per past open day: gap implied by perp vs actual opening gap, and which side converged',
     inputSchema: { type: 'object', properties: { asset: assetProp, limit: { type: 'number' } }, required: ['asset'] },
     run: async (a: Record<string, string>) => {
       const h = await loadHistory(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID])
@@ -33,13 +33,13 @@ const TOOLS = [
   },
   {
     name: 'get_news',
-    description: '종목의 날짜별 대표 이슈 (하루 1건)',
+    description: 'Top issue per day for an asset (1 per day)',
     inputSchema: { type: 'object', properties: { asset: assetProp }, required: ['asset'] },
     run: async (a: Record<string, string>) => newsMarkers(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID]),
   },
   {
     name: 'preview_pair_order',
-    description: '차익 페어 주문 미리보기(dry-run). 실제 주문은 보내지 않음',
+    description: 'Preview (dry-run) of an arbitrage pair order. No real order is sent',
     inputSchema: {
       type: 'object',
       properties: { asset: assetProp, notionalKrw: { type: 'number' }, direction: { type: 'string', enum: ['perp_short_stock_long', 'perp_long_stock_short'] } },

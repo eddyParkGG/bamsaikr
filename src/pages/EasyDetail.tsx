@@ -12,7 +12,7 @@ import { TodayIssue } from '../components/TodayIssue'
 import { IndicatorStrip } from '../components/IndicatorStrip'
 
 function Spark({ data, isIdx }: { data: ChartSeries; isIdx: boolean }) {
-  // 최근 이틀 15분봉. 국내 시세는 장 열린 시간만 있어서 선이 끊겨 보임
+  // Last two days of 15m bars. Domestic quotes exist only during market hours, so the line looks broken
   const W = 640
   const H = 140
   const from = Date.now() - 2 * 86400_000
@@ -98,7 +98,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
 
       <IndicatorStrip />
 
-      {/* 질문 1: 오를까 내릴까 */}
+      {/* Question 1: up or down */}
       <section className="panel q-card">
         <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 시가, 오를까요?` : '다음 시가, 오를까요?'}</p>
         {p && p.status === 'in-session' ? (
@@ -185,7 +185,7 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
         )}
       </section>
 
-      {/* 질문 2: 차익 */}
+      {/* Question 2: arbitrage */}
       <section className="panel q-card">
         <p className="q-card__q">지금 두 시장 차이로 얼마나 남아요?</p>
         {arb ? (

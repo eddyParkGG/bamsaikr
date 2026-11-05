@@ -132,7 +132,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const trade = useLive((s) => s.krxTrade[asset.krxCode])
   if (!arb) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
-  // 국내 현재가는 토스증권 실시간 체결로 갱신
+  // Domestic current price is updated from Toss Securities live trades
   const krxPrice = trade && trade.t > arb.updatedAt - 5000 ? trade.price : arb.krx.price
   const mid = ctx?.mid ?? arb.perp.mid
   const rate = asset.fx ? (usdc?.rate ?? arb.fx?.rate ?? 0) : 1

@@ -1,4 +1,4 @@
-# API 서버 (토스증권 허용 IP 때문에 고정 IP 한 대로 운영)
+# API server (runs as a single static-IP machine because of the Toss Securities IP allowlist)
 FROM node:22-slim
 WORKDIR /app
 COPY package.json package-lock.json ./

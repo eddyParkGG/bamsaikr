@@ -1,4 +1,4 @@
-// 아주 작은 폴링 캐시. 같은 키를 여러 컴포넌트가 써도 요청은 한 번, 탭이 숨겨지면 멈춤
+// Tiny polling cache. One request per key across components; pauses while the tab is hidden
 import { useEffect, useSyncExternalStore } from 'react'
 
 type State<T> = { data?: T; error?: Error; updatedAt: number }

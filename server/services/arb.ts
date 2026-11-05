@@ -1,18 +1,18 @@
-// 두 시장 괴리(프리미엄)와 비용 차감 후 실제 남는 차익 계산
+// Compute the premium between the two markets and the net arbitrage left after costs
 import { ASSETS, type Asset } from '../../shared/assets.js'
 import { sessionAt, type Session } from '../../shared/session.js'
 import { getPerpCtxs } from '../sources/hyperliquid.js'
 import { krxHolidays, krxQuote } from '../sources/krx.js'
 import { getUsdcKrw } from '../sources/upbit.js'
 
-// 비용 가정 (bp = 0.01%). API 쿼리로 덮어쓸 수 있음
+// Cost assumptions (bp = 0.01%). Can be overridden via API query
 export interface CostInput {
-  stockFeeBps: number // 증권사 매매 수수료 (편도)
-  stockTaxBps: number // 매도 시 증권거래세+농특세 (2026년 코스피 0.20%)
-  perpFeeBps: number // HL taker. HIP-3 기본 0.045%×2(deployerFeeScale 1.0)×0.1(growth mode) = 0.009%
-  fxFeeBps: number // 업비트 원화마켓 수수료 (편도)
-  leverage: number // perp 증거금 배수. 환전은 증거금만큼만 필요
-  holdHours: number // 괴리가 닫힐 때까지 예상 보유 시간 (펀딩비 계산용)
+  stockFeeBps: number // broker commission (one way)
+  stockTaxBps: number // securities transaction tax + special rural tax on sells (KOSPI 0.20% in 2026)
+  perpFeeBps: number // HL taker. HIP-3 base 0.045%×2 (deployerFeeScale 1.0)×0.1 (growth mode) = 0.009%
+  fxFeeBps: number // Upbit KRW-market fee (one way)
+  leverage: number // perp margin multiple. Only the margin needs FX conversion
+  holdHours: number // expected holding time until the premium closes (for funding)
 }
 
 export const DEFAULT_COST: CostInput = { stockFeeBps: 1.5, stockTaxBps: 20, perpFeeBps: 0.9, fxFeeBps: 5, leverage: 2, holdHours: 1 }
@@ -23,7 +23,7 @@ export interface ArbSnapshot {
   asset: Asset['id']
   name: string
   session: Session
-  /** live: 국내 시장이 열려 있어 바로 비교 가능. gap: 국내 휴장이라 직전 종가와 비교 */
+  /** live: domestic market open, directly comparable. gap: domestic market closed, compared to last close */
   mode: 'live' | 'gap'
   krx: { price: number; prevClose: number; changePct: number; high: number; low: number; open: number; tradeValue: number; source: string }
   perp: { coin: string; mid: number; mark: number; oracle: number; changePct: number; fundingHourly: number; openInterest: number; volume24hUsd: number; maxLeverage: number }
@@ -35,7 +35,7 @@ export interface ArbSnapshot {
     grossPct: number
     costs: { stock: number; perp: number; fx: number; funding: number }
     netPct: number
-    netKrwPer10m: number // 1천만원 기준 예상 순이익
+    netKrwPer10m: number // expected net profit per 10M KRW
     executable: boolean
     note: string
   }
@@ -53,7 +53,7 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
   const session = sessionAt(now, holidays)
   const mid = ctx.midPx ?? ctx.markPx
   const perpKrw = asset.fx ? mid * fx!.rate : mid
-  // 국내가 닫혀 있으면 마지막 체결가(=종가)가 기준
+  // When the domestic market is closed, the last trade (= close) is the reference
   const base = quote.price
   const premium = perpKrw / base - 1
   const mode = session === 'closed' ? 'gap' : 'live'
@@ -63,7 +63,7 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
   const perpCost = (cost.perpFeeBps * 2) / 10000
   const spreadHalf = fx ? (fx.ask - fx.bid) / 2 / fx.rate : 0
   const fxCost = asset.fx ? ((cost.fxFeeBps / 10000 + spreadHalf) * 2) / cost.leverage : 0
-  // 숏은 펀딩이 양수일 때 받고, 롱은 냄
+  // Shorts receive positive funding, longs pay it
   const fundingCost = (direction === 'perp_short_stock_long' ? -1 : 1) * ctx.funding * cost.holdHours
   const gross = Math.abs(premium)
   const netPct = gross - stockCost - perpCost - fxCost - fundingCost

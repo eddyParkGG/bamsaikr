@@ -1,4 +1,4 @@
-// 차트용 시계열: 두 시장 캔들 + 원화 환산 + 괴리율
+// Chart series: candles for both markets + KRW conversion + premium
 import type { Asset } from '../../shared/assets.js'
 import { kstDateKey, kstToMs, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
@@ -8,7 +8,7 @@ import { getUsdcKrwCandles, rateAt, type UpbitUnit } from '../sources/upbit.js'
 
 export type ChartInterval = '1m' | '5m' | '15m' | '1h' | '1d'
 
-// 국내 분봉은 토스 API 1회 200개라 구간이 길면 호출이 많아짐 → 1시간봉은 3주까지
+// Domestic minute bars are 200 per Toss API call, so long ranges need many calls → cap 1h bars at 3 weeks
 const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 2, '5m': 5, '15m': 10, '1h': 20, '1d': 400 }
 const STEP: Record<ChartInterval, number> = { '1m': 60_000, '5m': 300_000, '15m': 900_000, '1h': 3600_000, '1d': 86400_000 }
 const UPBIT_UNIT: Record<ChartInterval, UpbitUnit> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 'day' }
@@ -22,11 +22,11 @@ export interface ChartSeries {
   asset: Asset['id']
   interval: ChartInterval
   krxSource: string
-  perp: (Candle & { krw: number })[] // c 는 USDC, krw 는 원화 환산 종가
-  perpKrw: Candle[] // OHLC 전부 원화 환산
+  perp: (Candle & { krw: number })[] // c is USDC, krw is the KRW-converted close
+  perpKrw: Candle[] // full OHLC converted to KRW
   krx: Candle[]
   fx: SeriesPoint[]
-  premium: (SeriesPoint & { live: boolean })[] // live=false 는 국내 휴장 중(직전 종가 대비 갭)
+  premium: (SeriesPoint & { live: boolean })[] // live=false while domestic market is closed (gap vs last close)
   funding: SeriesPoint[]
   holidays: string[]
 }
@@ -78,7 +78,7 @@ export function chartSeries(asset: Asset, interval: ChartInterval): Promise<Char
       return { t: k.t, o: k.o * r, h: k.h * r, l: k.l * r, c: k.c * r, v: k.v }
     })
 
-    // 괴리율: 같은 봉끼리 비교. 국내 봉이 없으면 직전 국내 종가와 비교(휴장 갭)
+    // Premium: compare matching bars. Without a domestic bar, compare to the last domestic close (closed-market gap)
     const krxByT = new Map(krx.map((k) => [k.t, k]))
     const premium: ChartSeries['premium'] = []
     let lastKrx: number | null = null
@@ -101,7 +101,7 @@ export function chartSeries(asset: Asset, interval: ChartInterval): Promise<Char
       krx,
       fx: fx.filter((p) => p.t >= since).map((p) => ({ t: p.t, v: p.rate })),
       premium,
-      funding: funding.map((f) => ({ t: f.t, v: f.rate * 100 })), // 시간당 %
+      funding: funding.map((f) => ({ t: f.t, v: f.rate * 100 })), // % per hour
       holidays: [...holidays],
     }
   })

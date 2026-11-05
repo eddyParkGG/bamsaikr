@@ -5,7 +5,7 @@ import { track } from '../lib/ga'
 import { useQuery } from '../lib/query'
 import { StockLogo } from './Brand'
 
-/** 오늘의 이슈. asset 을 주면 그 종목, 없으면 전체에서 최신 순 */
+/** Today's issues. For the given asset, or across all assets when omitted, newest first */
 export const TodayIssue = memo(function TodayIssue({ asset, limit = 3, onOpen }: { asset?: string; limit?: number; onOpen?: (n: NewsMarker) => void }) {
   const q = useQuery<{ items: (NewsMarker & { asset?: string })[] }>(asset ? `/api/v1/news?asset=${asset}` : `/api/v1/news?limit=${limit}`, 300_000)
   const items = (asset ? [...(q.data?.items ?? [])].reverse() : (q.data?.items ?? [])).slice(0, limit)

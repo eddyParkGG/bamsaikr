@@ -13,7 +13,7 @@ export function fmtPct(v: number, digits = 2, sign = true) {
 
 export const tone = (v: number) => (v > 0 ? 'up' : v < 0 ? 'down' : '')
 
-/** 1억 이상은 '억', 1만 이상은 '만' */
+/** '억' for ≥ 100M, '만' for ≥ 10K */
 export function fmtKoreanUnit(v: number) {
   const a = Math.abs(v)
   if (a >= 1e8) return `${(v / 1e8).toFixed(a >= 1e10 ? 0 : 1)}억`
@@ -42,7 +42,7 @@ export function kstDay(ms: number) {
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${DOW[d.getUTCDay()]})`
 }
 
-/** 개장까지 남은 시간: '3시간 20분 뒤', '2일 뒤' */
+/** Time until open: '3시간 20분 뒤', '2일 뒤' */
 export function untilText(ms: number) {
   const diff = ms - Date.now()
   if (diff <= 0) return '지금'
@@ -53,7 +53,7 @@ export function untilText(ms: number) {
   return `${Math.floor(h / 24)}일 ${h % 24 ? `${h % 24}시간 ` : ''}뒤`
 }
 
-/** 시가 예상일을 사람 말로: 오늘/내일/월요일 */
+/** Forecast open day in plain words: 오늘/내일/월요일 (today/tomorrow/Monday) */
 export function openDayText(ms: number) {
   const d = new Date(ms + KST)
   const today = new Date(Date.now() + KST)

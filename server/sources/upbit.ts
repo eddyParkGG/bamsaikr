@@ -1,4 +1,4 @@
-// 업비트 원화마켓 USDC 시세. 하이퍼리퀴드 perp 는 USDC 로 정산되므로 원/달러가 아니라 원/USDC 로 환산
+// Upbit KRW-market USDC price. Hyperliquid perps settle in USDC, so convert with KRW/USDC rather than KRW/USD
 import { cached, fetchJson } from '../lib/cache.js'
 
 const BASE = 'https://api.upbit.com/v1'
@@ -22,8 +22,8 @@ export function getUsdcKrw(): Promise<{ rate: number; bid: number; ask: number; 
 type RawCandle = { candle_date_time_utc: string; opening_price: number; trade_price: number; high_price: number; low_price: number }
 
 /**
- * 원/USDC 시간봉. 1회 최대 200개라 거슬러 올라가며 이어붙임
- * 반환: 오름차순, t = 봉 시작 시각
+ * KRW/USDC hourly candles. Max 200 per call, so page backwards and concatenate
+ * Returns: ascending, t = bar start time
  */
 export function getUsdcKrwHourly(sinceMs: number): Promise<FxPoint[]> {
   const bucket = Math.floor(sinceMs / 86400_000)
@@ -38,7 +38,7 @@ export function getUsdcKrwHourly(sinceMs: number): Promise<FxPoint[]> {
       const oldest = page[page.length - 1]
       to = oldest.candle_date_time_utc + 'Z'
       if (Date.parse(to) <= sinceMs) break
-      // 업비트 캔들 API 초당 10회 제한
+      // Upbit candle API is limited to 10 req/sec
       if (i % 8 === 7) await new Promise((r) => setTimeout(r, 1000))
     }
     out.sort((a, b) => a.t - b.t)
@@ -46,7 +46,7 @@ export function getUsdcKrwHourly(sinceMs: number): Promise<FxPoint[]> {
   })
 }
 
-/** 정렬된 시계열에서 t 시점 직전 값 (이진 탐색) */
+/** Value at or just before t in a sorted series (binary search) */
 export function rateAt(series: FxPoint[], t: number): number | null {
   let lo = 0
   let hi = series.length - 1
@@ -61,7 +61,7 @@ export function rateAt(series: FxPoint[], t: number): number | null {
 
 export type UpbitUnit = 1 | 5 | 15 | 60 | 240 | 'day'
 
-/** 구간별 원/USDC 캔들 종가 (오름차순). 차트의 perp 원화 환산용 */
+/** KRW/USDC candle closes per interval (ascending). Used to convert perp prices to KRW on the chart */
 export function getUsdcKrwCandles(unit: UpbitUnit, sinceMs: number): Promise<FxPoint[]> {
   const step = unit === 'day' ? 86400_000 : unit * 60_000
   const bucket = Math.floor(sinceMs / step)

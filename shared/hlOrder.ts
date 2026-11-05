@@ -1,4 +1,4 @@
-// 하이퍼리퀴드 perp 주문. 서버(API 에이전트 지갑)와 브라우저(사용자가 승인한 에이전트 지갑) 양쪽에서 같이 씀
+// Hyperliquid perp orders. Shared by the server (API agent wallet) and the browser (user-approved agent wallet)
 import { ExchangeClient, HttpTransport, InfoClient } from '@nktkas/hyperliquid'
 import { SymbolConverter } from '@nktkas/hyperliquid/utils'
 import type { PrivateKeyAccount } from 'viem/accounts'
@@ -26,7 +26,7 @@ function converter(network: HlNetwork) {
   return c
 }
 
-/** HL 가격 규칙: 유효숫자 5자리, 소수점은 (6 - szDecimals) 자리까지 */
+/** HL price rule: 5 significant figures, up to (6 - szDecimals) decimals */
 export function formatPx(px: number, szDecimals: number) {
   const maxDecimals = Math.max(0, 6 - szDecimals)
   const sig = Number(px.toPrecision(5))
@@ -41,8 +41,8 @@ export function formatSz(sz: number, szDecimals: number) {
 export interface PerpOrderInput {
   coin: string // 'xyz:SMSN'
   side: 'buy' | 'sell'
-  size: number // 계약 수 (1 = 1주)
-  price?: number // 없으면 시장가 (IOC + 슬리피지)
+  size: number // contracts (1 = 1 share)
+  price?: number // market order if omitted (IOC + slippage)
   slippagePct?: number
   leverage?: number
   reduceOnly?: boolean
@@ -61,7 +61,7 @@ export interface PerpOrderPlan {
   referencePx: number
 }
 
-/** 서명 전 주문 내용 확정 (dry-run 에서도 그대로 보여줌) */
+/** Finalize order contents before signing (also shown as-is in dry-run) */
 export async function planPerpOrder(network: HlNetwork, input: PerpOrderInput): Promise<PerpOrderPlan> {
   const conv = await converter(network)
   const asset = conv.getAssetId(input.coin)
@@ -94,11 +94,11 @@ export async function planPerpOrder(network: HlNetwork, input: PerpOrderInput): 
   }
 }
 
-/** wallet: 에이전트 지갑(API wallet). 메인 지갑이 approveAgent 로 미리 승인해둔 키 */
+/** wallet: agent wallet (API wallet). Key pre-approved by the main wallet via approveAgent */
 export async function sendPerpOrder(wallet: PrivateKeyAccount, plan: PerpOrderPlan) {
   const exchange = new ExchangeClient({ transport: hlTransport(plan.network), wallet })
   if (plan.leverage) {
-    // trade.xyz 한국 종목은 격리(isolated) 전용
+    // trade.xyz Korean assets are isolated-margin only
     await exchange.updateLeverage({ asset: plan.asset, isCross: false, leverage: plan.leverage })
   }
   const res = await exchange.order({

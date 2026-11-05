@@ -1,8 +1,8 @@
-/* 토큰: 토스증권 PC(TDS) 값. 키컬러·CTA 만 카카오페이 노랑(#FFEB00) */
+/* Tokens: Toss Securities PC (TDS) values. Only key color/CTA use KakaoPay yellow (#FFEB00) */
 :root {
-  /* 다크(기본) */
+  /* Dark (default) */
   --bg-screen: #101013;
-  --bg: #17171c; /* 패널 */
+  --bg: #17171c; /* panel */
   --bg-layer: #202027;
   --bg-float: #2c2c35;
   --bg-sub: #1c1c22;
@@ -20,7 +20,7 @@
   --up-bg: rgba(240, 66, 81, 0.2);
   --down: #3485fa;
   --down-bg: rgba(52, 133, 250, 0.2);
-  --key: #ffeb00; /* 카카오페이 */
+  --key: #ffeb00; /* KakaoPay */
   --key-press: #f0dc00;
   --on-key: #060b11;
   --perp: #a78bfa;
@@ -140,7 +140,7 @@ p {
   gap: 12px;
 }
 
-/* ───── 레이아웃 ───── */
+/* ───── Layout ───── */
 .page {
   max-width: 1200px;
   margin: 0 auto;
@@ -150,7 +150,7 @@ p {
   max-width: none;
 }
 
-/* ───── 헤더 (토스 PC: 투명 배경, 60px, 메뉴 15px/600) ───── */
+/* ───── Header (Toss PC: transparent background, 60px, menu 15px/600) ───── */
 .header {
   position: sticky;
   top: 0;
@@ -188,7 +188,7 @@ p {
   color: var(--text);
 }
 
-/* ───── 패널 ───── */
+/* ───── Panels ───── */
 .panel {
   background: var(--bg);
   border-radius: var(--r-panel);
@@ -222,7 +222,7 @@ p {
   padding: 12px 16px 16px;
 }
 
-/* ───── 칩 · 버튼 ───── */
+/* ───── Chips · buttons ───── */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -311,7 +311,7 @@ p {
   filter: none;
 }
 
-/* 세그먼트 (토스: 지정가/시장가) */
+/* Segmented control (Toss: limit/market) */
 .seg {
   display: inline-flex;
   padding: 2px;
@@ -334,7 +334,7 @@ p {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
 }
 
-/* 큰 탭 (토스: 차트·호가 / 종목정보 …) */
+/* Large tabs (Toss: chart·orderbook / stock info …) */
 .ptabs {
   display: flex;
   gap: 2px;
@@ -381,7 +381,7 @@ p {
   color: var(--on-key);
 }
 
-/* 입력 (토스 주문창) */
+/* Inputs (Toss order form) */
 .field {
   display: flex;
   align-items: center;
@@ -479,7 +479,7 @@ p {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-/* 종목 아이콘 */
+/* Asset icons */
 .logo-mark {
   border-radius: 50%;
   display: inline-grid;
@@ -498,7 +498,7 @@ p {
   }
 }
 
-/* 로고 모션 */
+/* Logo motion */
 .brand {
   overflow: visible;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
@@ -525,7 +525,7 @@ p {
   opacity: 1;
   transform: scale(1);
 }
-/* 손을 떼면 바로 사라지게 (되감기 모션 없이) */
+/* Disappear immediately on hover out (no rewind animation) */
 .logo:not(:hover) .brand__bolt,
 .logo:not(:hover) .brand__head {
   transition-duration: 0s;

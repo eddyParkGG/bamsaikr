@@ -1,6 +1,6 @@
-// 한국 주식시장 시간대 구분 (KST 기준)
-// KRX 정규장 09:00~15:30, 넥스트레이드(NXT) 프리마켓 08:00~08:50 / 애프터마켓 15:30~20:00
-// 하이퍼리퀴드 perp 는 24시간. trade.xyz 오라클은 평일 20:00~익일 09:01, 주말·휴장일에 내부 가격으로 움직임
+// Korean stock market session classification (KST)
+// KRX regular 09:00~15:30, Nextrade (NXT) pre-market 08:00~08:50 / after-market 15:30~20:00
+// Hyperliquid perps trade 24h. The trade.xyz oracle runs on an internal price weekdays 20:00~09:01 next day, and on weekends/holidays
 
 export type Session = 'regular' | 'nxt' | 'closed'
 
@@ -35,7 +35,7 @@ export function isWeekend(ms: number) {
   return dow === 0 || dow === 6
 }
 
-/** holidays: 휴장일 'YYYYMMDD' 집합 (주말 제외 평일 휴장) */
+/** holidays: set of 'YYYYMMDD' market holidays (weekday closures only, weekends excluded) */
 export function sessionAt(ms: number, holidays: ReadonlySet<string>): Session {
   if (isWeekend(ms) || holidays.has(kstDateKey(ms))) return 'closed'
   const min = kstParts(ms).minutes
@@ -48,7 +48,7 @@ export function isTradingDay(ms: number, holidays: ReadonlySet<string>) {
   return !isWeekend(ms) && !holidays.has(kstDateKey(ms))
 }
 
-/** 다음 KRX 정규장 시가(09:00 KST) 시각 */
+/** Time of the next KRX regular-session open (09:00 KST) */
 export function nextRegularOpen(now: number, holidays: ReadonlySet<string>): number {
   let day = kstToMs(kstDateKey(now), '0900')
   if (now >= day) day += 86400_000
@@ -56,7 +56,7 @@ export function nextRegularOpen(now: number, holidays: ReadonlySet<string>): num
   return day
 }
 
-/** 직전 KRX 정규장 종가(15:30 KST) 시각 */
+/** Time of the previous KRX regular-session close (15:30 KST) */
 export function prevRegularClose(now: number, holidays: ReadonlySet<string>): number {
   let day = kstToMs(kstDateKey(now), '1530')
   if (now < day) day -= 86400_000
@@ -64,8 +64,8 @@ export function prevRegularClose(now: number, holidays: ReadonlySet<string>): nu
   return day
 }
 
-// 2026 KRX 휴장일 (주말 제외). KIS 휴장일조회 API 를 쓸 수 없을 때만 사용
-// 과거 휴장일은 일봉 데이터에서 직접 판별하므로 이 목록은 '다음 개장일' 계산용
+// 2026 KRX holidays (excluding weekends). Used only when the KIS holiday API is unavailable
+// Past holidays are detected from daily candles, so this list is only for computing the next open day
 export const KRX_HOLIDAYS_FALLBACK = new Set([
   '20260101', '20260216', '20260217', '20260218', '20260302', '20260501', '20260505',
   '20260525', '20260603', '20260817', '20260924', '20260925', '20261005', '20261009',

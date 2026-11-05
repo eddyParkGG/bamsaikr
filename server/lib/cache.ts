@@ -1,4 +1,4 @@
-// 인스턴스 메모리 캐시. 같은 키로 동시에 들어온 요청은 하나의 fetch 를 공유
+// In-memory instance cache. Concurrent requests for the same key share one fetch
 type Entry<T> = { value?: T; expires: number; pending?: Promise<T> }
 
 const store = new Map<string, Entry<unknown>>()
@@ -15,7 +15,7 @@ export async function cached<T>(key: string, ttlMs: number, load: () => Promise<
       return value
     })
     .catch((err) => {
-      // 실패하면 직전 값이라도 돌려줌 (stale-if-error)
+      // On failure, return the previous value if any (stale-if-error)
       store.delete(key)
       if (hit?.value !== undefined) {
         store.set(key, { value: hit.value, expires: Date.now() + 5_000 })

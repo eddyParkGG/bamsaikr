@@ -32,7 +32,7 @@ export const usePrefs = create<Prefs>()(
     {
       name: 'bamsai-prefs',
       version: 2,
-      // v2: 토스 PC 기준으로 다크 기본, 차트는 일봉 1년 기본
+      // v2: dark by default to match Toss PC; chart defaults to 1 year of daily candles
       migrate: (p) => ({ ...(p as object), theme: 'dark', interval: '1d' }) as Prefs,
       merge: (persisted, current) => {
         const p = persisted as Partial<Prefs>

@@ -1,9 +1,9 @@
-// lightweight-charts 시리즈 프리미티브: 장 시간대 배경, 뉴스 말풍선 핀
+// lightweight-charts series primitives: session background bands, news bubble pins
 import type { IChartApi, IPrimitivePaneRenderer, IPrimitivePaneView, ISeriesApi, ISeriesPrimitive, SeriesAttachedParameter, SeriesType, Time, UTCTimestamp } from 'lightweight-charts'
 import type { CanvasRenderingTarget2D } from 'fancy-canvas'
 
 export interface Span {
-  from: number // 차트 시간(초)
+  from: number // chart time (seconds)
   to: number
   kind: 'regular' | 'nxt' | 'closed'
 }
@@ -67,8 +67,8 @@ export class SessionBands extends Base {
 }
 
 export interface Pin {
-  time: number // 차트 시간(초), 실제 봉 시각에 맞춰 둔 값
-  price: number // 그 봉의 고가 → 말풍선이 봉 바로 위에 붙음 (차트를 위아래로 움직이면 같이 움직임)
+  time: number // chart time (seconds), snapped to an actual bar time
+  price: number // that bar's high → bubble sits right above the bar (moves with the chart vertically)
   id: string
 }
 
@@ -77,7 +77,7 @@ export class NewsPins extends Base {
   private hover: string | null = null
   private fill = '#FFEB00'
   private ink = '#060B11'
-  /** 화면 좌표 (클릭/호버 판정용) */
+  /** Screen coordinates (for click/hover hit testing) */
   hitboxes: { id: string; x: number; y: number }[] = []
 
   set(pins: Pin[], colors: { fill: string; ink: string }) {
@@ -117,7 +117,7 @@ export class NewsPins extends Base {
             const active = self.hover === p.id
             const w = active ? 24 : 20
             const h = active ? 18 : 16
-            // 봉 고가 위 8px 에 말풍선, 꼬리는 봉을 가리킴
+            // Bubble 8px above the bar high, tail points at the bar
             const bottom = Math.max(h + 6, barY - 8)
             const top = bottom - h - 4
             self.hitboxes.push({ id: p.id, x, y: top })

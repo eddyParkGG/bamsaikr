@@ -11,7 +11,7 @@
   color: var(--text);
 }
 
-/* CTA 는 카카오페이증권 색 */
+/* CTA uses the KakaoPay Securities color */
 .btn--buy {
   background: #ff3c3c;
   color: #fff;
@@ -25,7 +25,7 @@
   filter: brightness(1.06);
 }
 
-/* ───── 앱 셸 ───── */
+/* ───── App shell ───── */
 .shell {
   max-width: 1080px;
   margin: 0 auto;
@@ -35,7 +35,7 @@
   max-width: none;
 }
 
-/* 상단 지표 (토스 홈: 장 상태 줄 + 미니 차트 카드) */
+/* Top indicators (Toss home: market status line + mini chart cards) */
 .ind-strip {
   background: var(--bg);
   border-radius: var(--r-panel);
@@ -105,7 +105,7 @@
   flex-shrink: 0;
 }
 
-/* 오늘의 이슈 */
+/* Today's issues */
 .issue__list {
   list-style: none;
   margin: 0;
@@ -136,7 +136,7 @@
   white-space: nowrap;
 }
 
-/* 하단 띠 */
+/* Bottom strip */
 .ticker {
   position: fixed;
   left: 0;
@@ -165,7 +165,7 @@
   background: var(--line-strong);
 }
 
-/* ───── 종목 헤더 (토스: 이름 14/700, 가격 22/700, 지표 띠 12px) ───── */
+/* ───── Asset header (Toss: name 14/700, price 22/700, stat strip 12px) ───── */
 .stock-head {
   display: flex;
   align-items: center;
@@ -258,7 +258,7 @@
   box-shadow: inset 0 0 0 0.75px #57c28d;
 }
 
-/* ───── 프로 모드 본문 ───── */
+/* ───── Pro mode body ───── */
 .pro-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -297,7 +297,7 @@
   min-height: 0;
 }
 
-/* 지표 메뉴 */
+/* Indicator menu */
 .menu {
   position: relative;
 }
@@ -359,7 +359,7 @@
   border-radius: 2px;
 }
 
-/* 차트 오버레이 */
+/* Chart overlay */
 .chart {
   position: absolute;
   inset: 0;
@@ -476,7 +476,7 @@
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
-/* 호가 (토스: 가운데 가격, 좌 매도잔량 / 우 매수잔량) */
+/* Orderbook (Toss: price in the middle, ask size left / bid size right) */
 .ob {
   font-size: 12px;
   font-weight: 600;
@@ -541,7 +541,7 @@
   color: var(--text-3);
 }
 
-/* 주문 */
+/* Orders */
 .side-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -609,7 +609,7 @@
   color: var(--text-2);
 }
 
-/* 분석 탭 */
+/* Analysis tabs */
 .cols3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -711,7 +711,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* ───── 쉬운 모드 ───── */
+/* ───── Easy mode ───── */
 .easy {
   max-width: 760px;
   margin: 0 auto;

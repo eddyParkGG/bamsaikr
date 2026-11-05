@@ -10,7 +10,7 @@ export default defineConfig({
     target: 'es2022',
     rollupOptions: {
       output: {
-        // 차트 라이브러리는 프로 모드에서만 필요해서 따로 청크
+        // The chart library is only needed in pro mode, so split it into its own chunk
         manualChunks: (id) => (id.includes('lightweight-charts') ? 'chart' : undefined),
       },
     },

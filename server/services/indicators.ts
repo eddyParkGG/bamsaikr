@@ -1,4 +1,4 @@
-// 상단 지표 띠: 코스피·코스닥(토스증권) + 원/USDC(업비트). 토스 홈의 지표 카드처럼 미니 차트 포함
+// Top indicator strip: KOSPI/KOSDAQ (Toss Securities) + KRW/USDC (Upbit). Includes mini charts like the Toss home indicator cards
 import { kstDateKey, kstToMs } from '../../shared/session.js'
 import { cached, fetchJson } from '../lib/cache.js'
 import { tossCandles, tossIndicatorPrices } from '../sources/toss.js'

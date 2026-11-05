@@ -1,4 +1,4 @@
-# API 서버. 토스증권 토큰은 새로 받으면 이전 것이 끊기므로 머신은 항상 1대
+# API server. Issuing a new Toss Securities token invalidates the previous one, so always run exactly 1 machine
 app = "bamsai-api"
 primary_region = "nrt"
 

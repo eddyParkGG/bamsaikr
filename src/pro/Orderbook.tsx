@@ -57,7 +57,7 @@ function OrderbookImpl({ asset }: { asset: Asset }) {
   const book = useLive((s) => s.book[asset.perp])
   const krxLive = useLive((s) => s.krxBook[asset.krxCode])
   const rate = useLive((s) => s.usdc?.rate)
-  // 실시간이 오기 전 첫 화면은 토스 REST 호가로
+  // Use the Toss REST orderbook for the first render until live data arrives
   const first = useQuery<{ krx: { asks: Level[]; bids: Level[] } }>(tab === 'krx' && !krxLive ? `/api/v1/orderbook?asset=${asset.id}` : null)
   const krx = krxLive ?? first.data?.krx
 

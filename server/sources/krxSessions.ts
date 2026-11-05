@@ -1,7 +1,7 @@
-// KRX 정규장 시가(09:00)·종가(15:30)
-// 토스 일봉은 통합 시세(08:00~20:00) 기준이라 정규장 시가·종가와 다름 → 분봉에서 직접 뽑음
-// 토스 분봉 timestamp 는 봉이 끝나는 시각: 09:01 봉의 시가 = 개장 동시호가, 15:31 봉의 종가 = 마감 동시호가
-// 지난 날짜는 bundled JSON(server/data/krx-sessions.json)에 저장해두고 최근 며칠만 API 로 채움
+// KRX regular-session open (09:00) / close (15:30)
+// Toss daily candles use consolidated quotes (08:00~20:00), which differ from the regular-session open/close → derive from minute bars
+// Toss minute-bar timestamps are bar end times: open of the 09:01 bar = opening auction, close of the 15:31 bar = closing auction
+// Past dates are stored in bundled JSON (server/data/krx-sessions.json); only the last few days are filled via the API
 import { readFileSync } from 'node:fs'
 import { kstDateKey, kstToMs } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
@@ -10,7 +10,7 @@ import { tossCandles, tossCandlesBefore } from './toss.js'
 export interface RegularSession {
   date: string
   open: number
-  close: number | null // 오늘 장중이면 null
+  close: number | null // null during today's session
 }
 
 type Store = Record<string, Record<string, [number, number]>> // code → date → [open, close]
@@ -33,7 +33,7 @@ async function fetchDay(code: string, date: string): Promise<RegularSession | nu
   return { date, open: o.o, close: c?.c ?? null }
 }
 
-/** from(YYYYMMDD) 이후 거래일의 정규장 시가·종가 (오름차순) */
+/** Regular-session open/close for trading days from `from` (YYYYMMDD) onward (ascending) */
 export function regularSessions(code: string, from: string): Promise<RegularSession[]> {
   return cached(`krx:sessions:${code}:${from}`, 60_000, async () => {
     const daily = await tossCandles(code, '1d', kstToMs(from))
@@ -41,7 +41,7 @@ export function regularSessions(code: string, from: string): Promise<RegularSess
     const known = bundled[code] ?? {}
     const out: RegularSession[] = []
     const missing = dates.filter((d) => !known[d])
-    // 토스 차트 API 초당 20회 → 8개씩 병렬
+    // Toss chart API allows 20 req/sec → 8 in parallel
     const fetched = new Map<string, RegularSession | null>()
     for (let i = 0; i < missing.length; i += 8) {
       const batch = await Promise.all(missing.slice(i, i + 8).map((d) => fetchDay(code, d).catch(() => null)))

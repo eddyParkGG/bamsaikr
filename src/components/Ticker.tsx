@@ -3,7 +3,7 @@ import type { ArbSnapshot, Status } from '../../shared/api'
 import { fmtPct, fmtPrice, kstDay, untilText } from '../lib/format'
 import { subscribeUsdc, useLive } from '../lib/live'
 
-/** 토스증권 하단 지수 띠 자리: 장 상태, 원/USDC, perp 환산가 */
+/** Bottom strip (where Toss Securities shows indices): market status, KRW/USDC, perp converted price */
 export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnapshot[]; status?: Status }) {
   useEffect(() => subscribeUsdc(), [])
   const usdc = useLive((s) => s.usdc?.rate)

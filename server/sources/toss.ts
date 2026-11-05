@@ -1,6 +1,6 @@
-// 토스증권 Open API (https://developers.tossinvest.com)
-// REST: https://openapi.tossinvest.com  /  실시간: wss://openapi-ws.tossinvest.com/ws/v1
-// 허용 IP 에 등록된 서버에서만 호출 가능
+// Toss Securities Open API (https://developers.tossinvest.com)
+// REST: https://openapi.tossinvest.com  /  live: wss://openapi-ws.tossinvest.com/ws/v1
+// Callable only from servers on the allowed IP list
 import { cached, invalidate } from '../lib/cache.js'
 
 const BASE = 'https://openapi.tossinvest.com'
@@ -17,7 +17,7 @@ export class TossError extends Error {
   }
 }
 
-/** 액세스 토큰 (유효 24시간 → 23시간 캐시) */
+/** Access token (valid 24h → cached 23h) */
 export function tossToken(): Promise<string> {
   return cached('toss:token', 23 * 3600_000, async () => {
     const res = await fetch(`${BASE}/oauth2/token`, {
@@ -43,7 +43,7 @@ async function call<T>(path: string, init: RequestInit & { account?: boolean } =
     return call(path, init, retry - 1)
   }
   const j = (await res.json()) as { result?: T; error?: { code: string; message: string } }
-  // 다른 곳에서 토큰을 새로 받으면 이 토큰은 바로 무효가 됨 → 한 번 다시 발급
+  // A token issued elsewhere invalidates this one immediately → reissue once
   if ((res.status === 401 || j.error?.code === 'token-revoked' || j.error?.code === 'token-expired') && retry > 0) {
     invalidate('toss:token')
     return call(path, init, 0)
@@ -52,7 +52,7 @@ async function call<T>(path: string, init: RequestInit & { account?: boolean } =
   return j.result as T
 }
 
-// ───────── 시세 ─────────
+// ───────── Quotes ─────────
 
 export interface TossLevel {
   price: string
@@ -90,7 +90,7 @@ export interface TossCandle {
 type RawCandle = { timestamp: string; openPrice: string; highPrice: string; lowPrice: string; closePrice: string; volume: string }
 const mapCandle = (k: RawCandle): TossCandle => ({ t: Date.parse(k.timestamp), o: +k.openPrice, h: +k.highPrice, l: +k.lowPrice, c: +k.closePrice, v: +k.volume })
 
-/** 캔들 (1m, 1d). 1회 200개라 since 까지 거슬러 올라가며 이어붙임. 반환은 오름차순 */
+/** Candles (1m, 1d). 200 per call, so page backwards to `since` and concatenate. Returns ascending */
 export function tossCandles(code: string, interval: '1m' | '1d', since: number, indicator = false): Promise<TossCandle[]> {
   const step = interval === '1d' ? 86400_000 : 60_000
   const bucket = Math.floor(since / (interval === '1d' ? 86400_000 : 600_000))
@@ -110,7 +110,7 @@ export function tossCandles(code: string, interval: '1m' | '1d', since: number, 
   })
 }
 
-/** 특정 시각 이전 count 개 (과거 하루치 확인용). 지난 데이터라 오래 캐시 */
+/** `count` candles before a given time (to inspect a past day). Historical, so cached long */
 export function tossCandlesBefore(code: string, interval: '1m' | '1d', before: number, count: number): Promise<TossCandle[]> {
   const iso = new Date(before + 9 * 3600_000).toISOString().replace('Z', '+09:00')
   return cached(`toss:before:${code}:${interval}:${before}:${count}`, before < Date.now() - 3600_000 ? 24 * 3600_000 : 10_000, async () => {
@@ -120,15 +120,15 @@ export function tossCandlesBefore(code: string, interval: '1m' | '1d', before: n
 }
 
 /**
- * 기간 분봉. 하루(08:00~20:00, 약 720개)씩 나눠 날짜끼리 병렬로 받음
- * 지난 날짜는 바뀌지 않으므로 하루 단위로 오래 캐시
+ * Minute bars for a range. Split per day (08:00~20:00, ~720 bars) and fetched in parallel across days
+ * Past days never change, so they are cached long per day
  */
 export async function tossMinutes(code: string, since: number): Promise<TossCandle[]> {
   const KST = 9 * 3600_000
   const days: number[] = []
   for (let d = Math.floor((since + KST) / 86400_000); d <= Math.floor((Date.now() + KST) / 86400_000); d++) days.push(d)
   const oneDay = (d: number) => {
-    const dayStart = d * 86400_000 - KST // 해당 KST 날짜 00:00
+    const dayStart = d * 86400_000 - KST // 00:00 of that KST date
     const isPast = dayStart + 86400_000 < Date.now()
     return cached(`toss:minday:${code}:${d}`, isPast ? 24 * 3600_000 : 15_000, async () => {
       const out: TossCandle[] = []
@@ -146,7 +146,7 @@ export async function tossMinutes(code: string, since: number): Promise<TossCand
     })
   }
   const all: TossCandle[] = []
-  // 차트 API 초당 20회 한도 → 4일씩
+  // Chart API limit is 20 req/sec → 4 days at a time
   for (let i = 0; i < days.length; i += 4) all.push(...(await Promise.all(days.slice(i, i + 4).map(oneDay))).flat())
   return all.filter((k) => k.t >= since).sort((a, b) => a.t - b.t)
 }
@@ -181,7 +181,7 @@ export function tossInvestors(code: string) {
   })
 }
 
-// ───────── 계좌·주문 (실제 돈) ─────────
+// ───────── Account / orders (real money) ─────────
 
 export function accountSeq() {
   return cached('toss:account', 3600_000, async () => {

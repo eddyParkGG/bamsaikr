@@ -1,4 +1,4 @@
-// 차트 뉴스 마커: 하루에 하나, 가장 중요한 이슈만
+// Chart news markers: one per day, only the most important issue
 import type { Asset } from '../../shared/assets.js'
 import { kstToMs } from '../../shared/session.js'
 import { CURATED_EVENTS } from '../data/events.js'

@@ -11,7 +11,7 @@ import { usePath } from './lib/router'
 import EasyHome from './pages/EasyHome'
 import EasyDetail from './pages/EasyDetail'
 
-// 프로 모드·API 문서는 처음 들어올 때만 받음
+// Pro mode and API docs are loaded lazily on first visit
 const ProTerminal = lazy(() => import('./pages/ProTerminal'))
 const Developers = lazy(() => import('./pages/Developers'))
 

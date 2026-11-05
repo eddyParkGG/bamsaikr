@@ -1,4 +1,4 @@
-// 실행: npx tsx server/scripts/backtest.ts
+// Run: npx tsx server/scripts/backtest.ts
 import { ASSETS } from '../../shared/assets.js'
 import { loadHistory, predictOpen } from '../services/predict.js'
 import { arbSnapshot } from '../services/arb.js'

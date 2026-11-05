@@ -1,5 +1,5 @@
-// 실시간 시세: 하이퍼리퀴드 WS + 업비트 WS 를 브라우저에서 직접 구독
-// 메시지는 rAF 한 번에 모아서 store 에 반영 → 초당 수십 건이 와도 렌더는 프레임당 1회
+// Live quotes: subscribe to Hyperliquid WS + Upbit WS directly from the browser
+// Messages are batched per rAF into the store → one render per frame even at dozens of msgs/sec
 import { create } from 'zustand'
 
 export interface Level {
@@ -48,7 +48,7 @@ function queue(patch: (p: typeof pending) => void) {
   }
 }
 
-// ───────── 하이퍼리퀴드 ─────────
+// ───────── Hyperliquid ─────────
 
 type Sub = { type: 'l2Book' | 'activeAssetCtx'; coin: string } | { type: 'candle'; coin: string; interval: string }
 
@@ -124,7 +124,7 @@ export function subscribeHl(sub: Sub): () => void {
   }
 }
 
-// ───────── 업비트 원/USDC ─────────
+// ───────── Upbit KRW/USDC ─────────
 
 let upbit: WebSocket | null = null
 let upbitRefs = 0
@@ -155,7 +155,7 @@ export function subscribeUsdc(): () => void {
   }
 }
 
-// ───────── 국내 실시간 (토스증권 웹소켓 → 서버 중계 SSE) ─────────
+// ───────── Domestic live (Toss Securities WebSocket → server relay SSE) ─────────
 
 const krxStreams = new Map<string, { es: EventSource; refs: number }>()
 

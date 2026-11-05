@@ -1,4 +1,4 @@
-// 프론트에서 쓰는 API 응답 타입 (서버 구현에서 그대로 가져옴)
+// API response types used by the frontend (taken directly from the server implementation)
 export type { ArbSnapshot } from '../server/services/arb.js'
 export type { ChartSeries, ChartInterval } from '../server/services/series.js'
 export type { OpenEvent } from '../server/services/predict.js'

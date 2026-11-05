@@ -1,11 +1,11 @@
-// 다음 KRX 개장 시가 예측 + 과거 개장 수렴 이력
+// Next KRX opening price forecast + historical opening convergence
 //
-// 모델 (일부러 단순하게):
-//   g = 개장 직전 perp 원화환산가 / 직전 KRX 종가 - 1   (perp가 말하는 갭)
-//   a = 실제 KRX 시가 / 직전 종가 - 1                    (실제 갭)
-//   a = α + β·g + ε,  ε ~ N(0, σ_regime²)   regime = 평일 밤 / 주말·연휴
-// 개장까지 시간이 남아 있으면 그 사이 perp 가 더 움직일 수 있으므로 분산을 더함
-//   σ_t² = σ_regime² + β²·(휴장 시간대 perp 시간당 변동성)²·남은시간
+// Model (deliberately simple):
+//   g = perp KRW price just before open / previous KRX close - 1   (gap implied by perp)
+//   a = actual KRX open / previous close - 1                       (actual gap)
+//   a = α + β·g + ε,  ε ~ N(0, σ_regime²)   regime = weekday night / weekend·holiday
+// If time remains until open, the perp can still move, so add variance
+//   σ_t² = σ_regime² + β²·(hourly perp volatility while closed)²·hours remaining
 import type { Asset } from '../../shared/assets.js'
 import { isTradingDay, kstDateKey, kstToMs, nextRegularOpen, sessionAt } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
@@ -15,23 +15,23 @@ import { regularSessions } from '../sources/krxSessions.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
 
 const H = 3600_000
-const LONG_GAP_HOURS = 20 // 직전 종가~시가가 20시간 넘으면 주말·연휴로 봄
+const LONG_GAP_HOURS = 20 // close-to-open over 20h is treated as weekend/holiday
 const Z80 = 1.2816
 const PRIOR_N = Number(process.env.PREDICT_PRIOR_N ?? 60)
 
 export interface OpenEvent {
-  date: string // 개장일 YYYYMMDD
+  date: string // open day YYYYMMDD
   regime: 'overnight' | 'weekend'
   closedHours: number
   prevClose: number
-  perpRefKrw: number // 08:59 perp 원화환산가
+  perpRefKrw: number // 08:59 perp price in KRW
   open: number
-  perpAfterKrw: number | null // 09:59 perp 원화환산가
-  gapPct: number // perp 가 말한 갭
-  openGapPct: number // 실제 시가 갭
-  absorptionPct: number | null // 실제 갭 / perp 갭 ×100 (100이면 perp 대로 열림)
-  meetPoint: number | null // 0=perp 가 주식 쪽으로, 1=주식이 perp 쪽으로 이동해 만남
-  predictedPct?: number // 그날 이전 데이터만으로 한 예측 (walk-forward)
+  perpAfterKrw: number | null // 09:59 perp price in KRW
+  gapPct: number // gap implied by perp
+  openGapPct: number // actual opening gap
+  absorptionPct: number | null // actual gap / perp gap ×100 (100 = opened exactly as perp implied)
+  meetPoint: number | null // 0 = perp moved to the stock, 1 = stock moved to the perp
+  predictedPct?: number // forecast using only data before that day (walk-forward)
   hit?: boolean
   inBand80?: boolean
 }
@@ -65,8 +65,8 @@ function fit(events: OpenEvent[], perpHourlyVol: number): Model {
     sxy += (xs[i] - mx) * (ys[i] - my)
     sxx += (xs[i] - mx) ** 2
   }
-  // β 는 1(perp 그대로 반영) 쪽으로 당겨줌. 표본이 적을 때 급락일 몇 개에 휘둘리지 않게
-  // 사전분포 강도 = 관측치 PRIOR_N 개 분량
+  // Shrink β toward 1 (perp fully reflected) so a few crash days don't dominate small samples
+  // Prior strength = PRIOR_N observations
   const lambda = (PRIOR_N * sxx) / n
   const beta = (sxy + lambda) / (sxx + lambda)
   const alpha = my - beta * mx
@@ -80,7 +80,7 @@ function fit(events: OpenEvent[], perpHourlyVol: number): Model {
 }
 
 function candleAt(candles: Candle[], t: number): Candle | undefined {
-  // candles 는 1시간 간격 오름차순
+  // candles are hourly, ascending
   let lo = 0
   let hi = candles.length - 1
   while (lo <= hi) {
@@ -100,7 +100,7 @@ function buildEvents(asset: Asset, daily: { date: string; o: number; c: number }
     const prev = daily[i - 1]
     const tOpen = kstToMs(d.date, '0900')
     if (tOpen > Date.now()) continue
-    const ref = candleAt(perp, tOpen - H) // 08:00~08:59 봉 종가
+    const ref = candleAt(perp, tOpen - H) // close of the 08:00~08:59 bar
     if (!ref || !d.o) continue
     const perpRefKrw = krw(ref.c, tOpen - H)
     if (!Number.isFinite(perpRefKrw)) continue
@@ -130,7 +130,7 @@ function buildEvents(asset: Asset, daily: { date: string; o: number; c: number }
   return out
 }
 
-/** 휴장 시간대(perp 만 거래) 시간당 로그수익률 표준편차 */
+/** Std dev of hourly log returns while the market is closed (perp-only trading) */
 function closedHoursVol(perp: Candle[], holidays: ReadonlySet<string>) {
   const rs: number[] = []
   const from = Date.now() - 60 * 86400_000
@@ -155,12 +155,12 @@ export function loadHistory(asset: Asset) {
       asset.fx ? getUsdcKrwHourly(start) : Promise.resolve([] as FxPoint[]),
       krxHolidays(),
     ])
-    // 정규장 시가·종가가 모두 있는 날만 (오늘 장중이면 종가 없음)
+    // Only days with both regular-session open and close (no close during today's session)
     const daily = sessions.map((s) => ({ date: s.date, o: s.open, c: s.close ?? NaN }))
     const events = buildEvents(asset, daily, perp, fx).filter((e) => Number.isFinite(e.prevClose))
     const vol = closedHoursVol(perp, holidays)
 
-    // walk-forward: 그날 이전 데이터로만 학습해서 예측 → 실제와 비교
+    // walk-forward: fit only on data before that day, forecast → compare to actual
     let hits = 0
     let tested = 0
     let inBand = 0
@@ -192,8 +192,8 @@ export function loadHistory(asset: Asset) {
         hitRatePct: tested ? r2((hits / tested) * 100) : null,
         coverage80Pct: tested ? r2((inBand / tested) * 100) : null,
         maePct: tested ? r2(absErr / tested) : null,
-        perpRawMaePct: tested ? r2(perpRawAbsErr / tested) : null, // perp 가격 그대로 시가로 쓴 경우
-        naiveMaePct: tested ? r2(naiveAbsErr / tested) : null, // '전일 종가 그대로' 가정
+        perpRawMaePct: tested ? r2(perpRawAbsErr / tested) : null, // using the raw perp price as the open
+        naiveMaePct: tested ? r2(naiveAbsErr / tested) : null, // assumes 'open = previous close'
       },
     }
   })
@@ -212,7 +212,7 @@ export async function predictOpen(asset: Asset) {
   const session = sessionAt(now, holidays)
   const target = nextRegularOpen(now, holidays)
 
-  // 기준 종가: 오늘 정규장이 끝났으면 오늘 종가, 장중이면 현재가(잠정)
+  // Reference close: today's close if the regular session has ended, else the current price (provisional)
   const todayKey = kstDateKey(now)
   const todayClose = kstToMs(todayKey, '1530')
   const regularDoneToday = isTradingDay(now, holidays) && now >= todayClose

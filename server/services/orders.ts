@@ -1,5 +1,5 @@
-// 주문. 기본은 dry-run (실제로 보내지 않고 보낼 내용만 돌려줌)
-// 실주문은 서버 환경변수로 키가 있고, 요청에 API 토큰이 있을 때만
+// Orders. Dry-run by default (returns what would be sent without sending it)
+// Live orders only when the server has keys in env vars and the request carries the API token
 import { privateKeyToAccount } from 'viem/accounts'
 import type { Asset } from '../../shared/assets.js'
 import { cancelPerpOrder, perpAccount, planPerpOrder, sendPerpOrder, type HlNetwork } from '../../shared/hlOrder.js'
@@ -22,7 +22,7 @@ export interface KrxOrderReq {
   dryRun?: boolean
 }
 
-/** 토스증권은 모의투자가 없어서 실제 돈이 나감 → 서버 주인이 TOSS_LIVE_ORDERS=1 로 켠 경우에만 */
+/** Toss Securities has no paper trading, so real money is spent → only when the server owner sets TOSS_LIVE_ORDERS=1 */
 export const tossLiveOrders = () => tossEnabled() && process.env.TOSS_LIVE_ORDERS === '1'
 
 export async function placeKrxOrder(asset: Asset, req: KrxOrderReq) {
@@ -57,7 +57,7 @@ export async function krxAccount() {
   return { holdings, buyingPower }
 }
 
-// ───────── 하이퍼리퀴드 ─────────
+// ───────── Hyperliquid ─────────
 
 function serverAgent() {
   const key = process.env.HL_AGENT_KEY as `0x${string}` | undefined
@@ -108,7 +108,7 @@ export async function perpPositions(network: HlNetwork, user?: string) {
   return perpAccount(network, addr)
 }
 
-/** 차익 거래 한 쌍: perp 한쪽 + 주식 반대쪽. 수량은 1주 = perp 1계약 */
+/** Arbitrage pair: perp on one side + stock on the opposite side. 1 share = 1 perp contract */
 export async function placePairOrder(asset: Asset, req: { notionalKrw: number; direction: 'perp_short_stock_long' | 'perp_long_stock_short'; network?: HlNetwork; dryRun?: boolean }) {
   const quote = await krxQuote(asset)
   const qty = Math.floor(req.notionalKrw / quote.price)

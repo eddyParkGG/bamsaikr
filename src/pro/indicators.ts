@@ -1,4 +1,4 @@
-// 보조지표. 입력은 오름차순 캔들, 출력은 {t, v} (값이 없는 구간은 생략)
+// Technical indicators. Input: ascending candles, output: {t, v} (ranges without a value are omitted)
 export interface Bar {
   t: number
   o: number
@@ -53,7 +53,7 @@ export function bollinger(bars: Bar[], n = 20, mult = 2) {
   return { upper, mid, lower }
 }
 
-/** 일목균형표: 전환선(9), 기준선(26), 선행스팬1·2(26 앞으로), 후행스팬(26 뒤로) */
+/** Ichimoku: conversion (9), base (26), leading spans A/B (shifted 26 forward), lagging span (shifted 26 back) */
 export function ichimoku(bars: Bar[], step: number) {
   const hl = (from: number, to: number) => {
     let h = -Infinity
@@ -81,7 +81,7 @@ export function ichimoku(bars: Bar[], step: number) {
   return { tenkan, kijun, spanA, spanB, chikou }
 }
 
-/** 일자별로 리셋되는 VWAP (KST 기준 날짜) */
+/** VWAP that resets daily (KST date) */
 export function vwap(bars: Bar[]): Pt[] {
   const out: Pt[] = []
   let day = -1
@@ -137,5 +137,5 @@ export function macd(bars: Bar[], fast = 12, slow = 26, signal = 9) {
   }
 }
 
-// 이동평균 그물망: 짧은 것부터 긴 것까지 촘촘히
+// Moving average ribbon: densely spaced from short to long
 export const RIBBON = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 120]

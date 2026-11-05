@@ -1,5 +1,5 @@
-// 직접 확인한 주요 이슈 (출처 링크 포함). KIS 뉴스 API 에 없는 크립토/해외 쪽 이벤트 위주
-// 하루에 종목당 1개만 노출
+// Manually verified key issues (with source links). Mostly crypto/overseas events not in the KIS news API
+// Only one shown per asset per day
 import type { AssetId } from '../../shared/assets.js'
 
 export interface CuratedEvent {
@@ -11,7 +11,7 @@ export interface CuratedEvent {
   url: string
 }
 
-// 2026-11-05 웹 검색으로 출처 확인. 시각 없는 항목은 장 시작(09:00)에 표시
+// Sources verified via web search on 2026-11-05. Items without a time are shown at market open (09:00)
 export const CURATED_EVENTS: CuratedEvent[] = [
   { date: '2026-02-19', assets: ["SMSN"], title: "설 연휴 끝나자 코스피 3% 급등", summary: "설 연휴(2/16~18) 뒤 첫 거래일 코스피 3.09% 오른 5,677.25. 삼성전자 첫 19만원대 마감.", url: 'https://www.ytn.co.kr/_ln/0102_202602191615210267' },
   { date: '2026-02-20', assets: ["SMSN", "SKHX", "HYUNDAI"], title: "trade.xyz, 삼성·하이닉스·현대차 perp 상장", summary: "하이퍼리퀴드 HIP-3 빌더 trade.xyz가 3종목 무기한선물을 최대 10배로 상장. 유동성 공급은 프레스토랩스.", url: 'https://www.digitalasset.works/news/articleView.html?idxno=31616' },

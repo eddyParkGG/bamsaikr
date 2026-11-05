@@ -1,5 +1,5 @@
-// 토스증권 실시간 웹소켓 중계. 연결에 Authorization 헤더와 허용 IP 가 필요해서 브라우저가 직접 못 붙음
-// 계정당 동시 연결 2개 제한 → 서버에서 하나만 열고 구독자에게 나눠줌. 구독은 선언형(배열 전체 교체)
+// Toss Securities live WebSocket relay. Connecting needs an Authorization header and an allowed IP, so browsers can't connect directly
+// Limit of 2 concurrent connections per account → the server opens one and fans out to subscribers. Subscriptions are declarative (replace the whole array)
 import { mapBook, tossToken, type TossLevel } from './toss.js'
 
 const URL = 'wss://openapi-ws.tossinvest.com/ws/v1'
@@ -26,7 +26,7 @@ function connect(): Promise<void> {
   connecting = (async () => {
     const token = await tossToken()
     await new Promise<void>((resolve, reject) => {
-      // Node 22 의 WebSocket 은 headers 옵션을 받음 (브라우저 표준 생성자와 다름)
+      // Node 22's WebSocket accepts a headers option (unlike the standard browser constructor)
       const sock = new WebSocket(URL, { headers: { Authorization: `Bearer ${token}` } } as unknown as string[])
       ws = sock
       sock.onopen = () => {

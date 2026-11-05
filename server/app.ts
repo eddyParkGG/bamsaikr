@@ -30,7 +30,7 @@ export const app = new Hono().basePath('/api')
 
 app.use('*', cors())
 
-// 에이전트 가설(H5) 측정용: 화면 밖 호출을 구분해서 로그로 남김 (Vercel 로그에서 집계)
+// For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in Vercel logs)
 app.use('*', async (c, next) => {
   await next()
   if (c.req.header('sec-fetch-site') === 'same-origin') return
@@ -51,10 +51,10 @@ function assetOf(c: Context): Asset {
 }
 
 /**
- * 실주문 권한
- * - 국내(토스증권)는 모의투자가 없어서 서버 주인이 TOSS_LIVE_ORDERS=1 로 켰을 때만 (orders.ts)
- * - 같은 사이트 화면에서 누른 주문은 토큰 없이, 외부(에이전트) 호출은 API_TOKEN 필요
- * - 하이퍼리퀴드 메인넷은 항상 토큰 필요, 테스트넷은 바로
+ * Live order authorization
+ * - Domestic (Toss Securities) has no paper trading, so only when the server owner sets TOSS_LIVE_ORDERS=1 (orders.ts)
+ * - Orders from the same-site UI need no token; external (agent) calls require API_TOKEN
+ * - Hyperliquid mainnet always requires the token; testnet is open
  */
 const isExternal = (c: Context) => c.req.header('sec-fetch-site') !== 'same-origin'
 function requireToken(c: Context) {
@@ -134,7 +134,7 @@ v1.get('/orderbook', async (c) => {
 v1.get('/news', async (c) => {
   c.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
   if (c.req.query('asset')) return c.json({ items: await newsMarkers(assetOf(c)) })
-  // 전체 종목: 같은 날 같은 제목은 하나로, 최신순
+  // All assets: dedupe same-day same-title items, newest first
   const all = (await Promise.all(ASSETS.map(async (a) => (await newsMarkers(a)).map((n) => ({ ...n, asset: a.id }))))).flat()
   const seen = new Set<string>()
   const items = all
@@ -150,7 +150,7 @@ v1.get('/flows', async (c) => {
   return c.json({ investors: await tossInvestors(asset.krxCode), available: true })
 })
 
-// 국내 실시간 체결·호가 (토스증권 웹소켓 중계, SSE). 함수 최대 실행시간이 지나면 브라우저가 알아서 다시 붙음
+// Domestic live trades/orderbook (Toss Securities WebSocket relay, SSE). The browser reconnects automatically after the max function duration
 v1.get('/stream/krx', async (c) => {
   const asset = assetOf(c)
   return streamSSE(c, async (stream) => {
@@ -162,7 +162,7 @@ v1.get('/stream/krx', async (c) => {
       closed = true
       unsub()
     })
-    // 연결 유지용 주석 + 함수 시간 제한 전에 스스로 닫기
+    // Keep-alive comment + close ourselves before the function time limit
     const until = Date.now() + 55_000
     while (!closed && Date.now() < until) {
       await stream.sleep(15_000)
@@ -173,7 +173,7 @@ v1.get('/stream/krx', async (c) => {
   })
 })
 
-// ───────── 주문 ─────────
+// ───────── Orders ─────────
 
 v1.post('/orders/krx', async (c) => {
   const body = await c.req.json()

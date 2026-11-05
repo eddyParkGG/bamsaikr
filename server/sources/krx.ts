@@ -1,4 +1,4 @@
-// 국내 시세 창구: 토스증권 Open API (통합 시세 KRX+NXT)
+// Domestic quotes: Toss Securities Open API (consolidated KRX+NXT quotes)
 import type { Asset } from '../../shared/assets.js'
 import { isTradingDay, isWeekend, kstDateKey, kstToMs } from '../../shared/session.js'
 import { cached } from '../lib/cache.js'
@@ -25,7 +25,7 @@ export async function krxQuote(a: Asset): Promise<KrxQuote> {
   const price = prices.get(a.krxCode)?.price ?? daily.at(-1)?.c ?? 0
   const last = daily.at(-1)
   const isToday = !!last && kstDateKey(last.t) === kstDateKey(Date.now())
-  // '어제보다'는 KRX 정규장 종가 기준 (토스 앱과 같은 기준). 오늘이 거래일이면 오늘 이전 마지막 종가
+  // 'vs yesterday' uses the KRX regular-session close (same as the Toss app). On a trading day, the last close before today
   const [sessions, holidays] = await Promise.all([regularSessions(a.krxCode, kstDateKey(Date.now() - 12 * 86400_000)), krxHolidays()])
   const today = kstDateKey(Date.now())
   const done = sessions.filter((s) => s.close != null)
@@ -58,7 +58,7 @@ export async function krxDaily(a: Asset, from: string, _to?: string): Promise<Da
   return rows.map((k) => ({ date: kstDateKey(k.t), o: k.o, h: k.h, l: k.l, c: k.c, v: k.v }))
 }
 
-/** 1분봉 (통합 시세라 08:00~20:00 넥스트레이드 포함). 토스는 봉 끝 시각이라 시작 시각으로 1분 당김 */
+/** 1-minute candles (consolidated, so 08:00~20:00 incl. Nextrade). Toss stamps bar end time, so shift back 1 min to bar start */
 export async function krxMinutes(a: Asset, since: number): Promise<Candle[]> {
   const rows = await tossMinutes(a.krxCode, since)
   return rows.filter((k) => k.v > 0).map((k) => ({ ...k, t: k.t - 60_000 }))
@@ -69,8 +69,8 @@ export function krxOrderbook(a: Asset) {
 }
 
 /**
- * 휴장일(평일) 집합
- * 과거: 일봉이 없는 평일 / 앞으로: 토스 장 운영 캘린더의 다음 영업일까지 건너뛴 평일
+ * Set of market holidays (weekdays)
+ * Past: weekdays with no daily candle / Future: weekdays skipped until the next business day in Toss's market calendar
  */
 export function krxHolidays(): Promise<Set<string>> {
   return cached('krx:holidays', 30 * 60_000, async () => {

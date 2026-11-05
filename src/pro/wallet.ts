@@ -1,5 +1,5 @@
-// 브라우저 지갑 → 에이전트 지갑 승인 → 에이전트 키로 주문 서명
-// 메인 지갑 키는 페이지에 들어오지 않고, 주문 권한만 있는 에이전트 키를 이 브라우저에만 저장 (출금 권한 없음)
+// Browser wallet → approve agent wallet → sign orders with the agent key
+// The main wallet key never enters the page; only a trade-only agent key is stored in this browser (no withdrawal rights)
 import { ExchangeClient } from '@nktkas/hyperliquid'
 import { createWalletClient, custom, type EIP1193Provider } from 'viem'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'

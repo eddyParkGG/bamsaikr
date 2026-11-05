@@ -1,4 +1,4 @@
-// 차트 설정 (프로 모드). Chart 청크와 분리해서 메인 번들에서도 가볍게 import
+// Chart settings (pro mode). Kept separate from the Chart chunk so the main bundle can import it cheaply
 export interface ChartSettings {
   showKrx: boolean
   showPerp: boolean

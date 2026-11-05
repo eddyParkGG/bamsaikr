@@ -1,5 +1,5 @@
-// GA4. 측정 ID 가 없으면 아무것도 안 함 (로컬 개발)
-// 이벤트 이름은 README 의 가설·검증지표 표와 1:1 로 맞춰둠
+// GA4. No-op without a measurement ID (local dev)
+// Event names map 1:1 to the hypothesis/metric table in the README
 const GA_ID = import.meta.env.VITE_GA_ID as string | undefined
 
 declare global {
@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-/** 지금이 어떤 시간대인지 (KST). 리텐션 분석의 핵심 축: '개장 전 재방문' */
+/** Current market period (KST). Key axis for retention analysis: 'return visit before open' */
 export function kstWindow(now = Date.now()) {
   const d = new Date(now + 9 * 3600_000)
   const dow = d.getUTCDay()
@@ -21,7 +21,7 @@ export function kstWindow(now = Date.now()) {
   return 'night'
 }
 
-// 첫 유입 채널: 커뮤니티 실험(종토방·주갤)에서 링크마다 utm_source 를 다르게 붙임
+// First acquisition channel: community experiments use a distinct utm_source per link
 function firstTouch() {
   try {
     const q = new URLSearchParams(location.search)
@@ -54,7 +54,7 @@ export function initGa() {
   }
   window.gtag('js', new Date())
   window.gtag('config', GA_ID, { send_page_view: false })
-  // 사용자 속성: 어느 커뮤니티 글로 처음 왔는지 → 채널별 리텐션 비교
+  // User property: which community post they first came from → compare retention by channel
   window.gtag('set', 'user_properties', firstTouch())
 }
 
@@ -62,7 +62,7 @@ export type GaEvent =
   | 'mode_switch' // mode: easy|pro
   | 'prediction_view' // asset, session, hours_to_open
   | 'prediction_detail_open'
-  | 'model_explain_open' // 적중 이력·계산 방법 펼침 (신뢰 가설)
+  | 'model_explain_open' // expanded hit history / methodology (trust hypothesis)
   | 'arb_view'
   | 'arb_calc_change'
   | 'chart_market_toggle' // market, on
