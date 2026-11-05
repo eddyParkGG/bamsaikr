@@ -737,7 +737,7 @@
 }
 .easy-row {
   display: grid;
-  grid-template-columns: 36px 1fr auto;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 14px 12px;
@@ -758,6 +758,7 @@
 }
 .easy-row__right {
   text-align: right;
+  white-space: nowrap;
 }
 .easy-row__big {
   font-size: 15px;
@@ -989,8 +990,13 @@
 .easy-row > div {
   min-width: 0;
 }
-.easy-row__right {
-  max-width: 50%;
+/* Key-colour dot (intro, today's issues) */
+.dot-key {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--key);
+  display: inline-block;
 }
 .easy-intro {
   display: flex;
