@@ -80,7 +80,7 @@ Previous basis (15:30 → 09:00, 2026-02-20 → 11-05, ~170 opens): 91.2% / 90.8
 - API: `GET /api/v1/convergence?asset=SKHX&limit=500` → `backtest.followRatePct`, `followScored`, `followYes`,
   `followFlat`, `since`, plus per-day `events[].follow`
 - Script: `npx tsx --env-file=.env.local server/scripts/backtest.ts` (stop the dev server first: a new Toss token revokes the old one)
-- UI: About → 가설과 지금까지의 결과; stock detail → 내일 예측 (얼마나 맞았나) and 예측 기록 (filter 하이퍼리퀴드 방향대로)
+- UI: About (밤사이는 이렇게 계산해요 → 지금까지 얼마나 맞았나); stock detail → 개장 예측 tab (얼마나 맞았나) and 예측 기록 tab (filter 하이퍼리퀴드 방향대로)
 
 ## Next decision
 
