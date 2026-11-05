@@ -248,11 +248,14 @@ npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 KRX 정
 
 ## GA4 설정
 
+> 가설별 실험 계획·결과 기록과 GA 이벤트·파라미터 전체 목록(어느 화면에서 언제 보내는지)은 [`docs/experiments/`](docs/experiments/README.md)에 정리함
+
 1. Google Analytics → 관리 → 속성 만들기 → 웹 스트림 추가 → 측정 ID(`G-…`) 복사
 2. Vercel 환경변수 `VITE_GA_ID`에 넣고 재배포
 3. 관리 → 맞춤 정의에 등록
-   - 이벤트 범위: `kst_window`, `asset`, `from`, `market`
+   - 이벤트 범위: `kst_window`, `asset`, `from`, `market`, `tab`, `mode`, `side`
    - 사용자 범위: `first_source`, `first_content`
+   - 주요 이벤트(전환): `launch_notify_signup`, `order_submit`, `model_explain_open`
 4. 탐색 → 코호트 탐색: 코호트 = `first_source`, 재방문 조건 = `page_view` 중 `kst_window = preopen`
 5. 커뮤니티 글 링크 예시: `https://<도메인>/?utm_source=naver_jongto&utm_medium=community&utm_campaign=bamsai_test1&utm_content=smsn_thu_A`
 
