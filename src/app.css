@@ -2181,3 +2181,29 @@ button.ob2__px:active::after {
 :root[data-theme='light'] .kbd-text {
   color: var(--text-2);
 }
+
+/* Summary detail: link row to the detail tab */
+.q-card__more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-item);
+  background: var(--fill);
+  font-size: 14px;
+  color: var(--text-body);
+  text-align: left;
+}
+.q-card__more b {
+  color: var(--text);
+}
+.q-card__more:hover {
+  background: var(--fill-hover);
+}
+.q-card__more svg {
+  color: var(--text-3);
+  flex-shrink: 0;
+}

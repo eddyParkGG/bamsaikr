@@ -293,6 +293,16 @@ function StockDetail({ asset }: { asset: Asset }) {
                 </p>
               </>
             )}
+            {/* Point to the two-leg order in the detail tab (orders open later) */}
+            <button className="q-card__more" onClick={() => setMode('pro')}>
+              <span>
+                두 시장에 한 번에 주문하는 <b>시세차익 실행</b>은 상세 탭에 있어요
+                <span className="badge" style={{ marginLeft: 6 }}>출시 예정</span>
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
           </>
         ) : (
           <div className="skeleton" style={{ height: 160 }} />
