@@ -1011,3 +1011,90 @@
   flex-shrink: 0;
   transform: translateY(-2px);
 }
+.in-session__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.in-session__body {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.chart__tip .tip-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+.chart__tip .tip-date {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.chart__tip .tip-hint {
+  margin-top: 4px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+/* Indicator parameter sheet (Toss order-form style steppers) */
+.params__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.params__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.params__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.params__label {
+  font-size: 14px;
+  color: var(--text-2);
+}
+.stepper {
+  display: grid;
+  grid-template-columns: 36px 72px 36px;
+  height: 40px;
+  border-radius: var(--r-btn);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  overflow: hidden;
+}
+.stepper button {
+  font-size: 18px;
+  color: var(--text-2);
+}
+.stepper button:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+.stepper input {
+  border: none;
+  background: none;
+  outline: none;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 0;
+}
+.menu__gear {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.menu__gear:hover {
+  background: var(--fill-strong);
+  color: var(--text);
+}

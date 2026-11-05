@@ -73,7 +73,8 @@ export function ichimoku(bars: Bar[], step: number) {
     const t = bars[i].t
     if (i >= 8) tenkan.push({ t, v: hl(i - 8, i) })
     if (i >= 25) kijun.push({ t, v: hl(i - 25, i) })
-    const future = t + 26 * step
+    // 26 *bars* ahead (by index), so projections land on real bars; past the last bar, extend by step
+    const future = bars[i + 26]?.t ?? bars[bars.length - 1].t + (i + 26 - (bars.length - 1)) * step
     if (i >= 25) spanA.push({ t: future, v: (hl(i - 8, i) + hl(i - 25, i)) / 2 })
     if (i >= 51) spanB.push({ t: future, v: hl(i - 51, i) })
     if (i >= 26) chikou.push({ t: bars[i - 26].t, v: bars[i].c })

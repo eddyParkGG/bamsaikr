@@ -21,7 +21,7 @@ import {
 import type { ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import { bollinger, ichimoku, macd, RIBBON, rsi, sma, vwap, type Bar, type Pt } from './indicators'
 import { NewsPins, SessionBands, type Span } from './primitives'
-import type { ChartSettings } from './settings'
+import type { ChartSettings, IndicatorParams } from './settings'
 
 const KST = 9 * 3600
 /** The chart renders UTC, so shift by +9h to display KST wall-clock time */
@@ -33,14 +33,27 @@ export function css(name: string) {
 }
 
 const toLine = (pts: Pt[]) => pts.map((p) => ({ time: ct(p.t), value: p.v }))
+
+/**
+ * Line data with breaks across closed hours: KRX intraday bars stop overnight, and connecting the
+ * last evening value to the next morning draws a fake flat segment. A whitespace point ends the line.
+ */
+const toGappedLine = (pts: Pt[], step: number) => {
+  if (step >= 86400_000) return toLine(pts)
+  const out: { time: UTCTimestamp; value?: number }[] = []
+  for (let i = 0; i < pts.length; i++) {
+    out.push({ time: ct(pts[i].t), value: pts[i].v })
+    if (i + 1 < pts.length && pts[i + 1].t - pts[i].t > step * 1.5) out.push({ time: ct(pts[i].t + step) })
+  }
+  return out
+}
 const toCandles = (bars: Bar[]) => bars.map((k) => ({ time: ct(k.t), open: k.o, high: k.h, low: k.l, close: k.c }))
 
-export const MA_COLORS: [number, string][] = [
-  [5, '#f5a623'],
-  [20, '#f04251'],
-  [60, '#00b37e'],
-  [120, '#8b95a1'],
-]
+/** Colours for the 1st..4th moving average (periods are user-configurable) */
+export const MA_COLORS = ['#f5a623', '#f04251', '#00b37e', '#8b95a1']
+
+/** Bars Ichimoku projects into the future (standard 26) */
+const ICHIMOKU_SHIFT = 26
 
 export interface Lookup {
   krx: Map<number, Bar>
@@ -74,6 +87,7 @@ export class ChartController {
   lookup: Lookup = { krx: new Map(), perp: new Map(), prem: new Map() }
   private series = new Map<string, AnySeries>()
   private settings: ChartSettings
+  private params: IndicatorParams
   private input: Input | null = null
   private host: AnySeries | null = null
   private markers: ISeriesMarkersPluginApi<Time> | null = null
@@ -84,8 +98,10 @@ export class ChartController {
     el: HTMLElement,
     private interval: ChartInterval,
     settings: ChartSettings,
+    params: IndicatorParams,
   ) {
     this.settings = settings
+    this.params = params
     this.c = { text3: css('--text-3'), text2: css('--text-2'), text: css('--text'), line: css('--line'), up: css('--up'), down: css('--down'), perp: css('--perp'), float: css('--bg-float'), bg: css('--bg'), fill: css('--fill-strong') }
     const c = this.c
     this.chart = createChart(el, {
@@ -108,8 +124,14 @@ export class ChartController {
       timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffset: 6, minBarSpacing: 1 },
       localization: { locale: 'ko-KR', priceFormatter: (p: number) => Math.round(p).toLocaleString('ko-KR') },
     })
-    this.sync(settings)
+    // Invisible whitespace series holding every timestamp the chart can ever show (both markets
+    // plus Ichimoku's forward projection). Because the set of time points never changes, toggling
+    // anything keeps the user's zoom and scroll exactly as they left it.
+    this.axis = this.chart.addSeries(LineSeries, { visible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null }, 0)
+    this.sync(settings, params)
   }
+
+  private axis: ISeriesApi<'Line'>
 
   destroy() {
     this.chart.remove()
@@ -124,7 +146,8 @@ export class ChartController {
     const overlay = (key: string, color: string, feed: Spec['feed'], width: 1 | 2 = 1, style: LineStyle = LineStyle.Solid): Spec => ({
       key,
       pane: 'main',
-      create: (ch, p) => ch.addSeries(LineSeries, { color, lineWidth: width, lineStyle: style, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }, p),
+      // Overlays never rescale the price axis: only the price series decide the vertical range
+      create: (ch, p) => ch.addSeries(LineSeries, { color, lineWidth: width, lineStyle: style, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null }, p),
       feed,
     })
     const out: Spec[] = []
@@ -140,22 +163,24 @@ export class ChartController {
       })
     out.push({ key: 'perpCandle', pane: 'main', create: (ch) => ch.addSeries(CandlestickSeries, { ...candle, title: 'perp' }, 0), feed: (d) => toCandles(d.perpKrw) })
 
-    if (s.ma) for (const [n, color] of MA_COLORS) out.push(overlay(`ma${n}`, color, (_, b) => toLine(sma(b, n))))
-    if (s.ribbon) RIBBON.forEach((n, i) => out.push(overlay(`rb${n}`, `hsla(${200 + i * 9}, 70%, 50%, 0.55)`, (_, b) => toLine(sma(b, n)))))
+    const P = this.params
+    if (s.ma) P.ma.forEach((n, i) => out.push(overlay(`ma${i}:${n}`, MA_COLORS[i % MA_COLORS.length], (_, b) => toGappedLine(sma(b, n), STEP_MS[interval]))))
+    if (s.ribbon) RIBBON.forEach((n, i) => out.push(overlay(`rb${n}`, `hsla(${200 + i * 9}, 70%, 50%, 0.55)`, (_, b) => toGappedLine(sma(b, n), STEP_MS[interval]))))
     if (s.bb) {
-      out.push(overlay('bbU', '#8b95a1', (_, b) => toLine(bollinger(b).upper), 1, LineStyle.Dashed))
-      out.push(overlay('bbM', '#8b95a1', (_, b) => toLine(bollinger(b).mid)))
-      out.push(overlay('bbL', '#8b95a1', (_, b) => toLine(bollinger(b).lower), 1, LineStyle.Dashed))
+      const bb = (b: Bar[]) => bollinger(b, P.bb.period, P.bb.mult)
+      out.push(overlay('bbU', '#8b95a1', (_, b) => toGappedLine(bb(b).upper, STEP_MS[interval]), 1, LineStyle.Dashed))
+      out.push(overlay('bbM', '#8b95a1', (_, b) => toGappedLine(bb(b).mid, STEP_MS[interval])))
+      out.push(overlay('bbL', '#8b95a1', (_, b) => toGappedLine(bb(b).lower, STEP_MS[interval]), 1, LineStyle.Dashed))
     }
     if (s.ichimoku) {
       const ich = (b: Bar[]) => ichimoku(b, STEP_MS[interval])
-      out.push(overlay('tenkan', '#ff6a6a', (_, b) => toLine(ich(b).tenkan)))
-      out.push(overlay('kijun', '#3da8ff', (_, b) => toLine(ich(b).kijun)))
+      out.push(overlay('tenkan', '#ff6a6a', (_, b) => toGappedLine(ich(b).tenkan, STEP_MS[interval])))
+      out.push(overlay('kijun', '#3da8ff', (_, b) => toGappedLine(ich(b).kijun, STEP_MS[interval])))
       out.push(overlay('spanA', 'rgba(0,168,107,0.8)', (_, b) => toLine(ich(b).spanA)))
       out.push(overlay('spanB', 'rgba(255,60,60,0.6)', (_, b) => toLine(ich(b).spanB)))
       out.push(overlay('chikou', 'rgba(139,149,161,0.7)', (_, b) => toLine(ich(b).chikou), 1, LineStyle.Dotted))
     }
-    if (s.vwap && interval !== '1d') out.push(overlay('vwap', '#f5a623', (_, b) => toLine(vwap(b)), 2, LineStyle.Dashed))
+    if (s.vwap && interval !== '1d') out.push(overlay('vwap', '#f5a623', (_, b) => toGappedLine(vwap(b), STEP_MS[interval]), 2, LineStyle.Dashed))
 
     if (s.volume) {
       out.push({
@@ -196,45 +221,59 @@ export class ChartController {
         key: 'fund',
         pane: 'funding',
         create: (ch, p) => ch.addSeries(LineSeries, { color: c.perp, lineWidth: 1, priceFormat: { type: 'custom', formatter: (v: number) => `${v.toFixed(4)}%` }, priceLineVisible: false, title: '펀딩(1h)' }, p),
-        feed: (d) => (interval === '1d' || interval === '1h' ? d.funding.map((f) => ({ time: ct(f.t), value: f.v })) : []),
+        // Funding is hourly; snap it onto the chart's own bars so it never adds time points
+        feed: (d) => {
+          const out: { time: UTCTimestamp; value: number }[] = []
+          let j = 0
+          let last: number | null = null
+          const step = STEP_MS[interval]
+          for (const k of d.perp) {
+            while (j < d.funding.length && d.funding[j].t < k.t + step) last = d.funding[j++].v
+            if (last != null) out.push({ time: ct(k.t), value: last })
+          }
+          return out
+        },
       })
     if (s.rsi)
       out.push({
-        key: 'rsi',
+        key: `rsi:${P.rsi.period}:${P.rsi.upper}:${P.rsi.lower}`,
         pane: 'rsi',
         create: (ch, p) => {
-          const se = ch.addSeries(LineSeries, { color: '#7b61ff', lineWidth: 1, priceLineVisible: false, title: 'RSI 14' }, p)
-          se.createPriceLine({ price: 70, color: c.up, lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: false })
-          se.createPriceLine({ price: 30, color: c.down, lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: false })
+          const se = ch.addSeries(LineSeries, { color: '#7b61ff', lineWidth: 1, priceLineVisible: false, title: `RSI ${P.rsi.period}` }, p)
+          se.createPriceLine({ price: P.rsi.upper, color: c.up, lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: false })
+          se.createPriceLine({ price: P.rsi.lower, color: c.down, lineStyle: LineStyle.Dashed, lineWidth: 1, axisLabelVisible: false })
           return se
         },
-        feed: (_, b) => toLine(rsi(b)),
+        feed: (_, b) => toLine(rsi(b, P.rsi.period)),
       })
     if (s.macd) {
+      const m = (b: Bar[]) => macd(b, P.macd.fast, P.macd.slow, P.macd.signal)
+      const mk = `${P.macd.fast}:${P.macd.slow}:${P.macd.signal}`
       out.push({
-        key: 'macdHist',
+        key: `macdHist:${mk}`,
         pane: 'macd',
         create: (ch, p) => ch.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false }, p),
-        feed: (_, b) => macd(b).hist.map((p) => ({ time: ct(p.t), value: p.v, color: (p.v >= 0 ? c.up : c.down) + '99' })),
+        feed: (_, b) => m(b).hist.map((p) => ({ time: ct(p.t), value: p.v, color: (p.v >= 0 ? c.up : c.down) + '99' })),
       })
-      out.push({ key: 'macdLine', pane: 'macd', create: (ch, p) => ch.addSeries(LineSeries, { color: '#3da8ff', lineWidth: 1, priceLineVisible: false, title: 'MACD' }, p), feed: (_, b) => toLine(macd(b).macd) })
-      out.push({ key: 'macdSig', pane: 'macd', create: (ch, p) => ch.addSeries(LineSeries, { color: '#f5a623', lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, p), feed: (_, b) => toLine(macd(b).signal) })
+      out.push({ key: `macdLine:${mk}`, pane: 'macd', create: (ch, p) => ch.addSeries(LineSeries, { color: '#3da8ff', lineWidth: 1, priceLineVisible: false, title: `MACD ${mk.replace(/:/g, ',')}` }, p), feed: (_, b) => toLine(m(b).macd) })
+      out.push({ key: `macdSig:${mk}`, pane: 'macd', create: (ch, p) => ch.addSeries(LineSeries, { color: '#f5a623', lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, p), feed: (_, b) => toLine(m(b).signal) })
     }
     return out
   }
 
   private base(d: ChartSeries) {
-    // Indicators always describe the stock (KRX); perp only when there is no KRX data.
-    // Keeping the base fixed means toggling markets never rescales the price axis.
-    return d.krx.length ? d.krx : d.perpKrw
+    // Indicators follow the visible candles: KRX when it is shown, otherwise perp.
+    // Overlays are excluded from autoscale, so switching the base never moves the price axis.
+    return this.settings.showKrx && d.krx.length ? d.krx : d.perpKrw
   }
 
   /** Bring the set of series in line with the settings without recreating the chart */
-  sync(settings: ChartSettings) {
+  sync(settings: ChartSettings, params: IndicatorParams = this.params) {
     this.settings = settings
-    // Adding/removing series can change the set of timestamps on the time axis (e.g. KRX history
-    // is longer than perp, Ichimoku projects into the future). Keep the visible *time* range fixed.
-    const view = this.input ? this.chart.timeScale().getVisibleRange() : null
+    this.params = params
+    // The axis series fixes the set of time points, so the logical range (zoom + scroll) can be
+    // restored exactly after series are added or removed
+    const view = this.input ? this.chart.timeScale().getVisibleLogicalRange() : null
     const specs = this.specs(settings)
     const wanted = new Set(specs.map((s) => s.key))
 
@@ -293,7 +332,7 @@ export class ChartController {
       this.decorate()
     }
     this.styleMain()
-    if (view) this.chart.timeScale().setVisibleRange(view)
+    if (view) this.chart.timeScale().setVisibleLogicalRange(view)
   }
 
   /** Show/hide markets by colour only: hidden series keep their data so the axes do not move */
@@ -323,8 +362,20 @@ export class ChartController {
       perp: new Map(d.perpKrw.map((k, i) => [ct(k.t) as number, { ...k, usd: d.perp[i]?.c ?? 0 }])),
       prem: new Map(d.premium.map((p) => [ct(p.t) as number, { v: p.v, live: p.live }])),
     }
+    this.feedAxis()
     this.feedAll()
     this.decorate()
+  }
+
+  private feedAxis() {
+    const d = this.input!.data
+    const step = STEP_MS[this.interval]
+    const times = new Set<number>()
+    for (const k of d.perp) times.add(ct(k.t))
+    for (const k of d.krx) times.add(ct(k.t))
+    const last = Math.max(d.perp.at(-1)?.t ?? 0, d.krx.at(-1)?.t ?? 0)
+    for (let i = 1; i <= ICHIMOKU_SHIFT; i++) times.add(ct(last + i * step))
+    this.axis.setData([...times].sort((a, b) => a - b).map((t) => ({ time: t as UTCTimestamp })))
   }
 
   private feedAll() {

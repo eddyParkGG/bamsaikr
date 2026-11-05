@@ -504,30 +504,16 @@ p {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 .brand__bolt {
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  opacity: 0;
-  transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s, opacity 0s 0.15s;
-}
-.brand__head {
-  opacity: 0;
-  transform: scale(0.3);
-  transform-origin: 34.5px 11px;
-  transition: opacity 0.12s 0.5s, transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1) 0.5s;
+  /* Diagonal wipe from the bottom-left corner up to the arrow tip */
+  clip-path: polygon(0 100%, 0 100%, 0 100%);
+  transition: clip-path 0.42s cubic-bezier(0.3, 0.7, 0.2, 1) 0.12s;
 }
 .logo:hover .brand__bolt,
 .logo:focus-visible .brand__bolt {
-  stroke-dashoffset: 0;
-  opacity: 1;
+  clip-path: polygon(0 100%, 0 -120%, 220% 100%);
 }
-.logo:hover .brand__head,
-.logo:focus-visible .brand__head {
-  opacity: 1;
-  transform: scale(1);
-}
-/* Disappear immediately on hover out (no rewind animation) */
-.logo:not(:hover) .brand__bolt,
-.logo:not(:hover) .brand__head {
+/* Disappear instantly when the pointer leaves (no rewind) */
+.logo:not(:hover) .brand__bolt {
   transition-duration: 0s;
   transition-delay: 0s;
 }
@@ -543,8 +529,7 @@ p {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .brand__bolt,
-  .brand__head {
+  .brand__bolt {
     transition: none;
   }
   .logo:hover .brand__shine {

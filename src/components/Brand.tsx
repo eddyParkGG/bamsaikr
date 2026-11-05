@@ -37,9 +37,18 @@ export function BrandMark({ size = 30 }: { size?: number }) {
       <g mask="url(#bm-shape)">
         <rect className="brand__shine" x="-30" y="0" width="18" height="40" fill="url(#bm-shine)" transform="skewX(-20)" />
       </g>
-      {/* Hover: yellow arrow. Draws from bottom-left to top-right, with an arrowhead at the end */}
-      <path className="brand__bolt" pathLength={100} d="M4 31 L14.5 22.5 L20 27.5 L34.5 11" fill="none" stroke="#FFEB00" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path className="brand__head" d="M27 9.5 L36.5 8.5 L35.5 18 Z" fill="#FFEB00" stroke="#FFEB00" strokeWidth="2" strokeLinejoin="round" />
+      {/* Hover: a chunky, angular bolt that doubles as a rising arrow. Revealed from the bottom-left */}
+      <g className="brand__bolt">
+        <path
+          d="M2.6 33.2 L13.6 19.6 L18.4 24.6 L26.2 14.9 L22.4 12.1 L37.4 5.6 L34.6 21.6 L30.9 18.5 L19.6 32.6 L14.4 27.4 L6.4 37.2 Z"
+          fill="#FFEB00"
+          stroke="#060B11"
+          strokeWidth="1.1"
+          strokeLinejoin="miter"
+        />
+        {/* Inner bevel: darker lower faces give the bolt some depth */}
+        <path d="M14.4 27.4 L19.6 32.6 L30.9 18.5 L34.6 21.6 L33.6 27.4 L30.4 24.4 L19.8 35.9 Z" fill="#D9B800" opacity="0.55" />
+      </g>
     </svg>
   )
 }

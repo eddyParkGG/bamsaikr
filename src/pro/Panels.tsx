@@ -3,6 +3,7 @@ import type { OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { fmtPct, fmtPrice, kstDay, tone, untilText } from '../lib/format'
 import { useQuery } from '../lib/query'
+import { InSessionNotice, predictionReady } from '../components/NextOpenState'
 
 export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Prediction | null; asset: Asset }) {
   if (!p) return <div className="skeleton" style={{ height: 260, marginTop: 8 }} />
@@ -19,9 +20,10 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           </span>
         </div>
         <div className="panel__body">
+        {!predictionReady(p) ? <InSessionNotice /> : (
         <dl>
           <div className="kv">
-            <dt>{p.status === 'in-session' ? '기준가 (장중 현재가, 잠정)' : '기준 종가'}</dt>
+            <dt>기준 종가</dt>
             <dd data-fit>{fmtPrice(p.refClose, isIdx)}</dd>
           </div>
           <div className="kv">
@@ -49,6 +51,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
             </dd>
           </div>
         </dl>
+        )}
         </div>
       </section>
       <section className="panel">
@@ -56,6 +59,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           <span className="panel__title">시가 갭 분포</span>
         </div>
         <div className="panel__body">
+        {!predictionReady(p) ? <InSessionNotice /> : (<>
         <div className="dist">
           {p.distribution.map((d, i) => (
             <div className="dist__row" key={d.label}>
@@ -70,6 +74,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
         <p className="faint" style={{ fontSize: 12, marginTop: 10 }}>
           {p.regime === 'weekend' ? '주말·연휴 구간' : '평일 밤 구간'} · 남은 시간 {p.hoursToOpen}시간만큼 불확실성을 더했어요
         </p>
+        </>)}
         </div>
       </section>
       <section className="panel">

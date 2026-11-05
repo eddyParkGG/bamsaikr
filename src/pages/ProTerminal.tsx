@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { InSessionNotice, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction, Status } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { StockLogo } from '../components/Brand'
@@ -14,13 +15,14 @@ import { Orderbook } from '../pro/Orderbook'
 import { OrderPanel } from '../pro/OrderPanel'
 import { ConvergenceTable, FlowsPanel, PredictPanels } from '../pro/Panels'
 import type { ChartSettings } from '../pro/settings'
+import { ParamsSheet, type ParamKey } from '../pro/ParamsSheet'
 
 const Chart = lazy(() => import('../pro/Chart').then((m) => ({ default: m.Chart })))
 
 const INTERVALS: ChartInterval[] = ['1m', '5m', '15m', '1h', '1d']
 const INTERVAL_LABEL: Record<ChartInterval, string> = { '1m': '1분', '5m': '5분', '15m': '15분', '1h': '1시간', '1d': '일' }
 
-const MENU: { group: string; items: { k: keyof ChartSettings; label: string; swatch?: string[] }[] }[] = [
+const MENU: { group: string; items: { k: keyof ChartSettings; label: string; swatch?: string[]; param?: ParamKey }[] }[] = [
   {
     group: '표시',
     items: [
@@ -33,9 +35,9 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; swa
   {
     group: '가격 지표',
     items: [
-      { k: 'ma', label: '이동평균선 5 · 20 · 60 · 120', swatch: ['#f5a623', '#f04251', '#00b37e', '#8b95a1'] },
+      { k: 'ma', label: '이동평균선', swatch: ['#f5a623', '#f04251', '#00b37e', '#8b95a1'], param: 'ma' },
       { k: 'ribbon', label: '이동평균 그물망', swatch: ['#3e9bff', '#7b8cff', '#a78bfa'] },
-      { k: 'bb', label: '볼린저 밴드 (20, 2)' },
+      { k: 'bb', label: '볼린저 밴드', param: 'bb' },
       { k: 'ichimoku', label: '일목균형표' },
       { k: 'vwap', label: 'VWAP' },
     ],
@@ -46,15 +48,24 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; swa
       { k: 'volume', label: '거래량 (시장별)' },
       { k: 'premium', label: '괴리율' },
       { k: 'funding', label: '펀딩비' },
-      { k: 'rsi', label: 'RSI (14)' },
-      { k: 'macd', label: 'MACD (12, 26, 9)' },
+      { k: 'rsi', label: 'RSI', param: 'rsi' },
+      { k: 'macd', label: 'MACD', param: 'macd' },
     ],
   },
 ]
 
+/** Current parameters shown next to each indicator, e.g. "(14)" */
+function paramText(k: ParamKey, p: ReturnType<typeof usePrefs.getState>['params']) {
+  if (k === 'ma') return p.ma.join(' · ')
+  if (k === 'bb') return `${p.bb.period}, ${p.bb.mult}`
+  if (k === 'rsi') return `${p.rsi.period}`
+  return `${p.macd.fast}, ${p.macd.slow}, ${p.macd.signal}`
+}
+
 function IndicatorMenu() {
-  const { chart: settings, toggle } = usePrefs()
+  const { chart: settings, toggle, params } = usePrefs()
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<ParamKey | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
@@ -94,12 +105,32 @@ function IndicatorMenu() {
                       </svg>
                     )}
                   </span>
-                  {i.label}
+                  <span>
+                    {i.label}
+                    {i.param && <span className="faint"> ({paramText(i.param, params)})</span>}
+                  </span>
                   {i.swatch && (
                     <span className="menu__swatch">
                       {i.swatch.map((c) => (
                         <i key={c} style={{ background: c }} />
                       ))}
+                    </span>
+                  )}
+                  {i.param && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="menu__gear"
+                      aria-label={`${i.label} 설정`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditing(i.param!)
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                      </svg>
                     </span>
                   )}
                 </button>
@@ -108,6 +139,7 @@ function IndicatorMenu() {
           ))}
         </div>
       )}
+      {editing && <ParamsSheet which={editing} onClose={() => setEditing(null)} />}
     </div>
   )
 }
@@ -218,7 +250,11 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
         </span>
       </div>
       <div className="panel__body">
-        <div className="row" style={{ alignItems: 'baseline', marginBottom: 8, opacity: p.status === 'in-session' ? 0.45 : 1 }}>
+        {!predictionReady(p) ? (
+          <InSessionNotice />
+        ) : (
+        <>
+        <div className="row" style={{ alignItems: 'baseline', marginBottom: 8 }}>
           <span className={`num ${up ? 'up' : 'down'}`} style={{ fontSize: 18, fontWeight: 700 }}>
             {Math.round((up ? p.probUp : 1 - p.probUp) * 100)}%
           </span>
@@ -233,9 +269,11 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
         <div className="prob__bar" style={{ height: 6 }}>
           <i className="prob__up" style={{ width: `${p.probUp * 100}%` }} />
         </div>
-        <p className="faint num" style={{ fontSize: 12, marginTop: 8 }}>
-          {p.status === 'in-session' ? '장중 잠정치 · 15:30 마감 후부터 의미 있어요' : `80% 구간 ${fmtPrice(p.band80.low, isIdx)} ~ ${fmtPrice(p.band80.high, isIdx)} · 과거 적중 ${p.backtest.hitRatePct}%`}
+        <p className="faint num" style={{ fontSize: 12, marginTop: 8 }} data-fit>
+          80% 구간 {fmtPrice(p.band80.low, isIdx)} ~ {fmtPrice(p.band80.high, isIdx)} · 과거 적중 {p.backtest.hitRatePct}%
         </p>
+        </>
+        )}
       </div>
     </section>
   )
@@ -244,7 +282,7 @@ function NextOpenMini({ p, asset }: { p: Prediction | null; asset: Asset }) {
 type Tab = 'chart' | 'predict' | 'conv' | 'flows'
 
 export default function ProTerminal({ asset }: { asset: Asset }) {
-  const { interval, setInterval, chart: settings, toggle, theme } = usePrefs()
+  const { interval, setInterval, chart: settings, toggle, theme, params } = usePrefs()
   const [tab, setTab] = useState<Tab>('chart')
   const [openNews, setOpenNews] = useState<NewsMarker | null>(null)
 
@@ -353,6 +391,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                     prediction={pred.data ?? null}
                     arb={arb}
                     settings={settings}
+                    params={params}
                     theme={theme}
                     onNews={onNews}
                   />

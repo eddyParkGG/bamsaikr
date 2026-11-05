@@ -9,7 +9,9 @@ import { getUsdcKrwCandles, rateAt, type UpbitUnit } from '../sources/upbit.js'
 export type ChartInterval = '1m' | '5m' | '15m' | '1h' | '1d'
 
 // Domestic minute bars are 200 per Toss API call, so long ranges need many calls → cap 1h bars at 3 weeks
-const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 2, '5m': 5, '15m': 10, '1h': 20, '1d': 400 }
+// Loaded span per interval. Longer than what is shown at first so long indicators (MA 120 etc.)
+// are fully warmed up across the visible range and the user can scroll back
+const RANGE_DAYS: Record<ChartInterval, number> = { '1m': 3, '5m': 8, '15m': 20, '1h': 45, '1d': 800 }
 const STEP: Record<ChartInterval, number> = { '1m': 60_000, '5m': 300_000, '15m': 900_000, '1h': 3600_000, '1d': 86400_000 }
 const UPBIT_UNIT: Record<ChartInterval, UpbitUnit> = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 'day' }
 

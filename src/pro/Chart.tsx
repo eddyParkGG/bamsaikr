@@ -8,7 +8,7 @@ import { useLive } from '../lib/live'
 import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
 import type { Span } from './primitives'
-import type { ChartSettings } from './settings'
+import type { ChartSettings, IndicatorParams } from './settings'
 
 interface Props {
   asset: Asset
@@ -19,11 +19,12 @@ interface Props {
   prediction: Prediction | null
   arb: ArbSnapshot | null
   settings: ChartSettings
+  params: IndicatorParams
   theme: string
   onNews: (n: NewsMarker) => void
 }
 
-function ChartImpl({ asset, interval, data, news, events, prediction, arb, settings, theme, onNews }: Props) {
+function ChartImpl({ asset, interval, data, news, events, prediction, arb, settings, params, theme, onNews }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const legend = useRef<HTMLDivElement>(null)
   const tip = useRef<HTMLDivElement>(null)
@@ -31,8 +32,8 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   const [card, setCard] = useState<{ x: number; y: number; t: number } | null>(null)
   const [ready, setReady] = useState(0)
   // Latest values for handlers registered once per chart
-  const live = useRef({ settings, news, onNews })
-  live.current = { settings, news, onNews }
+  const live = useRef({ settings, params, news, onNews })
+  live.current = { settings, params, news, onNews }
 
   const holidays = useMemo(() => new Set(data.holidays), [data.holidays])
   // Session background spans (perp bars are continuous, so use them as the time grid)
@@ -52,7 +53,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   // Create the chart only when asset, interval or theme change
   useEffect(() => {
     const el = box.current!
-    const c = new ChartController(el, interval, live.current.settings)
+    const c = new ChartController(el, interval, live.current.settings, live.current.params)
     ctl.current = c
     const chart = c.chart
     const krxC = css('--krx')
@@ -79,24 +80,28 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
         rows.push(
           `<div class="row"><i class="lg-dot" style="background:${perpC}"></i><span>perp 환산</span><b>${f(p.c)}</b>${asset.fx ? `<span class="k">$${p.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</span>` : ''}${pr ? `<span class="k">${pr.live ? '괴리' : '종가 대비'}</span><b class="${pr.v > 0 ? 'up' : pr.v < 0 ? 'down' : ''}">${fmtPct(pr.v)}</b>` : ''}</div>`,
         )
-      if (s.ma) rows.push(`<div class="row"><span class="k">이동평균선</span>${MA_COLORS.map(([n, col]) => `<span style="color:${col}">${n}</span>`).join('')}</div>`)
+      if (s.ma) rows.push(`<div class="row"><span class="k">이동평균선</span>${live.current.params.ma.map((n, i) => `<span style="color:${MA_COLORS[i % MA_COLORS.length]}">${n}</span>`).join('')}</div>`)
       lg.innerHTML = rows.join('')
     }
     ;(c as unknown as { renderLegend: typeof renderLegend }).renderLegend = renderLegend
 
     // Legend and news hover update the DOM directly (no React re-render per mouse move)
+    const byId = (id: string) => live.current.news.find((x) => x.date + x.title === id)
     chart.subscribeCrosshairMove((param) => {
       renderLegend(param.time == null ? null : (param.time as number))
       const t = tip.current
       if (!t) return
       const hit = param.point ? c.pins.hitBox(param.point.x, param.point.y) : null
-      c.pins.setHover(hit?.id ?? null)
+      c.pins.setHover(hit ? hit.ids.join('|') : null)
       el.style.cursor = hit ? 'pointer' : ''
-      const n = hit ? live.current.news.find((x) => x.date + x.title === hit.id) : null
-      if (n && hit) {
+      const items = hit ? hit.ids.map(byId).filter((n): n is NewsMarker => !!n) : []
+      if (hit && items.length) {
         t.hidden = false
-        t.textContent = n.title
-        // Centre the tooltip over the bubble, just above it, kept inside the chart
+        // One line per issue: date + headline (several when bubbles are grouped)
+        t.innerHTML = items
+          .map((n) => `<div class="tip-row"><span class="tip-date">${+n.date.slice(4, 6)}/${+n.date.slice(6, 8)}</span><span>${n.title.replace(/</g, '&lt;')}</span></div>`)
+          .join('') + (items.length > 1 ? '<div class="tip-hint">눌러서 확대</div>' : '')
+        // Centre over the bubble, just above it, kept inside the chart
         const w = t.offsetWidth
         const h = t.offsetHeight
         const x = Math.min(Math.max(4, hit.x - w / 2), el.clientWidth - w - 4)
@@ -107,8 +112,20 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     chart.subscribeClick((param) => {
       if (!param.point) return
       const hit = c.pins.hitBox(param.point.x, param.point.y)
-      const n = hit ? live.current.news.find((x) => x.date + x.title === hit.id) : null
-      if (n) return live.current.onNews(n)
+      if (hit && hit.ids.length === 1) {
+        const n = byId(hit.ids[0])
+        if (n) return live.current.onNews(n)
+      }
+      if (hit && hit.ids.length > 1) {
+        // Zoom into the grouped dates so they split into individual bubbles
+        const ts = chart.timeScale()
+        const idx = hit.times.map((tm) => ts.timeToIndex(tm as UTCTimestamp, true) ?? 0)
+        const lo = Math.min(...idx)
+        const hi = Math.max(...idx)
+        const pad = Math.max(6, (hi - lo) * 1.5)
+        ts.setVisibleLogicalRange({ from: lo - pad, to: hi + pad })
+        return
+      }
       if (param.time == null) return setCard(null)
       setCard({ x: param.point.x, y: param.point.y, t: param.time as number })
     })
@@ -124,9 +141,9 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   useEffect(() => {
     const c = ctl.current
     if (!c) return
-    c.sync(settings)
+    c.sync(settings, params)
     ;(c as unknown as { renderLegend?: (t: null) => void }).renderLegend?.(null)
-  }, [settings, ready])
+  }, [settings, params, ready])
 
   // Data: replace series data, then set the default range once per chart
   const placed = useRef(false)

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ChartInterval } from '../../shared/api'
-import { DEFAULT_SETTINGS, type ChartSettings } from '../pro/settings'
+import { DEFAULT_PARAMS, DEFAULT_SETTINGS, type ChartSettings, type IndicatorParams } from '../pro/settings'
 
 export type Mode = 'easy' | 'pro'
 export type Theme = 'light' | 'dark'
@@ -11,6 +11,8 @@ interface Prefs {
   theme: Theme
   interval: ChartInterval
   chart: ChartSettings
+  params: IndicatorParams
+  setParams: (p: Partial<IndicatorParams>) => void
   setMode: (m: Mode) => void
   setTheme: (t: Theme) => void
   setInterval: (i: ChartInterval) => void
@@ -24,6 +26,8 @@ export const usePrefs = create<Prefs>()(
       theme: 'dark',
       interval: '1d',
       chart: DEFAULT_SETTINGS,
+      params: DEFAULT_PARAMS,
+      setParams: (p) => set((s) => ({ params: { ...s.params, ...p } })),
       setMode: (mode) => set({ mode }),
       setTheme: (theme) => set({ theme }),
       setInterval: (interval) => set({ interval }),
@@ -36,7 +40,7 @@ export const usePrefs = create<Prefs>()(
       migrate: (p) => ({ ...(p as object), theme: 'dark', interval: '1d' }) as Prefs,
       merge: (persisted, current) => {
         const p = persisted as Partial<Prefs>
-        return { ...current, ...p, chart: { ...DEFAULT_SETTINGS, ...(p?.chart ?? {}) } }
+        return { ...current, ...p, chart: { ...DEFAULT_SETTINGS, ...(p?.chart ?? {}) }, params: { ...DEFAULT_PARAMS, ...(p?.params ?? {}) } }
       },
     },
   ),

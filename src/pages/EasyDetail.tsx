@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { IN_SESSION, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartSeries, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { PERP_PLAIN, probLabel, verdict } from '../easy/copy'
@@ -101,13 +102,10 @@ export default function EasyDetail({ asset }: { asset: Asset }) {
       {/* Question 1: up or down */}
       <section className="panel q-card">
         <p className="q-card__q">{p ? `${openDayText(p.targetOpenAt)} 아침 시가, 오를까요?` : '다음 시가, 오를까요?'}</p>
-        {p && p.status === 'in-session' ? (
+        {p && !predictionReady(p) ? (
           <>
-            <p className="q-card__a" data-fit>지금은 장이 열려 있어요</p>
-            <p className="q-card__reason">
-              국내 시장과 해외 시장이 같이 열려 있을 때는 해외 가격이 국내 주가를 바로 따라가요. 그래서 지금은 내일 시가를 미리 알려줄 정보가 거의 없어요. 오늘 15:30에 장이
-              끝나면 그때부터 예측을 보여드릴게요.
-            </p>
+            <p className="q-card__a" data-fit>{IN_SESSION.title}</p>
+            <p className="q-card__reason">{IN_SESSION.body}</p>
             <button
               className="trust"
               onClick={() => {

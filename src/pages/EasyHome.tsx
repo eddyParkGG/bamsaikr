@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { IN_SESSION, InSessionNotice, predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
 import { probLabel, verdict, PERP_PLAIN } from '../easy/copy'
@@ -29,18 +30,16 @@ function PredictRow({ p }: { p: Prediction }) {
   const a = ASSET_BY_ID[p.asset]
   const pl = probLabel(p.probUp)
   const v = verdict(p.probUp)
-  if (p.status === 'in-session')
+  if (!predictionReady(p))
     return (
       <Link href={`/s/${p.asset}`} className="easy-row">
         <StockLogo id={p.asset} size={36} />
         <div>
           <p className="easy-row__name" data-fit>{a.name}</p>
-          <p className="easy-row__sub" data-fit>지금은 국내 시장이 열려 있어요</p>
+          <p className="easy-row__sub" data-fit>{IN_SESSION.title}</p>
         </div>
         <div className="easy-row__right">
-          <p className="easy-row__big faint" style={{ fontSize: 14 }}>
-            15:30 마감 후 예측
-          </p>
+          <InSessionNotice compact />
         </div>
       </Link>
     )

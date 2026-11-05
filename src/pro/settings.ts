@@ -37,3 +37,18 @@ export const DEFAULT_SETTINGS: ChartSettings = {
   macd: false,
 }
 
+
+/** Indicator parameters. Defaults are the standard ones used by Korean brokers and TradingView */
+export interface IndicatorParams {
+  ma: number[]
+  bb: { period: number; mult: number }
+  rsi: { period: number; upper: number; lower: number }
+  macd: { fast: number; slow: number; signal: number }
+}
+
+export const DEFAULT_PARAMS: IndicatorParams = {
+  ma: [5, 20, 60, 120],
+  bb: { period: 20, mult: 2 },
+  rsi: { period: 14, upper: 70, lower: 30 },
+  macd: { fast: 12, slow: 26, signal: 9 },
+}

@@ -9,8 +9,6 @@ export const Ticker = memo(function Ticker({ items, status }: { items?: ArbSnaps
   const usdc = useLive((s) => s.usdc?.rate)
   return (
     <footer className="ticker num">
-      <span className="ticker__notice">투자 유의사항</span>
-      <span className="ticker__sep" />
       {status && (
         <span>
           {status.session === 'regular' ? '정규장' : status.session === 'nxt' ? '넥스트레이드' : '휴장'}
