@@ -56,7 +56,7 @@ export default function About() {
         <div className="panel__body about__body">
           <p className="about__h">H1. 해외 선물 탈중앙 거래소 가격으로 다음 날 장 시작 가격의 방향을 80% 이상 맞힐 수 있다</p>
           <p className="muted" style={{ fontSize: 13 }}>
-            그날 이전 데이터로만 학습해서 그날 장 시작 가격을 맞혀봤어요 (2026년 2월~, 종목별 119번).
+            그날 이전 데이터로만 학습해서 그날 장 시작 가격을 맞혀봤어요 (2026년 5월 13일~, 종목별 119번. 4월 13일부터 20번은 학습에만 썼어요).
           </p>
           <div className="about__hits">
             {preds.data

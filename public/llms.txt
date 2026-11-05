@@ -15,7 +15,7 @@
 
 ## Method (short)
 - Opening gap = α + β × (Hyperliquid-implied gap at 08:59 KST), β shrunk toward 1; σ split into weeknight vs weekend, plus closed-hours volatility
-- Backtest uses only data before each day (walk-forward), about 119 opens per stock since Feb 2026: direction hit ~84–90%, 80% band coverage ~75–87%
+- Backtest uses only data before each day (walk-forward), 119 opens per stock from 2026-05-13 (the first 20 opens from 2026-04-13 are training only): direction hit ~84–90%, 80% band coverage ~75–87%
 
 ## API (no key for reads)
 - [OpenAPI spec](/api/openapi.json)
@@ -28,7 +28,7 @@
 
 ## Pages
 - [홈 (home)](/): next-open probability and spread opportunity for each stock
-- [종목 화면 (stock)](/s/SKHX): summary answers, overlaid chart, order books, open-convergence history
+- [종목 화면 (stock)](/s/SKHX): summary answers, overlaid chart, order books, prediction record (예측 기록)
 - [소개 (about)](/about): problem, target users, hypotheses and live hit rates
 - [API](/developers): REST, OpenAPI and MCP usage
 

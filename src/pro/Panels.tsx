@@ -274,7 +274,17 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
                     </span>
                   )}
                 </td>
-                <td>{e.hit == null ? '' : e.hit ? <span className="hit-yes">맞음</span> : <span className="faint">틀림</span>}</td>
+                <td>
+                  {e.hit == null ? (
+                    <span className="faint" title="모델을 세우는 데 처음 20번의 개장이 필요해서, 이 기간은 학습에만 썼어요">
+                      학습 기간
+                    </span>
+                  ) : e.hit ? (
+                    <span className="hit-yes">맞음</span>
+                  ) : (
+                    <span className="faint">틀림</span>
+                  )}
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (

@@ -32,7 +32,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
     items: [
       { k: 'bands', label: '장 시간대 배경', help: '정규장·넥스트레이드·휴장 시간을 배경색으로 나눠 보여줘요' },
       { k: 'news', label: '뉴스 말풍선', help: '가격이 크게 움직인 날의 주요 뉴스를 차트 위에 표시해요' },
-      { k: 'convergence', label: '개장 수렴 %', help: '하이퍼리퀴드가 미리 보여준 차이를 실제 장 시작 가격이 몇 % 따라갔는지 보여줘요' },
+      { k: 'convergence', label: '장 시작 반영 %', help: '하이퍼리퀴드가 미리 보여준 차이를 실제 장 시작 가격이 몇 % 따라갔는지 보여줘요' },
       { k: 'forecast', label: '예상 시작 가격 · 80% 구간', help: '다음 장 시작 가격 예측값과, 10번 중 8번은 들어올 범위를 그려요' },
     ],
   },
@@ -446,7 +446,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     ? [
         ['chart', '차트 · 호가'],
         ['predict', '개장 예측'],
-        ['conv', '개장 수렴 이력'],
+        ['conv', '예측 기록'],
         ['flows', '투자자 동향'],
       ]
     : [['chart', '차트 · 호가']]
@@ -593,7 +593,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       {tab === 'conv' && (
         <section className="panel" style={{ marginTop: 8 }}>
           <div className="panel__head">
-            <span className="panel__title">개장 수렴 이력</span>
+            <span className="panel__title">예측 기록</span>
             <span className="faint" style={{ fontSize: 12, marginLeft: 6 }}>
               하이퍼리퀴드가 미리 보여준 차이를 다음 날 장 시작 가격이 얼마나 따라갔는지
             </span>
