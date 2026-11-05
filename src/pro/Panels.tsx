@@ -108,6 +108,20 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
                   </div>
                 ))}
               </div>
+              {/* Same numbers folded into one split bar: falls on the left, rises on the right */}
+              <div className="updown num">
+                <div className="updown__labels">
+                  <span>
+                    내릴 확률 <b className="down">{100 - Math.round(p.probUp * 100)}%</b>
+                  </span>
+                  <span>
+                    오를 확률 <b className="up">{Math.round(p.probUp * 100)}%</b>
+                  </span>
+                </div>
+                <div className="prob__bar">
+                  <i className="updown__up" style={{ width: `${p.probUp * 100}%` }} />
+                </div>
+              </div>
               <p className="faint" style={{ fontSize: 12, marginTop: 12 }}>
                 {p.regime === 'weekend' ? '주말·연휴를 건너는 밤' : '평일 밤'} · 장 열리기까지 {p.hoursToOpen}시간 남아서 그만큼 범위를 넓혔어요
               </p>
