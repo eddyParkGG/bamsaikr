@@ -2530,3 +2530,14 @@ html,
 body {
   overscroll-behavior-y: none;
 }
+
+/* Market toggles (국내 시장 / 하이퍼리퀴드): both can be on, so keep their filled chips apart */
+.chip--mkt + .chip--mkt {
+  margin-left: 6px;
+}
+/* Search and theme toggle sit together at the right of the header */
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

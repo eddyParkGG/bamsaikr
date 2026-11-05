@@ -562,7 +562,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                 <span className="chart-tools__sep" />
                 {hasKrx(asset) ? (
                 <button
-                  className="chip"
+                  className="chip chip--mkt"
                   aria-pressed={settings.showKrx}
                   onClick={() => {
                     toggle('showKrx')
@@ -583,7 +583,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                   </button>
                 )}
                 <button
-                  className="chip"
+                  className="chip chip--mkt"
                   aria-pressed={settings.showPerp}
                   onClick={() => {
                     toggle('showPerp')
