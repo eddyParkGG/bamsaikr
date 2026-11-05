@@ -1,7 +1,8 @@
 import { track } from '../lib/ga'
 import { usePrefs } from '../lib/prefs'
-import { Link, usePath } from '../lib/router'
+import { Link, navigate, usePath } from '../lib/router'
 import { BrandMark } from './Brand'
+import { SearchTrigger } from './AssetSearch'
 
 export function Header() {
   const { mode, setMode, theme, setTheme } = usePrefs()
@@ -26,24 +27,27 @@ export function Header() {
           </Link>
         </nav>
         <span className="spacer" />
-        <div className="seg" role="group" aria-label="화면 모드" style={{ width: 168 }}>
+        <SearchTrigger />
+        <div className="seg" role="group" aria-label="화면 모드" style={{ width: 120 }}>
           <button
-            aria-pressed={mode === 'easy'}
+            aria-pressed={onMarket && mode === 'easy'}
             onClick={() => {
               setMode('easy')
               track('mode_switch', { mode: 'easy' })
+              if (!onMarket) navigate('/')
             }}
           >
-            쉬운 모드
+            요약
           </button>
           <button
-            aria-pressed={mode === 'pro'}
+            aria-pressed={onMarket && mode === 'pro'}
             onClick={() => {
               setMode('pro')
               track('mode_switch', { mode: 'pro' })
+              if (!onMarket) navigate('/')
             }}
           >
-            프로 모드
+            상세
           </button>
         </div>
         <button className="icon-btn" aria-label={theme === 'dark' ? '밝은 화면으로' : '어두운 화면으로'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
