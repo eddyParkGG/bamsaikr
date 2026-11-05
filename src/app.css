@@ -2351,7 +2351,7 @@ button.ob2__px:active::after {
 /* About: calculation steps as label / explanation rows, worked example in a tinted box */
 .fact {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 180px 1fr;
   gap: 12px;
   padding: 5px 0;
   font-size: 13px;
@@ -2383,5 +2383,5 @@ button.ob2__px:active::after {
   }
 }
 .calc .fact {
-  grid-template-columns: 92px 1fr;
+  grid-template-columns: 164px 1fr;
 }

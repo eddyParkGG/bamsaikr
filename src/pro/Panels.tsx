@@ -19,7 +19,7 @@ const HELP = {
   follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
   liquid: '밤사이 하이퍼리퀴드에서 100만 달러(약 13억 원) 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
   big: '하이퍼리퀴드가 밤사이 1% 이상 움직인 날만 센 비율이에요. 크게 움직인 밤일수록 더 잘 맞았어요.',
-  coverage: '10번 중 8번 들어오게 잡은 범위(80% 구간) 안에서 실제로 시작한 비율이에요. 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
+  coverage: '예상 범위는 10번 중 8번 들어오게 잡았어요. 실제로 그 안에서 시작한 비율이 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
   mae: '예상 시작 가격이 실제 시작 가격과 평균 몇 % 차이 났는지예요. 아래 두 줄보다 작아야 예측이 쓸모 있어요.',
   perpRaw: '예측 없이 "지금 하이퍼리퀴드 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
   naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
@@ -76,7 +76,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
               <Row label="예상 시작 가격" help={HELP.expected}>
                 <b>{fmtKrw(p.expectedOpen, isIdx)}</b> <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct)}</span>
               </Row>
-              <Row label="80% 구간" help={HELP.band}>
+              <Row label="예상 범위" help={HELP.band}>
                 {fmtPrice(p.band80.low, isIdx)} ~ {fmtKrw(p.band80.high, isIdx)}
               </Row>
               <Row label="오를 확률" help={HELP.up}>
@@ -141,7 +141,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
             <Row label="1% 이상 움직인 밤만" help={HELP.big}>
               {bt.bigRatePct?.toFixed(1)}% <span className="faint">({bt.bigScored}번 중 {bt.bigYes}번)</span>
             </Row>
-            <Row label="80% 구간 안에서 시작" help={HELP.coverage}>
+            <Row label="예상 범위 안에서 시작" help={HELP.coverage}>
               {bt.coverage80Pct?.toFixed(1)}%{' '}
               <span className="faint">
                 ({bt.tested}번 중 ·{' '}
