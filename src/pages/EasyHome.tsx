@@ -89,7 +89,11 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
             {t.short}
           </p>
         )}
-        <p className="easy-row__sub" data-fit>1천만원 기준</p>
+        {t.kind === 'go' && (
+          <p className="easy-row__sub" data-fit>
+            1천만원 기준
+          </p>
+        )}
       </div>
     </Link>
   )
@@ -112,7 +116,7 @@ export default function EasyHome() {
       <section className="easy-hero">
         <h1>{inSession ? '장이 끝나고 내일 가격이 어떨지 추측할 수 있어요' : `${day} 아침 장 시작 가격, 오를까요?`}</h1>
         <p className="easy-intro">
-          국내 주식시장이 닫힌 밤과 주말에도 삼성전자·SK하이닉스·현대차는 24시간 운영되는 해외 선물 탈중앙 거래소 하이퍼리퀴드에서 거래돼요. 그 가격으로 다음 날 가격을 미리 보여드려요.
+          국내 주식시장이 닫힌 밤과 주말에도, 탈중앙 거래소 하이퍼리퀴드에서는 삼성전자·SK하이닉스·현대차 가격을 따라가는 선물이 24시간 거래돼요. 그 가격으로 다음 날 아침 국내 장이 얼마에 시작할지 예측해요.
         </p>
         <StatusLine s={status.data} />
       </section>

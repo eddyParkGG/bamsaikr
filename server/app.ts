@@ -26,10 +26,22 @@ import {
 } from './services/orders.js'
 import { openapi } from './openapi.js'
 import { mcp } from './mcp.js'
+import { clientIp, createLimiter } from './lib/rateLimit.js'
 
 export const app = new Hono().basePath('/api')
 
 app.use('*', cors())
+
+// Bot/flood guard. Only on Fly (Fly-Client-IP is set by its proxy); local dev is never limited
+const limiter = createLimiter()
+app.use('*', async (c, next) => {
+  const peer = c.req.header('fly-client-ip')
+  if (peer && limiter.hit(clientIp(c.req.header('x-forwarded-for'), peer), peer)) {
+    c.header('Retry-After', '60')
+    return c.json({ error: '요청이 너무 많아요. 1분 뒤에 다시 시도해 주세요' }, 429)
+  }
+  await next()
+})
 
 // For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in the server logs)
 app.use('*', async (c, next) => {

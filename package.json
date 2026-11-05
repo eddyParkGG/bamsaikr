@@ -7,7 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
+    "dev": "vite",
+    "dev:local": "API_TARGET=http://localhost:8787 concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "vite",
     "dev:api": "tsx watch server/dev.ts",
     "build": "tsc -b && vite build",

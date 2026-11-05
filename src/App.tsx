@@ -9,6 +9,7 @@ import { LaunchNotify } from './components/LaunchNotify'
 import { usePrefs } from './lib/prefs'
 import { useArb, useStatus } from './lib/data'
 import { usePath } from './lib/router'
+import { useMarketRollover } from './lib/market'
 import EasyHome from './pages/EasyHome'
 
 // Pro mode and API docs are loaded lazily on first visit
@@ -21,6 +22,7 @@ export default function App() {
   const theme = usePrefs((s) => s.theme)
   const arb = useArb()
   const status = useStatus()
+  useMarketRollover()
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme

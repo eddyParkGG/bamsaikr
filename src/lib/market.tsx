@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Status } from '../../shared/api'
 import { kstDay, untilText } from './format'
+import { refetchAll } from './query'
 
 export type Session = Status['session']
 
@@ -63,6 +64,35 @@ export function useNow(ms = 1000) {
     return () => clearInterval(id)
   }, [ms])
   return now
+}
+
+/** KST minutes where the market state changes: NXT pre-market 08:00/08:50, regular 09:00/15:30, NXT close 20:00 */
+const BOUNDARIES = [480, 530, 540, 930, 1200]
+
+/** Next moment the market state changes */
+export function nextBoundary(now = Date.now()) {
+  for (let day = 0; day < 2; day++)
+    for (const m of BOUNDARIES) {
+      const t = kstToday(now, 0, m) + day * 86400_000
+      if (t > now) return t
+    }
+  return now + 86400_000
+}
+
+/**
+ * Refresh all data when a market opens or closes, so nothing waits for its polling interval or a reload.
+ * Fetches twice: right after the boundary, and again once the server's short caches have expired
+ */
+export function useMarketRollover() {
+  useEffect(() => {
+    let timers: ReturnType<typeof setTimeout>[] = []
+    const arm = () => {
+      const wait = nextBoundary() - Date.now()
+      timers = [setTimeout(refetchAll, wait + 2000), setTimeout(refetchAll, wait + 20_000), setTimeout(arm, wait + 21_000)]
+    }
+    arm()
+    return () => timers.forEach(clearTimeout)
+  }, [])
 }
 
 /** 'H:MM:SS' */

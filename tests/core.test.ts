@@ -3,6 +3,7 @@ import { kstToMs, nextRegularOpen, prevRegularClose, sessionAt } from '../shared
 import { formatPx, formatSz } from '../shared/hlOrder'
 import { bollinger, rsi, sma } from '../src/pro/indicators'
 import { normCdf } from '../server/services/predict'
+import { clientIp, createLimiter } from '../server/lib/rateLimit'
 
 const NONE = new Set<string>()
 
@@ -55,5 +56,21 @@ describe('normal CDF', () => {
   it('symmetric', () => {
     expect(normCdf(0)).toBeCloseTo(0.5, 6)
     expect(normCdf(1.2816)).toBeCloseTo(0.9, 3)
+  })
+})
+
+describe('per-IP rate limit', () => {
+  it('caps each visitor, resets every minute, and caps a shared peer separately', () => {
+    const l = createLimiter(3, 5)
+    const t = 60_000 * 100
+    expect([1, 2, 3].map(() => l.hit('a', 'edge', t))).toEqual([false, false, false])
+    expect(l.hit('a', 'edge', t)).toBe(true) // 4th from the same visitor
+    expect(l.hit('b', 'edge', t)).toBe(false) // new visitor, peer at its cap of 5
+    expect(l.hit('b', 'edge', t)).toBe(true) // 6th through the same peer
+    expect(l.hit('a', 'edge', t + 60_000)).toBe(false) // next minute
+  })
+  it('takes the visitor from the first X-Forwarded-For entry', () => {
+    expect(clientIp('1.2.3.4, 76.76.21.1', '76.76.21.1')).toBe('1.2.3.4')
+    expect(clientIp(undefined, '9.9.9.9')).toBe('9.9.9.9')
   })
 })

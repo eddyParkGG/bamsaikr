@@ -23,14 +23,18 @@ export function arbText(s: ArbSnapshot) {
   const won = fmtWon(Math.round(s.net.netKrwPer10m))
   switch (k) {
     case 'gap':
-      return { kind: k, text: '장 열리면 확인할 수 있어요', short: '장 열리면 확인' }
+      return { kind: k, text: '시세차익 계산은 국장 중에만 가능해요 · 국장이 닫혀 있으면 국내 주식을 사고팔 수 없어요', short: '시세차익 계산은 국장 중에만 가능해요' }
     case 'go':
       return { kind: k, text: `평소보다 ${p2(s.deviationPct)} 더 벌어졌어요 · 1천만원 기준 약 ${won}원 남아요`, short: `+${won}원`, won }
     case 'normal':
-      return { kind: k, text: `평소 수준이에요 · 평소에도 해외 가격이 ${p2(s.normalPremiumPct)} ${s.normalPremiumPct >= 0 ? '비싸요' : '싸요'}`, short: '평소 수준' }
+      return { kind: k, text: `평소 수준이에요 · 평소에도 해외 가격이 ${p2(s.normalPremiumPct)} ${s.normalPremiumPct >= 0 ? '비싸요' : '싸요'}`, short: '평소 수준이라 시세차익이 없어요' }
     case 'cost':
-      return { kind: k, text: `평소보다 ${p2(s.deviationPct)} 벌어졌지만 비용이 더 커요`, short: '비용이 더 커요' }
+      return { kind: k, text: `평소보다 ${p2(s.deviationPct)} 벌어졌지만 비용이 더 커요`, short: '비용을 빼면 시세차익이 없어요' }
     case 'short':
-      return { kind: k, text: `해외 가격이 평소보다 ${p2(s.deviationPct)} 낮아요 · 주식을 빌려 팔아야 해서 개인은 어려워요`, short: '개인은 어려워요' }
+      return {
+        kind: k,
+        text: `해외 가격이 평소보다 ${p2(s.deviationPct)} 싸요 · 이 주식을 가진 사람은 국내에서 팔고 하이퍼리퀴드에서 사면 차익이 남아요`,
+        short: '시세차익은 이 주식을 가진 사람만 가능해요',
+      }
   }
 }
