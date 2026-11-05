@@ -777,6 +777,10 @@ body.is-resizing * {
 .easy-list .panel__body {
   padding: 4px 8px 8px;
 }
+/* A list with no title bar: same space above the first row as below the last */
+.easy-list > .panel__body:first-child {
+  padding-top: 8px;
+}
 .easy-row {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr) auto;
