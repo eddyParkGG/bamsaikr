@@ -218,16 +218,16 @@ p {
   flex-shrink: 0;
 }
 .panel__title {
+  /* A plain heading, not a chip: a filled title read like a button next to the real toggles */
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   height: 28px;
-  padding: 4px 8px;
-  border-radius: var(--r-chip);
-  background: var(--fill);
-  box-shadow: var(--shadow-chip);
+  padding: 0 4px;
   color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 .panel__body {
   padding: 12px 16px 16px;
