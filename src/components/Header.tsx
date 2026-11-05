@@ -17,7 +17,7 @@ export function Header() {
         </Link>
         <nav className="nav">
           <Link href="/s/SKHX" aria-current={onMarket ? 'page' : undefined}>
-            시세
+            종목
           </Link>
           <Link href="/about" aria-current={path === '/about' ? 'page' : undefined}>
             소개

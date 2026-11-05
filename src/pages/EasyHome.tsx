@@ -109,7 +109,7 @@ export default function EasyHome() {
   return (
     <div className="easy">
       <section className="easy-hero">
-        <h1>{inSession ? '장이 끝나도 내일 가격이 어떨지 추측할 수 있어요' : `${day} 아침 장 시작 가격, 오를까요?`}</h1>
+        <h1>{inSession ? '장이 끝나고 내일 가격이 어떨지 추측할 수 있어요' : `${day} 아침 장 시작 가격, 오를까요?`}</h1>
         <p className="easy-intro">
           국내 주식시장이 닫힌 밤과 주말에도 삼성전자·SK하이닉스·현대차는 24시간 운영되는 해외 선물 탈중앙 거래소 하이퍼리퀴드에서 거래돼요. 그 가격으로 다음 날 가격을 미리 보여드려요.
         </p>
@@ -161,7 +161,7 @@ export default function EasyHome() {
           바꿔서 다음 날 장이 어떤 가격에서 시작할지 계산해요.
         </p>
         <p>
-          지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 화면과{' '}
+          지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 상세와{' '}
           <Link href="/about" className="link">
             소개
           </Link>

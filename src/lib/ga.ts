@@ -1,5 +1,5 @@
 // GA4. No-op without a measurement ID (local dev)
-// Event names map 1:1 to the hypothesis/metric table in the README
+// Event names map 1:1 to the hypothesis/metric tables in docs/experiments (see ga-events.md)
 const GA_ID = import.meta.env.VITE_GA_ID as string | undefined
 
 declare global {
@@ -64,7 +64,6 @@ export type GaEvent =
   | 'prediction_detail_open'
   | 'model_explain_open' // opened the forecast detail or the prediction record (trust hypothesis)
   | 'arb_view'
-  | 'arb_calc_change'
   | 'chart_market_toggle' // market, on
   | 'chart_indicator_toggle'
   | 'chart_interval_change'
@@ -72,10 +71,8 @@ export type GaEvent =
   | 'convergence_view'
   | 'order_submit' // order intent: orders are not live yet, a launch sign-up sheet opens
   | 'launch_notify_signup' // email left for the order launch (not stored)
-  | 'wallet_connect'
   | 'api_docs_view'
   | 'mcp_copy'
-  | 'share_click'
 
 export function track(name: GaEvent, params: Record<string, string | number | boolean | undefined> = {}) {
   const p = { ...params, kst_window: kstWindow() }
