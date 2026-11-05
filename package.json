@@ -1,0 +1,39 @@
+{
+  "name": "stock-hype",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "vite",
+    "dev:api": "tsx watch server/dev.ts",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@nktkas/hyperliquid": "0.33.3",
+    "hono": "4.13.16",
+    "lightweight-charts": "5.2.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "viem": "2.57.16",
+    "zustand": "5.0.16"
+  },
+  "devDependencies": {
+    "@hono/node-server": "2.1.6",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "concurrently": "10.0.6",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vitest": "5.1.0"
+  }
+}
