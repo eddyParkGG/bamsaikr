@@ -9,7 +9,7 @@ import { NewsSheet } from '../components/NewsSheet'
 import { TodayIssue } from '../components/TodayIssue'
 import { SessionBadge } from '../components/SessionBadge'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, fmtUsd, fmtWonUnit, tone } from '../lib/format'
+import { fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { useQuery } from '../lib/query'
@@ -173,10 +173,12 @@ function Range({ low, high, value, isIdx }: { low: number; high: number; value: 
   return (
     <span className="range num">
       {fmtPrice(low, isIdx)}
+      {isIdx ? '' : '원'}
       <span className="range__bar">
         <i style={{ left: `calc(${Math.min(100, Math.max(0, pos)) / 100} * (100% - 4px))` }} />
       </span>
       {fmtPrice(high, isIdx)}
+      {isIdx ? '' : '원'}
     </span>
   )
 }
@@ -238,12 +240,15 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           <dd>
             <Range low={Math.min(mid, prev) * rate} high={Math.max(mid, prev) * rate} value={mid * rate} isIdx={isIdx} />
           </dd>
-          <dt>달러 가격</dt>
-          <dd>{asset.fx ? `$${fmtUsd(mid)}` : fmtPrice(mid, true)}</dd>
+          <dt>24시간 전</dt>
+          <dd>
+            {fmtPrice(prev * rate, isIdx)}
+            {unit}
+          </dd>
         </div>
         <div className="stats__group">
           <dt>원/USDC</dt>
-          <dd>{asset.fx ? rate.toLocaleString('ko-KR') : '환산 없음'}</dd>
+          <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
           <dt>펀딩 (1시간)</dt>
           <dd className={tone(funding)}>{funding.toFixed(4)}%</dd>
         </div>
@@ -260,7 +265,7 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
             <>
               <dt>국내 보통주 {asset.ratio}주</dt>
               <dd className={tone((mid * rate) / arb.krx.price - 1)}>
-                {fmtPrice(arb.krx.price)} ({fmtPct(((mid * rate) / arb.krx.price - 1) * 100)})
+                {fmtPrice(arb.krx.price)}원 ({fmtPct(((mid * rate) / arb.krx.price - 1) * 100)})
               </dd>
             </>
           ) : (
@@ -325,7 +330,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           <dt>하이퍼리퀴드 환산</dt>
           <dd>
             {fmtPrice(perpKrw, isIdx)}
-            {asset.fx && <span className="faint"> ${fmtUsd(mid)}</span>}
+            {isIdx ? '' : '원'}
           </dd>
           <dt>{arb.mode === 'live' ? '괴리율' : '종가 대비'}</dt>
           <dd className={tone(premium)}>{fmtPct(premium)}</dd>
@@ -334,7 +339,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           <dt>순차익</dt>
           <dd className={tone(arb.net.netPct)}>{fmtPct(arb.net.netPct)}</dd>
           <dt>원/USDC</dt>
-          <dd>{asset.fx ? rate.toLocaleString('ko-KR') : '환산 없음'}</dd>
+          <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
         </div>
         <div className="stats__group">
           <dt>펀딩 (1시간)</dt>
