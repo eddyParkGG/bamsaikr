@@ -97,7 +97,9 @@ export function SessionLine({ status, style }: { status: Pick<Status, 'session' 
   if (s === 'nxt')
     return (
       <>
-        {style === 'words' ? '넥스트레이드 ' : ''}마감까지 <span className="num">{left('nxt')}</span>
+        {/* After 15:30 the Nextrade close (20:00) is the domestic close; before 09:00 it is only the pre-market break */}
+        {style === 'words' ? '넥스트레이드 마감까지 ' : kstMinutes(now) >= 930 ? '국내 시장 마감까지 ' : '마감까지 '}
+        <span className="num">{left('nxt')}</span>
         {kstMinutes(now) < 540 && <> · 정규장 {at(status.nextRegularOpen, '09:00', '오전 9시')}</>}
       </>
     )
