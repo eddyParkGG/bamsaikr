@@ -17,6 +17,11 @@ export function BrandMark({ size = 30 }: { size?: number }) {
           <rect width="40" height="40" fill="#fff" />
           <circle cx="31.5" cy="8.5" r="9" fill="#000" />
         </mask>
+        <linearGradient id="bm-bolt" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#FFF06A" />
+          <stop offset="0.5" stopColor="#FFD60A" />
+          <stop offset="1" stopColor="#F2A900" />
+        </linearGradient>
         <linearGradient id="bm-shine" x1="0" x2="1">
           <stop offset="0" stopColor="#fff" stopOpacity="0" />
           <stop offset="0.5" stopColor="#fff" stopOpacity="0.75" />
@@ -37,17 +42,13 @@ export function BrandMark({ size = 30 }: { size?: number }) {
       <g mask="url(#bm-shape)">
         <rect className="brand__shine" x="-30" y="0" width="18" height="40" fill="url(#bm-shine)" transform="skewX(-20)" />
       </g>
-      {/* Hover: a chunky, angular bolt that doubles as a rising arrow. Revealed from the bottom-left */}
+      {/* Hover: a classic thick lightning bolt whose top is an arrowhead (rising to the upper right).
+          Revealed with a diagonal wipe from the bottom-left */}
       <g className="brand__bolt">
         <path
-          d="M2.6 33.2 L13.6 19.6 L18.4 24.6 L26.2 14.9 L22.4 12.1 L37.4 5.6 L34.6 21.6 L30.9 18.5 L19.6 32.6 L14.4 27.4 L6.4 37.2 Z"
-          fill="#FFEB00"
-          stroke="#060B11"
-          strokeWidth="1.1"
-          strokeLinejoin="miter"
+          d="M6.48 31.14 L23.74 22.92 L20.75 20.58 L29.76 16.77 L33.5 19.7 L32.61 6.95 L19.6 11.25 L23.35 14.17 L15.09 18.57 L18.08 20.91 Z"
+          fill="url(#bm-bolt)"
         />
-        {/* Inner bevel: darker lower faces give the bolt some depth */}
-        <path d="M14.4 27.4 L19.6 32.6 L30.9 18.5 L34.6 21.6 L33.6 27.4 L30.4 24.4 L19.8 35.9 Z" fill="#D9B800" opacity="0.55" />
       </g>
     </svg>
   )
@@ -57,10 +58,13 @@ const LOGOS: Record<string, { bg: string; fg: string; label: string; size: numbe
   SMSN: { bg: '#1428a0', fg: '#fff', label: 'SAMSUNG', size: 5.2, weight: 800 },
   SKHX: { bg: '#ea002c', fg: '#fff', label: 'SK', size: 11, weight: 800 },
   HYUNDAI: { bg: '#002c5f', fg: '#fff', label: 'H', size: 15, weight: 800, italic: true },
+  SKHY: { bg: '#ea002c', fg: '#fff', label: 'ADR', size: 8.5, weight: 800 },
   KR200: { bg: '#3c3c47', fg: '#fff', label: '200', size: 9.5, weight: 700 },
+  EWY: { bg: '#0f7b5f', fg: '#fff', label: 'EWY', size: 8.5, weight: 800 },
+  KORU: { bg: '#f08c00', fg: '#fff', label: '3x', size: 12, weight: 800 },
 }
 
-/** Asset icon: brand-color circle + short wordmark (Toss Securities list icon style) */
+/** Asset icon: brand-color circle + short wordmark (brokerage list icon style) */
 export function StockLogo({ id, size = 30 }: { id: string; size?: number }) {
   const l = LOGOS[id] ?? LOGOS.KR200
   return (

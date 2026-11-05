@@ -5,6 +5,7 @@ import { Boundary } from './components/Boundary'
 import { Header } from './components/Header'
 import { IndicatorStrip } from './components/IndicatorStrip'
 import { Ticker } from './components/Ticker'
+import { Toaster } from './components/Toast'
 import { usePrefs } from './lib/prefs'
 import { useQuery } from './lib/query'
 import { usePath } from './lib/router'
@@ -32,6 +33,25 @@ export default function App() {
   const asset = id && isAssetId(id) ? ASSET_BY_ID[id] : null
   const isDocs = path === '/developers' || path === '/about'
 
+  // Per-route title and description (SEO / link previews)
+  useEffect(() => {
+    const base = '밤사이'
+    const t =
+      path === '/about'
+        ? `소개 · ${base}`
+        : path === '/developers'
+          ? `API · MCP · ${base}`
+          : asset
+            ? `${asset.name} 밤사이 시세 · 내일 장 시작 가격 예측 | ${base}`
+            : `${base} · 국장이 닫힌 사이, 내일 가격을 먼저 보는 곳`
+    document.title = t
+    const d = asset
+      ? `${asset.name}의 하이퍼리퀴드 가격을 원화로 바꿔 국내 가격과 비교하고, 다음 날 장 시작 가격과 시세차익 기회를 보여드려요.`
+      : '국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드에서 거래되는 한국 주식 가격으로 다음 날 장 시작 가격과 시세차익 기회를 보여드려요.'
+    document.querySelector('meta[name="description"]')?.setAttribute('content', d)
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', `https://bamsai.vercel.app${path}`)
+  }, [path, asset])
+
   let page
   if (path === '/developers') page = <Developers />
   else if (path === '/about') page = <About />
@@ -53,6 +73,7 @@ export default function App() {
         </Boundary>
       </main>
       <Ticker items={arb.data?.items} status={status.data} />
+      <Toaster />
     </>
   )
 }

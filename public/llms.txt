@@ -1,0 +1,35 @@
+# 밤사이 (Bamsai)
+
+> 국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드(trade.xyz HIP-3)에서 거래되는 한국 주식 무기한 선물 가격을 업비트 원/USDC로 환산해, 다음 날 장 시작 가격의 상승 확률·예상 범위와 비용을 뺀 시세차익 기회를 보여주는 웹앱이에요.
+> Bamsai shows Korean stocks' overnight and weekend prices from Hyperliquid perpetuals, converted to KRW with Upbit KRW-USDC, to forecast the next KRX opening price and the net spread after costs.
+
+## What it answers
+- "SK하이닉스 내일 장 시작하면 오를까?" — probability of an up open, expected opening price and 80% band
+- "지금 해외 가격이랑 국내 가격 차이로 남는 돈이 있나?" — premium and net profit after fees, tax, FX and funding
+- "이 예측 얼마나 맞았어?" — walk-forward backtest hit rate, band coverage and error per stock
+
+## Assets
+- SMSN 삼성전자 (005930), SKHX SK하이닉스 (000660), HYUNDAI 현대차 (005380): premium + next-open prediction
+- SKHY SK하이닉스 ADR: compared with 0.1 common share, premium only
+- KR200 코스피200, EWY MSCI Korea ETF, KORU 3x Korea ETF: Hyperliquid price only
+
+## Method (short)
+- Opening gap = α + β × (Hyperliquid-implied gap at 08:59 KST), β shrunk toward 1; σ split into weeknight vs weekend, plus closed-hours volatility
+- Backtest uses only data before each day (walk-forward), about 119 opens per stock since Feb 2026: direction hit ~84–90%, 80% band coverage ~75–87%
+
+## API (no key for reads)
+- [OpenAPI spec](/api/openapi.json)
+- GET /api/v1/predict?asset=SKHX — next-open forecast
+- GET /api/v1/arb — premium and net spread for all comparable assets
+- GET /api/v1/convergence?asset=SMSN — per-open history: implied gap vs actual gap
+- GET /api/v1/series?asset=SKHX&interval=1h — overlaid candles (KRX + Hyperliquid in KRW)
+- GET /api/v1/perps — Hyperliquid state for every asset
+- MCP server: /api/mcp (Streamable HTTP)
+
+## Pages
+- [요약 (summary)](/): one-line answers for each stock
+- [소개 (about)](/about): problem, target users, hypotheses and live hit rates
+- [API](/developers): REST, OpenAPI and MCP usage
+
+## Notes
+- Reference information, not investment advice. Hyperliquid products are not covered by Korean investor protection.
