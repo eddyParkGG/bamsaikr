@@ -71,3 +71,17 @@ export const KRX_HOLIDAYS_FALLBACK = new Set([
   '20260525', '20260603', '20260817', '20260924', '20260925', '20261005', '20261009',
   '20261225', '20261231',
 ])
+
+/**
+ * Domestic market = KRX + NXT, i.e. anything a retail investor can trade (08:00–20:00 on trading days).
+ * The truly closed window is 20:00 → next trading day 08:00.
+ */
+export function nextDomesticOpen(now: number, holidays: ReadonlySet<string>): number {
+  let day = kstToMs(kstDateKey(now), '0800')
+  if (now >= day) day += 86400_000
+  for (let i = 0; i < 20 && !isTradingDay(day, holidays); i++) day += 86400_000
+  return day
+}
+
+/** True while KRX or NXT is trading (forecast for the next re-open is not meaningful then) */
+export const domesticTrading = (ms: number, holidays: ReadonlySet<string>) => sessionAt(ms, holidays) !== 'closed'

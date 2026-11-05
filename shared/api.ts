@@ -8,7 +8,8 @@ export type Prediction = Awaited<ReturnType<typeof predictOpen>>
 export interface Status {
   now: number
   session: 'regular' | 'nxt' | 'closed'
-  nextOpen: number
+  nextOpen: number // next domestic (KRX or NXT) open, 08:00
+  nextRegularOpen: number // next KRX regular session, 09:00
   prevClose: number
   krxSource: 'toss'
   toss: boolean

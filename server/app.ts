@@ -4,7 +4,7 @@ import { streamSSE } from 'hono/streaming'
 import { subscribeKrx } from './sources/tossWs.js'
 import { regularSessions } from './sources/krxSessions.js'
 import { ASSET_BY_ID, ASSETS, canPredict, hasKrx, isAssetId, PREDICTABLE, type Asset } from '../shared/assets.js'
-import { nextRegularOpen, prevRegularClose, sessionAt } from '../shared/session.js'
+import { nextDomesticOpen, nextRegularOpen, prevRegularClose, sessionAt } from '../shared/session.js'
 import { TossError, tossEnabled, tossInvestors } from './sources/toss.js'
 import { getPerpBook, getPerpCtxs } from './sources/hyperliquid.js'
 import { krxHolidays, krxOrderbook, krxSource } from './sources/krx.js'
@@ -95,7 +95,8 @@ v1.get('/status', async (c) => {
   return c.json({
     now,
     session: sessionAt(now, holidays),
-    nextOpen: nextRegularOpen(now, holidays),
+    nextOpen: nextDomesticOpen(now, holidays), // next time a retail investor can trade (08:00)
+    nextRegularOpen: nextRegularOpen(now, holidays),
     prevClose: prevRegularClose(now, holidays),
     krxSource: krxSource(),
     toss: tossEnabled(),
