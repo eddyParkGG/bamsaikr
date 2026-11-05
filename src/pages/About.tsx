@@ -59,8 +59,15 @@ export default function About() {
             <span className="about__status about__status--done">통과</span>
           </p>
           <p className="muted" style={{ fontSize: 13 }}>
-            국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요. 하이퍼리퀴드에 한국 종목이 상장된 2026년 2월 20일 직후부터 지금까지의 모든 개장일이 대상이고, 시작 가격은 정규장 09:00 기준이에요. 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요.
+            국내 시장이 닫힌 동안 하이퍼리퀴드가 오르거나 내린 방향대로 다음 날 국내 시장이 시작했는지 봤어요. 시작 가격은 정규장 09:00 기준이고, 둘 중 하나라도 ±0.05% 안쪽이라 방향을 따지기 어려운 날은 뺐어요.
           </p>
+          <div className="nbar about__period">
+            <span className="nbar__label">기간</span>
+            <i className="nbar__sep" />
+            <span className="nbar__text">
+              하이퍼리퀴드에 한국 종목이 <b>처음 상장된 2026년 2월 19일 이후</b>의 모든 개장일
+            </span>
+          </div>
           <div className="about__hits">
             {preds.data
               ? preds.data.items.map((p) => (
@@ -69,8 +76,7 @@ export default function About() {
                     <span className="strong">{p.name}</span>
                     <span className="spacer" />
                     <span className="faint num" style={{ fontSize: 12 }}>
-                      {p.backtest.since && `${+p.backtest.since.slice(4, 6)}/${+p.backtest.since.slice(6, 8)}부터`} {p.backtest.followScored}번 중{' '}
-                      {p.backtest.followYes}번
+                      상장 후 {p.backtest.followScored}번 중 {p.backtest.followYes}번
                     </span>
                     <b className="num" data-fit>
                       {p.backtest.followRatePct?.toFixed(1)}%

@@ -111,7 +111,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
           </div>
         </dl>
         <p className="faint" style={{ fontSize: 12, marginTop: 6 }}>
-          방향대로 열림은 하이퍼리퀴드 상장 직후인 {p.backtest.since ? `${+p.backtest.since.slice(4, 6)}월 ${+p.backtest.since.slice(6, 8)}일` : ''}부터 모든 개장({p.backtest.opens}번)을 봤고, 둘 중 하나라도 ±0.05% 안쪽이었던 {p.backtest.followFlat}번은 뺐어요. 예상 가격과 80% 구간은 그날 이전 데이터로만 계산한 결과예요. 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
+          방향대로 열림은 하이퍼리퀴드에 한국 종목이 처음 상장된 2026년 2월 19일 이후 모든 개장({p.backtest.opens}번)을 봤고, 둘 중 하나라도 ±0.05% 안쪽이었던 {p.backtest.followFlat}번은 뺐어요. 예상 가격과 80% 구간은 그날 이전 데이터로만 계산한 결과예요. 시작 가격 갭 = α + β·하이퍼리퀴드 갭, β {p.model.beta}, σ 평일 {p.model.sigmaPct.overnight}% / 주말 {p.model.sigmaPct.weekend}%
         </p>
         </div>
       </section>

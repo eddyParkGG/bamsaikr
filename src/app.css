@@ -2314,3 +2314,7 @@ button.ob2__px:active::after {
   background: var(--key);
   color: var(--on-key);
 }
+.about__period {
+  margin-top: 12px;
+  cursor: default;
+}
