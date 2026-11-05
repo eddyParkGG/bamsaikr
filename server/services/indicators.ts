@@ -42,7 +42,7 @@ async function usdcIndicator(): Promise<Indicator> {
   const change = t.trade_price - t.prev_closing_price
   return {
     id: 'USDC',
-    name: '원/USDC',
+    name: 'USDC',
     price: t.trade_price,
     prevClose: t.prev_closing_price,
     change,

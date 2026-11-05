@@ -56,7 +56,8 @@ function Card({ it }: { it: Indicator }) {
       <div className="ind__text">
         <p className="ind__name" data-fit>{it.name}</p>
         <p className="ind__value num" data-fit>
-          {price.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}{' '}
+          {price.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}
+          {it.id === 'USDC' ? '원' : ''}{' '}
           <span className={up ? 'up' : 'down'}>
             {up ? '+' : '-'}
             {Math.abs(change).toLocaleString('ko-KR', { maximumFractionDigits: 2 })} ({Math.abs(pct).toFixed(2)}%)

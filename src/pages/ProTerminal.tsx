@@ -248,7 +248,7 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </dd>
         </div>
         <div className="stats__group">
-          <dt>원/USDC</dt>
+          <dt>USDC</dt>
           <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
           <dt>펀딩 (1시간)</dt>
           <dd className={tone(funding)}>{funding.toFixed(4)}%</dd>
@@ -339,7 +339,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
         <div className="stats__group">
           <dt>순차익</dt>
           <dd className={tone(arb.net.netPct)}>{fmtPct(arb.net.netPct)}</dd>
-          <dt>원/USDC</dt>
+          <dt>USDC</dt>
           <dd>{asset.fx ? `${rate.toLocaleString('ko-KR')}원` : '환산 없음'}</dd>
         </div>
         <div className="stats__group">
