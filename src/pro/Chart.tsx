@@ -4,7 +4,7 @@ import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Pr
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
 import { SESSION_LABEL, venueAt } from '../lib/market'
-import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice } from '../lib/format'
+import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWonUnit } from '../lib/format'
 import { useLive } from '../lib/live'
 import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
@@ -224,7 +224,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       <div ref={box} className="chart__canvas" />
       <div ref={legend} className="chart__legend num" />
       <div ref={tip} className="chart__tip" hidden />
-      {card && ctl.current && <BarCard card={card} interval={interval} lookup={ctl.current.lookup} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} />}
+      {card && ctl.current && <BarCard card={card} interval={interval} lookup={ctl.current.lookup} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} isIdx={asset.kind === 'index'} />}
       {!data.krx.length && settings.showKrx && <div className="chart__empty">이 구간에는 국내 시세가 없어요.</div>}
     </div>
   )
@@ -253,7 +253,7 @@ function sessionLabel(t: number) {
 }
 
 /** Info card pinned where the user clicked */
-function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: number; y: number; t: number }; interval: ChartInterval; lookup: Lookup; news: NewsMarker[]; onClose: () => void; boxW: number }) {
+function BarCard({ card, interval, lookup, news, onClose, boxW, isIdx }: { card: { x: number; y: number; t: number }; interval: ChartInterval; lookup: Lookup; news: NewsMarker[]; onClose: () => void; boxW: number; isIdx: boolean }) {
   const k = lookup.krx.get(card.t)
   const p = lookup.perp.get(card.t)
   const pr = lookup.prem.get(card.t)
@@ -273,13 +273,13 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
           <div className="kv">
             <dt>국내 시작 · 종가</dt>
             <dd>
-              {fmtPrice(k.o)} → {fmtPrice(k.c)}
+              {fmtPrice(k.o)} → {fmtPrice(k.c)}원
             </dd>
           </div>
           <div className="kv">
             <dt>국내 고가 · 저가</dt>
             <dd>
-              {fmtPrice(k.h)} / {fmtPrice(k.l)}
+              {fmtPrice(k.h)} / {fmtPrice(k.l)}원
             </dd>
           </div>
           <div className="kv">
@@ -292,11 +292,12 @@ function BarCard({ card, interval, lookup, news, onClose, boxW }: { card: { x: n
         <>
           <div className="kv">
             <dt>하이퍼리퀴드 종가</dt>
-            <dd>{fmtPrice(p.c)}</dd>
+            <dd>{isIdx ? fmtPrice(p.c, true) : `${fmtPrice(p.c)}원`}</dd>
           </div>
           <div className="kv">
-            <dt>하이퍼리퀴드 거래량</dt>
-            <dd>{fmtKoreanUnit(p.v)}계약</dd>
+            <dt>하이퍼리퀴드 거래대금</dt>
+            {/* Volume × typical price, both already in KRW at that bar's USDC rate */}
+            <dd>{isIdx ? `약 ${fmtUsdCompact(p.v * p.usd)}` : `약 ${fmtWonUnit((p.v * (p.h + p.l + p.c)) / 3)}원`}</dd>
           </div>
         </>
       )}
