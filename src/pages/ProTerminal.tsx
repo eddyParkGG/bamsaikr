@@ -261,23 +261,28 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
-  useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: asset.perp }), [asset.perp])
+/** Live numbers shared by the stock head and the compact bar: domestic price from live trades, perp in KRW */
+function useStockLive(asset: Asset, arb: ArbSnapshot | null) {
   const ctx = useLive((s) => s.ctx[asset.perp])
   const usdcRate = useUsdcRate()
   const trade = useLive((s) => s.krxTrade[asset.krxCode])
-  if (!arb) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
-  const isIdx = asset.kind === 'index'
-  // Domestic current price is updated from Toss Securities live trades
+  if (!arb) return null
   const krxPrice = trade && trade.t > arb.updatedAt - 5000 ? trade.price : arb.krx.price
   const mid = ctx?.mid ?? arb.perp.mid
   const usdcKrw = usdcRate ?? arb.fx?.rate ?? 0
   const rate = asset.fx ? usdcKrw : 1
   const perpKrw = mid * rate
-  const premium = (perpKrw / krxPrice - 1) * 100
-  const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
   const diff = krxPrice - arb.krx.prevClose
-  const changePct = (diff / arb.krx.prevClose) * 100
+  return { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium: (perpKrw / krxPrice - 1) * 100, diff, changePct: (diff / arb.krx.prevClose) * 100 }
+}
+
+function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
+  useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: asset.perp }), [asset.perp])
+  const live = useStockLive(asset, arb)
+  if (!arb || !live) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
+  const isIdx = asset.kind === 'index'
+  const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium, diff, changePct } = live
+  const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
   return (
     <div className="stock-head">
       <div className="stock-head__id">
@@ -335,6 +340,52 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           <dd>{arb.perp.maxLeverage}배</dd>
         </div>
       </dl>
+    </div>
+  )
+}
+
+/** One-line bar pinned under the top menu once the stock head has scrolled away: name, price, gap, tabs */
+function CompactBar({ asset, arb, tabs, tab, onTab, show }: { asset: Asset; arb: ArbSnapshot | null; tabs: [Tab, string][]; tab: Tab; onTab: (t: Tab) => void; show: boolean }) {
+  const live = useStockLive(asset, arb)
+  const perp = usePerps(asset.id).item
+  const usdc = useUsdcRate()
+  const isIdx = asset.kind === 'index'
+  let price: number | null = null
+  let diff = 0
+  let pct = 0
+  if (asset.kind === 'stock' && live) {
+    price = live.krxPrice
+    diff = live.diff
+    pct = live.changePct
+  } else if (perp) {
+    const rate = asset.fx ? (usdc ?? 0) : 1
+    price = perp.mid * rate
+    diff = (perp.mid - perp.prevDay) * rate
+    pct = (perp.mid / perp.prevDay - 1) * 100
+  }
+  return (
+    <div className={`pcompact ${show ? 'is-on' : ''}`} aria-hidden={!show}>
+      <AssetName asset={asset} />
+      {price != null && (
+        <span className="pcompact__price num">
+          <b>{fmtKrw(price, isIdx)}</b>
+          <span className={tone(diff)}>{fmtPct(pct)}</span>
+        </span>
+      )}
+      {asset.kind === 'stock' && live && arb && (
+        <span className="pcompact__stat num">
+          <span className="faint">{arb.mode === 'live' ? '가격 차이' : '종가 대비'}</span> <b className={tone(live.premium)}>{fmtPct(live.premium)}</b>
+          {arb.mode === 'live' && <span className="faint"> 평소 {fmtPct(arb.normalPremiumPct)}</span>}
+        </span>
+      )}
+      <span className="spacer" />
+      <div className="ptabs" role="tablist">
+        {tabs.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={tab === k} tabIndex={show ? 0 : -1} onClick={() => onTab(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -437,6 +488,24 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       ]
     : [['chart', '차트 · 호가']]
   useEffect(() => setTab('chart'), [asset.id])
+  const selectTab = (k: Tab) => {
+    setTab(k)
+    if (k === 'conv') track('convergence_view', { asset: asset.id })
+    // H3: opening the evidence (forecast detail or the record) counts as checking the basis
+    if (k === 'predict' || k === 'conv') track('model_explain_open', { asset: asset.id, tab: k })
+  }
+
+  // Compact bar shows once the tabs have scrolled under the top menu
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const [compact, setCompact] = useState(false)
+  useEffect(() => {
+    const el = tabsRef.current
+    if (!el) return
+    const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 60
+    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting && e.boundingClientRect.top < headerH), { rootMargin: `-${headerH}px 0px 0px 0px` })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   return (
     <>
@@ -451,23 +520,14 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
           }}
         />
       )}
-      <div className="ptabs" role="tablist">
+      <div className="ptabs" role="tablist" ref={tabsRef}>
         {tabs.map(([k, label]) => (
-          <button
-            key={k}
-            role="tab"
-            aria-selected={tab === k}
-            onClick={() => {
-              setTab(k)
-              if (k === 'conv') track('convergence_view', { asset: asset.id })
-              // H3: opening the evidence (forecast detail or the record) counts as checking the basis
-              if (k === 'predict' || k === 'conv') track('model_explain_open', { asset: asset.id, tab: k })
-            }}
-          >
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
             {label}
           </button>
         ))}
       </div>
+      <CompactBar asset={asset} arb={arb} tabs={tabs} tab={tab} onTab={selectTab} show={compact} />
 
       {tab === 'chart' && (
         <div className="pro-grid" style={{ '--side-w': `${sideW}px` } as React.CSSProperties}>

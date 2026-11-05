@@ -141,7 +141,7 @@
 .stock-head {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 20px;
   padding: 12px 0 14px;
   flex-wrap: wrap;
 }
@@ -193,6 +193,22 @@
   border-left: none;
   padding-left: 0;
 }
+/* Fixed value-column widths (sized for the longest prices, SK hynix): digits changing never shift the strip */
+.stats__group:nth-child(1) {
+  grid-template-columns: auto 205px;
+}
+.stats__group:nth-child(2) {
+  grid-template-columns: auto 115px;
+}
+.stats__group:nth-child(3) {
+  grid-template-columns: auto 55px;
+}
+.stats__group:nth-child(4) {
+  grid-template-columns: auto 59px;
+}
+.stats__group:nth-child(5) {
+  grid-template-columns: auto 55px;
+}
 .stats dt {
   color: var(--text-3);
   font-weight: 500;
@@ -231,7 +247,8 @@
 
 /* ───── Pro mode body ───── */
 .pro-grid {
-  --chart-h: max(600px, calc(100vh - var(--header-h) - 60px));
+  /* Fills the screen under the top menu and the compact bar (8px gaps + bottom bar) */
+  --chart-h: max(480px, calc(100vh - var(--header-h) - var(--compact-h) - 60px));
   display: grid;
   grid-template-columns: minmax(0, 1fr) 8px var(--side-w, 340px);
   align-items: start;
@@ -239,13 +256,13 @@
 }
 .pro-chart {
   position: sticky;
-  top: calc(var(--header-h) + 8px);
+  top: calc(var(--header-h) + var(--compact-h) + 8px);
   height: var(--chart-h);
 }
 /* Order book + order form: same top and height as the chart while scrolling */
 .pro-trade {
   position: sticky;
-  top: calc(var(--header-h) + 8px);
+  top: calc(var(--header-h) + var(--compact-h) + 8px);
   height: var(--chart-h);
   display: flex;
   flex-direction: column;
@@ -272,7 +289,7 @@
 /* Chart ↔ right column resize handle: hidden until hover, 4px key-color bar */
 .split {
   position: sticky;
-  top: calc(var(--header-h) + 8px);
+  top: calc(var(--header-h) + var(--compact-h) + 8px);
   height: var(--chart-h);
   width: 10px;
   margin-left: -1px;
@@ -2389,4 +2406,76 @@ button.ob2__px:active::after {
 }
 .calc .fact {
   grid-template-columns: 164px 1fr;
+}
+
+/* Compact stock bar: pinned under the top menu once the stock head scrolls away */
+:root {
+  --compact-h: 52px;
+}
+.pcompact {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  z-index: 19;
+  height: var(--compact-h);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 24px;
+  background: var(--bg-screen);
+  border-bottom: 1px solid var(--line);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0s 0.15s;
+}
+/* Fill the 8px gap down to the pinned chart so scrolled content never shows through it */
+.pcompact::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 8px;
+  background: var(--bg-screen);
+}
+.pcompact.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.pcompact__price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.pcompact__price b {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.pcompact__stat {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .pcompact {
+    padding: 0 12px;
+    gap: 12px;
+  }
+  .pcompact__stat,
+  .pcompact .ptabs {
+    display: none;
+  }
+}
+
+/* No rubber-band bounce: pinned bars stay put on hard scrolls */
+html,
+body {
+  overscroll-behavior-y: none;
 }
