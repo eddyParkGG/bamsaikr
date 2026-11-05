@@ -2398,3 +2398,16 @@ button.ob2__px:active::after {
   vertical-align: middle;
   white-space: nowrap;
 }
+
+/* "Domestic market is open" notice sits in the middle of its panel */
+.cols3 > .panel {
+  display: flex;
+  flex-direction: column;
+}
+.cols3 .panel__body:has(> .in-session) {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
