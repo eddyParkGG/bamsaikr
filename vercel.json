@@ -9,7 +9,7 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "buildCommand": "vite build && tsx scripts/prerender.ts"
