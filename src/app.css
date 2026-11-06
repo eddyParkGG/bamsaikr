@@ -76,7 +76,38 @@
   margin-left: 4px;
 }
 .spark-mini {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
   flex-shrink: 0;
+}
+.spark-mini svg {
+  display: block;
+}
+/* Same as Toss home's index sparklines: 1.5s linear, starts a third of the way in */
+.spark-pulse {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform-origin: center center;
+  animation: spark-pulse 1.5s linear -0.5s infinite;
+}
+@keyframes spark-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  66% {
+    opacity: 0.2;
+    transform: scale(3.33);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(5);
+  }
 }
 
 /* Today's issues */
