@@ -147,6 +147,9 @@ export class ChartController {
 
   private axis: ISeriesApi<'Line'>
   private resize: ResizeObserver
+  /** Logical index of the latest real bar on the axis (-1 before the first data) */
+  private lastIdx = -1
+  private axisTimes: number[] = []
 
   destroy() {
     this.resize.disconnect()
@@ -415,9 +418,27 @@ export class ChartController {
       perp: new Map(d.perpKrw.map((k, i) => [ct(k.t) as number, { ...k, usd: d.perp[i]?.c ?? 0 }])),
       prem: new Map(d.premium.map((p) => [ct(p.t) as number, { v: p.v, live: p.live }])),
     }
+    // Keep the view where the user left it as bars come and go (the window drops old bars as new ones arrive,
+    // so logical indices shift). Latest bar on screen: keep its distance from the right edge, so new bars push the
+    // chart left. Scrolled back into history: keep the same times on screen
+    const ts = this.chart.timeScale()
+    const view = this.axisTimes.length ? ts.getVisibleLogicalRange() : null
+    const prevLast = this.lastIdx
+    const prevTimes = this.axisTimes
     this.feedAxis()
     this.feedAll()
     this.decorate()
+    if (view && prevLast >= 0) {
+      const width = view.to - view.from
+      if (view.to >= prevLast) {
+        const gap = view.to - prevLast
+        ts.setVisibleLogicalRange({ from: this.lastIdx + gap - width, to: this.lastIdx + gap })
+      } else {
+        const anchor = Math.max(0, Math.min(prevTimes.length - 1, Math.round(view.from)))
+        const at = this.axisTimes.indexOf(prevTimes[anchor])
+        if (at >= 0) ts.setVisibleLogicalRange({ from: at + (view.from - anchor), to: at + (view.from - anchor) + width })
+      }
+    }
   }
 
   private feedAxis() {
@@ -428,7 +449,9 @@ export class ChartController {
     for (const k of d.krx) times.add(ct(k.t))
     const last = Math.max(d.perp.at(-1)?.t ?? 0, d.krx.at(-1)?.t ?? 0)
     for (let i = 1; i <= ICHIMOKU_SHIFT; i++) times.add(ct(last + i * step))
-    this.axis.setData([...times].sort((a, b) => a - b).map((t) => ({ time: t as UTCTimestamp })))
+    this.axisTimes = [...times].sort((a, b) => a - b)
+    this.lastIdx = this.axisTimes.indexOf(ct(last) as number)
+    this.axis.setData(this.axisTimes.map((t) => ({ time: t as UTCTimestamp })))
   }
 
   private feedAll() {
