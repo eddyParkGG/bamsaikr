@@ -152,6 +152,13 @@ export class ChartController {
   private lastIdx = -1
   private axisTimes: number[] = []
 
+  /** Top of a sub-pane (px from the chart's top), for HTML labels laid over it; null when the pane is not shown */
+  paneTop(key: string): number | null {
+    const el = this.series.get(key)?.getPane().getHTMLElement()
+    const root = this.chart.chartElement()
+    return el ? el.getBoundingClientRect().top - root.getBoundingClientRect().top : null
+  }
+
   destroy() {
     this.resize?.disconnect()
     this.resize = null
@@ -257,7 +264,7 @@ export class ChartController {
             },
             p,
           )
-          se.createPriceLine({ price: 100, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '그대로' })
+          se.createPriceLine({ price: 100, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '같은 만큼' })
           se.createPriceLine({ price: 0, color: c.line, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: false })
           return se
         },
