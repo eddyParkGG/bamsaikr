@@ -6,7 +6,7 @@
 
 ```sh
 curl -s https://bamsai.kr/api/health | jq        # 소스별 마지막 성공 시각
-fly status -a bamsai-api                          # 머신 상태·헬스체크 결과
+fly status -a bamsai-api                          # 머신 상태·헬스체크 결과 (Fly 체크는 /api/health?live=1: 프로세스가 살아 있는지만 봄)
 fly logs -a bamsai-api                            # 실시간 로그
 ```
 

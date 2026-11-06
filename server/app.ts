@@ -281,6 +281,9 @@ v1.post('/orders/pair', async (c) => {
 const HEALTH_STALE_MS = 5 * 60_000
 const HEALTH_CORE: Source[] = ['hyperliquid', 'upbit']
 app.get('/health', async (c) => {
+  // ?live=1 is the Fly check: answers whenever the process is up. With one machine, failing it on stale upstream data
+  // would take the whole API off the proxy, so data freshness is reported here but never used to pull traffic
+  if (c.req.query('live')) return c.json({ status: 'alive', uptimeSec: Math.round(process.uptime()) })
   const probes = [getPerpCtxs(), getUsdcKrw(), tossEnabled() ? tossPrices([ASSET_BY_ID.SMSN.krxCode]) : null]
   await Promise.race([Promise.allSettled(probes), new Promise((r) => setTimeout(r, 3000))])
   const now = Date.now()
