@@ -15,6 +15,9 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
+
+/** Empty space right of the last bar so the price tags ('하이퍼리퀴드', '국내 시장') don't cover it: 12% of the width, 80–160px */
+export const rightGapPx = (width: number) => Math.round(Math.min(160, Math.max(80, width * 0.12)))
 import type { ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import { bollinger, ichimoku, macd, RIBBON, rsi, sma, vwap, type Bar, type Pt } from './indicators'
 import { NewsPins, SessionBands, VLine, type Span } from './primitives'
@@ -120,7 +123,7 @@ export class ChartController {
       },
       // Fixed axis width: price tags stay flush right even when the number of digits changes
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.16, bottom: 0.12 }, textColor: c.text2, minimumWidth: 92 },
-      timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffset: 6, minBarSpacing: 1 },
+      timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffsetPixels: rightGapPx(el.clientWidth), minBarSpacing: 1 },
       localization: {
         locale: 'ko-KR',
         priceFormatter: (p: number) => Math.round(p).toLocaleString('ko-KR'),
@@ -138,11 +141,15 @@ export class ChartController {
     // anything keeps the user's zoom and scroll exactly as they left it.
     this.axis = this.chart.addSeries(LineSeries, { visible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null }, 0)
     this.sync(settings, params)
+    this.resize = new ResizeObserver(() => this.chart.applyOptions({ timeScale: { rightOffsetPixels: rightGapPx(el.clientWidth) } }))
+    this.resize.observe(el)
   }
 
   private axis: ISeriesApi<'Line'>
+  private resize: ResizeObserver
 
   destroy() {
+    this.resize.disconnect()
     this.chart.remove()
   }
 
