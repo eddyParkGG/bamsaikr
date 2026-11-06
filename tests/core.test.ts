@@ -4,6 +4,7 @@ import { formatPx, formatSz } from '../shared/hlOrder'
 import { bollinger, rsi, sma } from '../src/pro/indicators'
 import { normCdf } from '../server/services/predict'
 import { clientIp, createLimiter } from '../server/lib/rateLimit'
+import { nightStage } from '../src/lib/night'
 
 const NONE = new Set<string>()
 
@@ -74,3 +75,26 @@ describe('per-IP rate limit', () => {
     expect(clientIp(undefined, '9.9.9.9')).toBe('9.9.9.9')
   })
 })
+
+describe('night stage before the next open (US session in KST, DST-aware)', () => {
+  const kst = (iso: string) => Date.parse(iso + '+09:00')
+  const fri8 = kst('2026-11-06T08:00')
+  it('standard time: US open 23:30, close 06:00 KST', () => {
+    expect(nightStage(fri8, kst('2026-11-05T21:00')).stage).toBe('before')
+    expect(nightStage(fri8, kst('2026-11-06T01:00')).stage).toBe('during')
+    expect(nightStage(fri8, kst('2026-11-06T06:30')).stage).toBe('after')
+    expect(nightStage(fri8, kst('2026-11-05T21:00')).when).toBe('새벽 6시 이후가 가장 정확해요')
+  })
+  it('daylight saving: US open 22:30, close 05:00 KST', () => {
+    const thu8 = kst('2026-10-15T08:00')
+    expect(nightStage(thu8, kst('2026-10-14T22:45')).stage).toBe('during')
+    expect(nightStage(thu8, kst('2026-10-15T05:30')).stage).toBe('after')
+    expect(nightStage(thu8, kst('2026-10-14T21:00')).when).toBe('새벽 5시 이후가 가장 정확해요')
+  })
+  it('weekend: Friday night session still ahead, then settled until Monday', () => {
+    const mon8 = kst('2026-11-09T08:00')
+    expect(nightStage(mon8, kst('2026-11-06T21:00')).stage).toBe('before')
+    expect(nightStage(mon8, kst('2026-11-08T12:00')).stage).toBe('after')
+  })
+})
+

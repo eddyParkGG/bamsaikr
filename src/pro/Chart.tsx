@@ -3,7 +3,8 @@ import type { ISeriesApi, UTCTimestamp } from 'lightweight-charts'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
-import { SESSION_LABEL, venueAt } from '../lib/market'
+import { SESSION_LABEL, useNow, venueAt } from '../lib/market'
+import { nightStage } from '../lib/night'
 import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit, tone } from '../lib/format'
 import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
@@ -256,6 +257,8 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
   // Only a tradable spread gets a note (and its line); the usual gap is not news
   const arbPrice = arb && arbKind(arb) === 'go' ? arb.perpKrw : null
   const fc = prediction && predictionReady(prediction) ? prediction : null
+  const now = useNow(60_000)
+  const night = nightStage(prediction?.targetOpenAt ?? now, now)
 
   useEffect(() => {
     ctl.current?.setArbLine(arbPrice)
@@ -307,6 +310,8 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
           <button className="cnote__btn" onClick={onPredict}>
             자세히
           </button>
+          {/* How much this number can still move before the open (US session) */}
+          <span className="cnote__sub">{night.stage === 'after' ? night.text : `${night.text} · ${night.when}`}</span>
         </div>
       )}
       {prediction && !predictionReady(prediction) && (

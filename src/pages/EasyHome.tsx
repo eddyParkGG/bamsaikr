@@ -6,7 +6,8 @@ import { ASSET_BY_ID } from '../../shared/assets'
 import { probLabel, verdict, PERP_PLAIN } from '../lib/copy'
 import { track } from '../lib/ga'
 import { fmtPct, fmtPrice, openDayText } from '../lib/format'
-import { SessionLine } from '../lib/market'
+import { SessionLine, useNow } from '../lib/market'
+import { nightStage } from '../lib/night'
 import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
 import { StockLogo } from '../components/Brand'
@@ -101,6 +102,7 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
 
 export default function EasyHome() {
   const status = useStatus()
+  const now = useNow(60_000)
   const preds = usePredictions()
   const arb = useArb()
 
@@ -129,7 +131,7 @@ export default function EasyHome() {
           <span className="panel__title">다음 장 시작 가격 예측</span>
           <span className="spacer" />
           <span className="faint" style={{ fontSize: 12 }}>
-            {PERP_PLAIN} 가격 기준
+            {status.data ? nightStage(status.data.nextOpen, now).short : `${PERP_PLAIN} 가격 기준`}
           </span>
         </div>
         <div className="panel__body">
