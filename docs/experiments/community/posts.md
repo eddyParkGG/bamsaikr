@@ -35,3 +35,22 @@ GA at the same moment (realtime, last 30 min): 4 active users, all desktop — l
 community visitors. Events: page_view 8, prediction_view 5, user_engagement 4, scroll 3, first_visit 2,
 session_start 2, arb_view 1. Standard (non-realtime) GA reports were still empty: a new property needs up to 24–48 h.
 
+## Readout 2026-11-06 (Fri) 10:13 KST
+
+| | A `smsn_thu_A` | B `skhx_thu_B` |
+|---|---|---|
+| DC views since baseline | +29 | +54 |
+| Upvotes / comments since baseline | +0 / 0 | +0 / 0 |
+| GA users with this `utm_source` | 0 (`dc_stock`) | 0 (`dc_skhynix`) |
+
+- GA standard report (11/05–11/06, partial for today): every session is `(direct)` except `cli_test` (our test) and one
+  `naver_jongto / smsn_thu_A` (someone copied the URL from the deleted Naver post). No DC-tagged visit at all.
+- Page views between 06:00 and 08:00 on 11/06: none (hour dimension; the custom `kst_window` dimension is not registered yet).
+- **Likely cause found**: Vercel's CDN cached API responses that Fly compressed with zstd and served them to browsers that
+  did not ask for zstd (`Accept-Encoding: gzip, deflate, br`, e.g. older iPhone Safari). Those browsers cannot read the
+  JSON and stay on the skeleton. Checked 15 requests with an iPhone Safari profile: 10 came back zstd. Fix pending.
+- Forecast in the posts was a 21:00 snapshot; Hyperliquid kept falling overnight (SMSN 200,569 → 182,326 KRW by 07:00).
+  Actual 08:00–08:10 VWAP: SMSN 177,495 (−11.9%), SKHX 1,086,809 (−13.9%). Direction right by the open, size larger.
+- Decision: no conclusion on H2 (0 tracked visitors). Fix the compression bug, register GA custom dimensions, exclude the
+  owner's IP, then repost.
+
