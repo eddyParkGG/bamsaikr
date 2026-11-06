@@ -18,9 +18,9 @@ export function followAtStage(p: { night?: { follow?: { ratePct: number | null }
   return p.night?.follow?.ratePct ?? null
 }
 
-/** '과거 평일 밤 이 시간대엔 87%가 이 방향대로 열렸어요' */
+/** '과거 이 시간대 87%가 이 방향대로 열렸어요' (weekends say 주말·연휴) */
 export function followText(p: { regime: string; night?: { follow?: { ratePct: number | null } | null } | null }) {
   const r = followAtStage(p)
-  return r == null ? null : `과거 ${p.regime === 'weekend' ? '주말·연휴' : '평일 밤'} 이 시간대엔 ${Math.round(r)}%가 이 방향대로 열렸어요`
+  return r == null ? null : `과거 ${p.regime === 'weekend' ? '주말·연휴 ' : ''}이 시간대 ${Math.round(r)}%가 이 방향대로 열렸어요`
 }
 

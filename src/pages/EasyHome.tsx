@@ -5,7 +5,7 @@ import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
 import { PERP_PLAIN } from '../lib/copy'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, openDayText, tone } from '../lib/format'
+import { fmtPct, fmtPrice, tone } from '../lib/format'
 import { SessionLine, useNow } from '../lib/market'
 import { followText, nightStage } from '../lib/night'
 import { useArb, usePredictions, useStatus } from '../lib/data'
@@ -47,19 +47,11 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
       </div>
       {ready ? (
         <>
-          <p className="stock-card__label">{PERP_PLAIN} 지금</p>
+          <p className="stock-card__label">{night.stage === 'after' ? `미국장 닫힌 뒤 ${PERP_PLAIN}` : `${PERP_PLAIN} 지금`}</p>
           <p className="stock-card__big num" data-fit>
             {fmtPrice(p.perpKrw)}원 <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
           </p>
-          <p className="stock-card__sub num">
-            {p.night?.usCloseKrw != null && p.night.usClosePct != null ? (
-              <>
-                미국장 마감 때 {fmtPrice(p.night.usCloseKrw)}원 <span className={tone(p.night.usClosePct)}>{fmtPct(p.night.usClosePct)}</span>
-              </>
-            ) : (
-              night.text
-            )}
-          </p>
+          {night.stage !== 'after' && <p className="stock-card__sub">{night.text}</p>}
           {follow && <p className="stock-card__foot">{follow}</p>}
         </>
       ) : (
@@ -129,13 +121,11 @@ export default function EasyHome() {
     if (preds.data && status.data) track('prediction_view', { from: 'home', session: status.data.session })
   }, [!!preds.data, !!status.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const day = status.data ? openDayText(status.data.nextOpen) : '다음'
-  const inSession = !!status.data && status.data.session !== 'closed'
 
   return (
     <div className="easy">
       <section className="easy-hero">
-        <h1>{inSession ? '국내 시장이 닫히면, 밤사이 해외 가격을 보여드려요' : `${day} 아침 국내 시장 시작 전, 밤사이 해외 가격부터 보세요`}</h1>
+        <h1>국장 시작 전, 가격을 먼저 가늠해 보세요</h1>
         <p className="easy-intro">
           국내 주식시장이 닫힌 밤과 주말에도, 탈중앙 거래소 하이퍼리퀴드에서는 삼성전자·SK하이닉스·현대차 가격을 따라가는 선물이 24시간 거래돼요. 그 가격을 원화로 바꾸고, 지난 개장일마다 국내 시장이 그 방향대로 열린 비율을 함께 보여드려요.
         </p>
@@ -143,7 +133,7 @@ export default function EasyHome() {
       </section>
 
       <div className="easy-section-title">
-        <h2>밤사이 해외 가격</h2>
+        <h2>밤사이 해외 가격과 비교</h2>
         <span className="faint" style={{ fontSize: 12 }}>
           {status.data ? nightStage(status.data.nextOpen, now).short : `${PERP_PLAIN} 가격 기준`}
         </span>
