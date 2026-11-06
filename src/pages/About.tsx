@@ -4,6 +4,13 @@ import { fmtPct } from '../lib/format'
 /** How every number on the site is worked out, in plain words with one worked example */
 export default function About() {
   const preds = usePredictions()
+  // Hit rate by where the night stood against the US session (weeknights, one count per open), averaged over the main stocks
+  const stage = (() => {
+    const items = preds.data?.items.filter((p) => p.backtest.followByStage && p.backtest.liquidScored >= 30) ?? []
+    if (!items.length) return null
+    const avg = (k: 'before' | 'during' | 'after') => `${Math.round(items.reduce((s, p) => s + (p.backtest.followByStage.overnight[k].ratePct ?? 0), 0) / items.length)}%`
+    return { before: avg('before'), during: avg('during'), after: avg('after') }
+  })()
   const arb = useArb()
   return (
     <div className="easy about">
@@ -19,22 +26,30 @@ export default function About() {
         <Fact k="왜 업비트 가격">은행 환율이 아니라, 실제로 원화를 USDC로 바꿀 때 내는 가격이라서요.</Fact>
       </Block>
 
-      <Block title="내일 아침 가격은 이렇게 예측해요">
+      <Block title="밤사이 가격은 이렇게 보여드려요">
         <Fact k="언제 보여주나">저녁 8시부터 다음 날 아침 8시까지, 국내 시장이 닫혀 있을 때만요. 장이 열려 있을 땐 지금 가격을 보면 되니까요.</Fact>
-        <Fact k="1. 밤사이 움직임">하이퍼리퀴드 가격이 어제 저녁 8시 국내 가격보다 몇 % 오르거나 내렸는지 봐요.</Fact>
-        <Fact k="2. 예상 가격">지난 기록을 보면 국내 시장은 밤사이 움직임을 대부분 따라 시작했어요. 종목마다 얼마나 따라갔는지 계산해서, 그만큼 움직인 가격을 예상 가격으로 보여드려요.</Fact>
-        <Fact k="3. 예상 범위">예측이 딱 맞을 순 없어서 범위도 같이 보여드려요. 10번 중 8번은 이 범위 안에서 시작하도록 잡았어요. 장 열리기까지 시간이 많이 남았으면 그사이 더 움직일 수 있어서 범위를 넓게 잡아요.</Fact>
-        <Fact k="4. 오를 확률">어제 저녁 8시 가격보다 높게 시작할 가능성이에요. 하이퍼리퀴드가 많이 오를수록 높아지고, 많이 내릴수록 낮아져요. 장 열리기까지 남은 시간이 짧을수록 예측이 더 확실해져요.</Fact>
+        <Fact k="1. 밤사이 움직임">하이퍼리퀴드 가격이 어제 저녁 8시 국내 마지막 가격보다 몇 % 오르거나 내렸는지 보여드려요.</Fact>
+        <Fact k="2. 언제 본 가격이냐가 중요해요">
+          밤사이 가장 크게 움직이는 건 미국장이 열려 있는 동안이에요(겨울 밤 11시 반~새벽 6시, 여름 밤 10시 반~새벽 5시). 그래서 미국장이 닫힌 뒤 가격이 다음 날
+          시작 가격과 가장 가까워요.
+          {stage && (
+            <>
+              {' '}
+              평일 밤 기준으로 그 시간대에 본 하이퍼리퀴드 방향대로 국내 시장이 열린 비율은 미국장 열리기 전 {stage.before}, 열려 있는 동안 {stage.during}, 닫힌 뒤{' '}
+              {stage.after}였어요.
+            </>
+          )}
+        </Fact>
+        <Fact k="3. 이 방향대로 열린 비율">지금과 같은 시간대에 하이퍼리퀴드 가격을 봤던 지난 개장일 중, 국내 시장이 그 방향(오름·내림)으로 시작한 비율이에요. 개장일마다 한 번씩 세요. 앞으로 오를지 내릴지를 약속하는 숫자가 아니에요.</Fact>
+        <Fact k="4. 보통 이 안에서 시작">지난 기록으로 보면 10번 중 8번은 이 범위 안에서 시작했어요. 장 열리기까지 시간이 많이 남았으면 그사이 더 움직일 수 있어서 범위를 넓게 잡아요.</Fact>
         <Fact k="무엇과 비교하나">아침 8시~8시 10분 국내 평균 가격과 비교해요. 8시 첫 거래는 몇 건 안 돼서 가격이 튀기 쉬워요.</Fact>
         <div className="calc">
           <p className="calc__title">예시 · 11월 4일 SK하이닉스</p>
           <Fact k="어제 저녁 8시 국내 가격">1,414,000원</Fact>
           <Fact k="아침 8시 하이퍼리퀴드 가격">1,461,621원 (밤사이 +3.37%)</Fact>
-          <Fact k="예상 가격">1,452,600원쯤 (+2.73%)</Fact>
-          <Fact k="예상 범위">1,428,000원 ~ 1,477,200원</Fact>
-          <Fact k="오를 확률">98%</Fact>
+          <Fact k="보통 이 안에서 시작">1,428,000원 ~ 1,477,200원</Fact>
           <Fact k="실제 시작 가격">
-            <b>1,451,776원 (+2.67%)</b> · 예상과 거의 같았어요
+            <b>1,451,776원 (+2.67%)</b> · 하이퍼리퀴드 방향대로 열렸고, 범위 안이었어요
           </Fact>
         </div>
         {preds.data && (

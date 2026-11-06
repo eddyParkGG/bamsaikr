@@ -403,7 +403,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   useEffect(() => subscribeUsdc(), [])
   // Funnel events (H2–H4): forecast and spread seen on the stock screen, once per asset
   useEffect(() => {
-    if (pred.data) track('prediction_view', { asset: asset.id, from: 'stock', prob_up: pred.data.probUp, ready: predictionReady(pred.data) })
+    if (pred.data) track('prediction_view', { asset: asset.id, from: 'stock', stage: pred.data.night?.stage, follow_rate: pred.data.night?.follow?.ratePct ?? undefined, ready: predictionReady(pred.data) })
   }, [!!pred.data, asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (arb) track('arb_view', { asset: asset.id, net_pct: arb.net.netPct, mode: arb.mode })

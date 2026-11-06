@@ -18,7 +18,7 @@ the default automatic page view is off.
 
 | Event | Fired when | Where | Params | Used by |
 |---|---|---|---|---|
-| `prediction_view` | Forecasts load on home / a stock detail | `pages/EasyHome.tsx`, `pages/ProTerminal.tsx` | `from` (`home`/`stock`), `asset`, `session`, `prob_up`, `ready` | H2 activation, H3 denominator |
+| `prediction_view` | Forecasts load on home / a stock detail | `pages/EasyHome.tsx`, `pages/ProTerminal.tsx` | `from` (`home`/`stock`), `asset`, `session`, `stage` (US session: `before`/`during`/`after`), `follow_rate`, `ready` | H2 activation, H3 denominator |
 | `prediction_detail_open` | A stock row on home is clicked | `pages/EasyHome.tsx` | `asset`, `from` | H2 activation |
 | `model_explain_open` | 개장 예측 or 예측 기록 tab opened, or 자세히 on the chart's 내일 아침 예상 note | `pages/ProTerminal.tsx` | `asset`, `tab` (`predict`/`conv`), `from` (`chart` for the note) | H3 |
 | `convergence_view` | 예측 기록 tab opened | `pages/ProTerminal.tsx` | `asset` | H3 detail |
@@ -39,7 +39,7 @@ the default automatic page view is off.
 1. Admin → Data streams → Web → copy the measurement ID (`G-…`) into Vercel env `VITE_GA_ID`, redeploy.
 2. Admin → Custom definitions
    - Event-scoped: `kst_window`, `asset`, `from`, `market`, `tab`, `mode`, `side`
-   - Event-scoped metric: `net_pct`, `prob_up`
+   - Event-scoped metric: `net_pct`, `follow_rate`
    - User-scoped: `first_source`, `first_content`
 3. Admin → Key events: `launch_notify_signup`, `order_submit`, `model_explain_open`.
 4. Explorations

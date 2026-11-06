@@ -4,7 +4,7 @@ import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Pr
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
 import { SESSION_LABEL, useNow, venueAt } from '../lib/market'
-import { nightStage } from '../lib/night'
+import { followText, nightStage } from '../lib/night'
 import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit, tone } from '../lib/format'
 import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
@@ -281,12 +281,12 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
     }
     const tick = () => {
       place(arbEl.current, arbPrice)
-      place(fcEl.current, fc?.expectedOpen ?? null)
+      place(fcEl.current, fc?.perpKrw ?? null)
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [ctl, arbPrice, fc?.expectedOpen])
+  }, [ctl, arbPrice, fc?.perpKrw])
 
   return (
     <>
@@ -303,15 +303,15 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
       )}
       {fc && (
         <div ref={fcEl} className="cnote" hidden>
-          <span className="cnote__label">내일 아침 예상</span>
+          <span className="cnote__label">하이퍼리퀴드 지금</span>
           <span>
-            {fmtPrice(fc.expectedOpen)}원 <b className={tone(fc.expectedGapPct)}>{fmtPct(fc.expectedGapPct)}</b>
+            {fmtPrice(fc.perpKrw)}원 <b className={tone(fc.perpGapPct)}>{fmtPct(fc.perpGapPct)}</b>
           </span>
           <button className="cnote__btn" onClick={onPredict}>
             자세히
           </button>
           {/* How much this number can still move before the open (US session) */}
-          <span className="cnote__sub">{night.stage === 'after' ? night.text : `${night.text} · ${night.when}`}</span>
+          <span className="cnote__sub">{[night.text, followText(fc)].filter(Boolean).join(' · ')}</span>
         </div>
       )}
       {prediction && !predictionReady(prediction) && (
