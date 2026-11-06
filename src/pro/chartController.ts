@@ -79,6 +79,7 @@ interface Spec {
 }
 
 const SUB_PANES = ['volume', 'premium', 'follow', 'funding', 'rsi', 'macd'] as const
+export type SubPane = (typeof SUB_PANES)[number]
 
 export class ChartController {
   readonly chart: IChartApi
@@ -152,11 +153,19 @@ export class ChartController {
   private lastIdx = -1
   private axisTimes: number[] = []
 
-  /** Top of a sub-pane (px from the chart's top), for HTML labels laid over it; null when the pane is not shown */
-  paneTop(key: string): number | null {
-    const el = this.series.get(key)?.getPane().getHTMLElement()
-    const root = this.chart.chartElement()
-    return el ? el.getBoundingClientRect().top - root.getBoundingClientRect().top : null
+  /** Every sub-pane on screen and its top (px from the chart's top), for HTML titles laid over them */
+  subPaneTops(): { pane: SubPane; top: number }[] {
+    const root = this.chart.chartElement().getBoundingClientRect().top
+    const seen = new Set<string>()
+    const out: { pane: SubPane; top: number }[] = []
+    for (const spec of this.specs(this.settings)) {
+      if (spec.pane === 'main' || seen.has(spec.pane)) continue
+      const el = this.series.get(spec.key)?.getPane().getHTMLElement()
+      if (!el) continue
+      seen.add(spec.pane)
+      out.push({ pane: spec.pane, top: el.getBoundingClientRect().top - root })
+    }
+    return out
   }
 
   destroy() {

@@ -10,7 +10,7 @@ import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
 import { predictionReady } from '../components/NextOpenState'
 import { Help } from '../components/Help'
-import { ChartController, css, ct, MA_COLORS, rightGapPx, STEP_MS, type Lookup } from './chartController'
+import { ChartController, css, ct, MA_COLORS, rightGapPx, STEP_MS, type Lookup, type SubPane } from './chartController'
 import type { Bar } from './indicators'
 import type { Span } from './primitives'
 import type { ChartSettings, IndicatorParams } from './settings'
@@ -232,12 +232,12 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     })
   }, [asset.krxCode, interval])
 
-  // HTML label with a '?' over the 'follow' pane (pane titles on the canvas cannot carry a tooltip)
-  const [followTop, setFollowTop] = useState<number | null>(null)
+  // A grey title with a '?' over each sub-pane (canvas pane titles cannot carry a tooltip); new indicators get one too
+  const [paneTops, setPaneTops] = useState<{ pane: SubPane; top: number }[]>([])
   useEffect(() => {
     const c = ctl.current
     if (!c || !box.current) return
-    const update = () => setFollowTop(c.paneTop('follow'))
+    const update = () => setPaneTops(c.subPaneTops())
     const raf = requestAnimationFrame(update)
     const ro = new ResizeObserver(update)
     ro.observe(box.current)
@@ -245,17 +245,17 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       cancelAnimationFrame(raf)
       ro.disconnect()
     }
-  }, [ready, settings])
+  }, [ready, settings, params])
 
   return (
     <div className="chart">
       <div ref={box} className="chart__canvas" />
-      {followTop != null && (
-        <div className="pane-label" style={{ top: followTop + 4 }}>
-          따라간 정도 %
-          <Help text="국내 장이 시작할 때마다 막대 하나예요. 밤사이 하이퍼리퀴드가 움직인 만큼을 100으로 볼 때, 국내가 얼마나 움직여 시작했는지예요. 100이면 같은 만큼, 146이면 1.46배 더, 50이면 절반만, 0 아래면 반대로 시작했어요. 1% 넘게 움직인 밤만 그려요." />
+      {paneTops.map(({ pane, top }) => (
+        <div key={pane} className="pane-label" style={{ top: top + 4 }}>
+          {PANE_INFO[pane].title(params)}
+          <Help text={PANE_INFO[pane].help} />
         </div>
-      )}
+      ))}
       <div ref={legend} className="chart__legend num" />
       <div ref={tip} className="chart__tip" hidden />
       {card && ctl.current && <BarCard card={card} interval={interval} lookup={ctl.current.lookup} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} isIdx={asset.kind === 'index'} />}
@@ -263,6 +263,34 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       {asset.kind === 'stock' && <ChartNotes ctl={ctl} legend={legend} ready={ready} arb={arb} prediction={settings.forecast ? prediction : null} onPredict={onPredict} onArb={onArb} />}
     </div>
   )
+}
+
+/** Title and plain explanation for each sub-pane */
+const PANE_INFO: Record<SubPane, { title: (p: IndicatorParams) => string; help: string }> = {
+  volume: {
+    title: () => '거래량',
+    help: '막대 하나가 그 시간 동안 거래된 양이에요. 국내 시장(주식 수)과 하이퍼리퀴드(계약 수)는 단위가 달라서 각자 높이에 맞춰 겹쳐 그려요. 양을 서로 비교하기보다 언제 거래가 몰렸는지 보는 용도예요.',
+  },
+  premium: {
+    title: () => '가격 차이 %',
+    help: '하이퍼리퀴드 가격(원화)이 국내 가격보다 몇 % 비싼지(+, 빨강) 싼지(−, 파랑)예요. 국내 시장이 닫힌 동안에는 국내 마지막 가격과 비교해요.',
+  },
+  follow: {
+    title: () => '따라간 정도 %',
+    help: '국내 장이 시작할 때마다 막대 하나예요. 밤사이 하이퍼리퀴드가 움직인 만큼을 100으로 볼 때, 국내가 얼마나 움직여 시작했는지예요. 100이면 같은 만큼, 146이면 1.46배 더, 50이면 절반만, 0 아래면 반대로 시작했어요. 1% 넘게 움직인 밤만 그려요.',
+  },
+  funding: {
+    title: () => '펀딩비 (1시간)',
+    help: '하이퍼리퀴드에서 1시간마다 롱과 숏이 서로 주고받는 비용이에요. +면 롱(매수)이 숏에게 내요. 하이퍼리퀴드 가격이 기초 가격보다 비쌀수록 커져요.',
+  },
+  rsi: {
+    title: (p) => `RSI ${p.rsi.period}`,
+    help: '최근 오른 폭과 내린 폭으로 0~100 사이 값을 만든 지표예요. 위 점선(과열)보다 높으면 많이 올랐다는 뜻, 아래 점선보다 낮으면 많이 내렸다는 뜻으로 많이 봐요.',
+  },
+  macd: {
+    title: (p) => `MACD ${p.macd.fast}·${p.macd.slow}·${p.macd.signal}`,
+    help: '짧은 평균선과 긴 평균선의 차이(파란 선)와 그 평균(주황 선)이에요. 막대는 둘의 차이로, 0 위로 커지면 오르는 힘이, 아래로 커지면 내리는 힘이 세진다는 뜻으로 봐요.',
+  },
 }
 
 /**
