@@ -4,9 +4,9 @@
 // (median over the last 5 trading days' regular-session hours), not the raw premium.
 import { COMPARABLE, type Asset } from '../../shared/assets.js'
 import { sessionAt, type Session } from '../../shared/session.js'
-import { getPerpCtxs } from '../sources/hyperliquid.js'
-import { krxHolidays, krxQuote } from '../sources/krx.js'
-import { getUsdcKrw } from '../sources/upbit.js'
+import { getPerpBook, getPerpCandles, getPerpCtxs } from '../sources/hyperliquid.js'
+import { krxHolidays, krxOrderbook, krxQuote } from '../sources/krx.js'
+import { getUsdcKrw, getUsdcKrwCandles, rateAt } from '../sources/upbit.js'
 import { cached } from '../lib/cache.js'
 import { kstDateKey } from '../../shared/session.js'
 import { chartSeries } from './series.js'
@@ -19,9 +19,11 @@ export interface CostInput {
   fxFeeBps: number // Upbit KRW-market fee (one way)
   leverage: number // perp margin multiple. Only the margin needs FX conversion
   holdHours: number // expected holding time until the premium closes (for funding)
+  notionalKrw: number // trade size per leg: both order books are walked for this amount
+  lagSec: number // time between the two orders hitting (price can move in between)
 }
 
-export const DEFAULT_COST: CostInput = { stockFeeBps: 1.5, stockTaxBps: 20, perpFeeBps: 0.9, fxFeeBps: 5, leverage: 2, holdHours: 1 }
+export const DEFAULT_COST: CostInput = { stockFeeBps: 1.5, stockTaxBps: 20, perpFeeBps: 0.9, fxFeeBps: 5, leverage: 2, holdHours: 1, notionalKrw: 10_000_000, lagSec: 3 }
 
 export type Direction = 'perp_short_stock_long' | 'perp_long_stock_short'
 
@@ -43,9 +45,20 @@ export interface ArbSnapshot {
   net: {
     direction: Direction
     grossPct: number
-    costs: { stock: number; perp: number; fx: number; funding: number }
+    /** %. slippage: fill prices vs mid/last on both legs. latency: price move while the second order lands */
+    costs: { stock: number; perp: number; fx: number; funding: number; slippage: number; latency: number }
     netPct: number
     netKrwPer10m: number // expected net profit per 10M KRW
+    /** Requested size per leg (cost.notionalKrw) and the expected net on what the books can fill of it */
+    notionalKrw: number
+    netKrw: number
+    /** Volume-weighted fill prices (KRW, per perp unit) for that size; null when a book was unavailable */
+    fills: { perpKrw: number; stockKrw: number; perpSlippagePct: number; stockSlippagePct: number } | null
+    /** true when the visible book on either side can't fill notionalKrw; maxNotionalKrw is what it can */
+    depthLimited: boolean
+    maxNotionalKrw: number | null
+    /** Stdev of 1-minute returns of the perp in KRW over the last 60 minutes (%), the base of costs.latency */
+    vol1mPct: number | null
     executable: boolean
     note: string
   }
@@ -53,6 +66,68 @@ export interface ArbSnapshot {
 }
 
 const pct = (x: number) => Math.round(x * 10000) / 10000
+
+export interface Level {
+  px: number
+  sz: number
+}
+
+/** Visible notional (px × sz) on one side of a book */
+export const bookNotional = (levels: Level[]) => levels.reduce((s, l) => s + l.px * l.sz, 0)
+
+/**
+ * Walk one side of a book (best level first) for `notional` in price units.
+ * Returns the volume-weighted fill price and how much was filled; null when nothing can fill
+ */
+export function walkBook(levels: Level[], notional: number): { avgPx: number; filled: number; full: boolean } | null {
+  let left = notional
+  let qty = 0
+  let cost = 0
+  for (const l of levels) {
+    if (left <= 0) break
+    const take = Math.min(l.sz, left / l.px)
+    qty += take
+    cost += take * l.px
+    left -= take * l.px
+  }
+  if (qty <= 0) return null
+  return { avgPx: cost / qty, filled: cost, full: left <= notional * 1e-9 }
+}
+
+/** Stdev of 1-minute log returns over the last `n` returns (fraction); null with fewer than 10 */
+export function minuteVol(closes: number[], n = 60): number | null {
+  const c = closes.filter((v) => v > 0).slice(-(n + 1))
+  const r = c.slice(1).map((v, i) => Math.log(v / c[i]))
+  if (r.length < 10) return null
+  const m = r.reduce((s, v) => s + v, 0) / r.length
+  return Math.sqrt(r.reduce((s, v) => s + (v - m) ** 2, 0) / (r.length - 1))
+}
+
+/** Cost of the gap between the two orders: 1-minute volatility scaled to `lagSec` (random walk) */
+export const latencyCost = (vol1m: number, lagSec: number) => vol1m * Math.sqrt(Math.max(0, lagSec) / 60)
+
+/**
+ * Executable gross after slippage: sell the perp / buy the stock at their fill prices (or the reverse),
+ * measured against the usual premium. `slippage` = how much the fills give up vs mid/last (fraction, ≥ 0 normally)
+ */
+export function execGross(p: { perpMid: number; stockLast: number; perpFill: number; stockFill: number; normal: number; direction: Direction }) {
+  const s = p.direction === 'perp_short_stock_long' ? 1 : -1
+  const midPrem = p.perpMid / p.stockLast - 1
+  const fillPrem = p.perpFill / p.stockFill - 1
+  return { gross: s * (fillPrem - p.normal), slippage: s * (midPrem - fillPrem) }
+}
+
+/** 1-minute closes of the perp in KRW for the last ~70 minutes (Hyperliquid + Upbit 1m, both already cached) */
+function perpKrwMinutes(asset: Asset): Promise<number[]> {
+  return cached(`arb:vol:${asset.id}`, 60_000, async () => {
+    const since = Math.floor((Date.now() - 70 * 60_000) / 600_000) * 600_000 // 10-min buckets keep cache keys few
+    const [bars, fx] = await Promise.all([getPerpCandles(asset.perp, '1m', since), asset.fx ? getUsdcKrwCandles(1, since) : null])
+    return bars.map((k) => k.c * (fx ? (rateAt(fx, k.t + 59_999) ?? NaN) : 1)).filter(Number.isFinite)
+  })
+}
+
+/** KRX book cached a few seconds: arb runs for every asset on every refresh, and Toss calls are rate-limited */
+const krxBook = (asset: Asset) => cached(`arb:krxbook:${asset.id}`, 3000, () => krxOrderbook(asset))
 
 /** Usual premium (fraction) for an asset; 0 when there is no history */
 function normalPremium(asset: Asset, holidays: ReadonlySet<string>): Promise<number> {
@@ -66,7 +141,15 @@ function normalPremium(asset: Asset, holidays: ReadonlySet<string>): Promise<num
 }
 
 export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST): Promise<ArbSnapshot> {
-  const [ctxs, quote, fx, holidays] = await Promise.all([getPerpCtxs(), krxQuote(asset), asset.fx ? getUsdcKrw() : null, krxHolidays()])
+  const [ctxs, quote, fx, holidays, perpBook, stockBook, minutes] = await Promise.all([
+    getPerpCtxs(),
+    krxQuote(asset),
+    asset.fx ? getUsdcKrw() : null,
+    krxHolidays(),
+    getPerpBook(asset.perp).catch(() => null),
+    krxBook(asset).catch(() => null),
+    perpKrwMinutes(asset).catch(() => []),
+  ])
   const normal = await normalPremium(asset, holidays).catch(() => 0)
   const ctx = ctxs.get(asset.perp)
   if (!ctx) throw new Error(`perp 시세 없음: ${asset.perp}`)
@@ -89,7 +172,24 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
   // Shorts receive positive funding, longs pay it
   const fundingCost = (direction === 'perp_short_stock_long' ? -1 : 1) * ctx.funding * cost.holdHours
   const gross = Math.abs(deviation)
-  const netPct = gross - stockCost - perpCost - fxCost - fundingCost
+
+  // Fill prices for the trade size: short perp hits the bids and the stock is bought at the asks (reverse for the other way).
+  // Both legs are walked for the same KRW amount, capped at what the thinner visible book holds
+  const short = direction === 'perp_short_stock_long'
+  const rate = asset.fx ? fx!.rate : 1
+  const perpSide = perpBook ? (short ? perpBook.bids : perpBook.asks).map((l) => ({ px: l.px * rate, sz: l.sz })) : []
+  // KRX sizes are shares; one perp unit is `ratio` shares (prices are already per perp unit)
+  const stockSide = stockBook ? (short ? stockBook.asks : stockBook.bids).map((l) => ({ px: l.px, sz: l.sz / asset.ratio })) : []
+  const maxNotional = Math.min(bookNotional(perpSide), bookNotional(stockSide))
+  const size = Math.min(cost.notionalKrw, maxNotional)
+  const pf = size > 0 ? walkBook(perpSide, size) : null
+  const sf = size > 0 ? walkBook(stockSide, size) : null
+  const exec = pf && sf ? execGross({ perpMid: perpKrw, stockLast: base, perpFill: pf.avgPx, stockFill: sf.avgPx, normal, direction }) : null
+  const slippage = exec?.slippage ?? 0
+  const vol1m = minuteVol(minutes)
+  const latency = vol1m == null ? 0 : latencyCost(vol1m, cost.lagSec)
+  const netPct = gross - slippage - latency - stockCost - perpCost - fxCost - fundingCost
+  const depthLimited = !!exec && maxNotional < cost.notionalKrw
 
   let executable = mode === 'live'
   let note = ''
@@ -126,9 +226,18 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
     net: {
       direction,
       grossPct: pct(gross * 100),
-      costs: { stock: pct(stockCost * 100), perp: pct(perpCost * 100), fx: pct(fxCost * 100), funding: pct(fundingCost * 100) },
+      costs: { stock: pct(stockCost * 100), perp: pct(perpCost * 100), fx: pct(fxCost * 100), funding: pct(fundingCost * 100), slippage: pct(slippage * 100), latency: pct(latency * 100) },
       netPct: pct(netPct * 100),
       netKrwPer10m: Math.round(netPct * 10_000_000),
+      notionalKrw: cost.notionalKrw,
+      netKrw: Math.round(netPct * (exec ? size : cost.notionalKrw)),
+      fills:
+        pf && sf
+          ? { perpKrw: pct(pf.avgPx), stockKrw: pct(sf.avgPx), perpSlippagePct: pct((short ? 1 - pf.avgPx / perpKrw : pf.avgPx / perpKrw - 1) * 100), stockSlippagePct: pct((short ? sf.avgPx / base - 1 : 1 - sf.avgPx / base) * 100) }
+          : null,
+      depthLimited,
+      maxNotionalKrw: exec ? Math.round(maxNotional) : null,
+      vol1mPct: vol1m == null ? null : pct(vol1m * 100),
       executable,
       note,
     },
