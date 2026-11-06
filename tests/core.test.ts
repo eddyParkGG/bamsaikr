@@ -98,3 +98,15 @@ describe('night stage before the next open (US session in KST, DST-aware)', () =
   })
 })
 
+
+describe('api usage events', () => {
+  it('tells agents and scripts from browsers by User-Agent', async () => {
+    const { callerKind } = await import('../server/lib/gaEvents')
+    expect(callerKind('Claude-User (claude-code/2.1)')).toBe('agent')
+    expect(callerKind('curl/8.7.1')).toBe('curl')
+    expect(callerKind('python-requests/2.32')).toBe('python')
+    expect(callerKind('node')).toBe('node')
+    expect(callerKind('Mozilla/5.0 (Macintosh)')).toBe('browser')
+    expect(callerKind('')).toBe('unknown')
+  })
+})

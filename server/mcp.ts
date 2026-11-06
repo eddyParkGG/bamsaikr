@@ -101,6 +101,8 @@ mcp.get('/', (c) => c.text('MCP endpoint. POST JSON-RPC here.', 405))
 mcp.post('/', async (c) => {
   const body = (await c.req.json()) as RpcReq | RpcReq[]
   const list = Array.isArray(body) ? body : [body]
+  // Which method/tool was called, for the usage log (tools/call → the tool name)
+  c.header('x-mcp-call', list.map((r) => (r.method === 'tools/call' ? String(r.params?.name ?? '') : r.method)).join(',').slice(0, 100))
   const replies = []
   for (const r of list) {
     if (r.id === undefined) continue // notification
