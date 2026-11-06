@@ -28,6 +28,7 @@ import { openapi } from './openapi.js'
 import { mcp } from './mcp.js'
 import { compress } from 'hono/compress'
 import { clientIp, createLimiter } from './lib/rateLimit.js'
+import { sendApiCall } from './lib/gaEvents.js'
 
 export const app = new Hono().basePath('/api')
 
@@ -53,7 +54,10 @@ app.use('*', async (c, next) => {
 app.use('*', async (c, next) => {
   await next()
   if (c.req.header('sec-fetch-site') === 'same-origin') return
-  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua: c.req.header('user-agent')?.slice(0, 80) }))
+  const ua = c.req.header('user-agent')?.slice(0, 80)
+  const mcpCall = c.res.headers.get('x-mcp-call')
+  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined }))
+  sendApiCall({ path: c.req.path, status: c.res.status, ua, mcp: mcpCall })
 })
 
 app.onError((err, c) => {
