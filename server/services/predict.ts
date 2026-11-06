@@ -325,8 +325,12 @@ export async function predictOpen(asset: Asset) {
 
   // Where tonight is against the US session, and Hyperliquid at the US close once it has closed
   const ns = nightStageAt(target, now)
+  // A past price converts at the USDC rate of that same hour (bar ending then), not today's rate
+  const fxSince = Math.min(ns.usClose ?? now, now) - 26 * H
+  const fxHourly = asset.fx ? await getUsdcKrwHourly(fxSince) : []
+  const krwAt = (px: number, t: number) => (asset.fx ? px * (rateAt(fxHourly, t - H) ?? fx!.rate) : px)
   const closeBar = ns.stage === 'after' && ns.usClose ? candleAt(tonight, ns.usClose - H) : undefined
-  const usCloseKrw = closeBar ? (asset.fx ? closeBar.c * fx!.rate : closeBar.c) : null
+  const usCloseKrw = closeBar ? krwAt(closeBar.c, ns.usClose!) : null
   const typicalNightUsd = recentNights.length ? recentNights[recentNights.length >> 1] : 0
 
   // While the domestic market trades: Hyperliquid at today's 08:00 open (after the US close), to compare with the live price
@@ -334,7 +338,7 @@ export async function predictOpen(asset: Asset) {
   if (inSession) {
     const at = now - ((now + 9 * H) % (24 * H)) + 8 * H
     const bar = candleAt(await getPerpHourlySince(asset.perp, at - 2 * H), at - H)
-    if (bar) preOpen = { at, krw: Math.round((asset.fx ? bar.c * fx!.rate : bar.c) * 100) / 100 }
+    if (bar) preOpen = { at, krw: Math.round(krwAt(bar.c, at) * 100) / 100 }
   }
 
   const bucket = (lo: number, hi: number) => normCdf((hi - mu) / sigma) - normCdf((lo - mu) / sigma)
