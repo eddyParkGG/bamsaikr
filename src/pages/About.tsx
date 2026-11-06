@@ -46,7 +46,7 @@ export default function About() {
         <div className="calc">
           <p className="calc__title">예시 · 11월 4일 SK하이닉스</p>
           <Fact k="어제 저녁 8시 국내 가격">1,414,000원</Fact>
-          <Fact k="아침 8시 하이퍼리퀴드 가격">1,461,621원 (밤사이 +3.37%)</Fact>
+          <Fact k="아침 8시 직전 하이퍼리퀴드 가격">1,461,621원 (밤사이 +3.37%)</Fact>
           <Fact k="보통 이 안에서 시작">1,428,000원 ~ 1,477,200원</Fact>
           <Fact k="실제 시작 가격">
             <b>1,451,776원 (+2.67%)</b> · 하이퍼리퀴드 방향대로 열렸고, 범위 안이었어요
@@ -58,7 +58,7 @@ export default function About() {
               .filter((p) => p.backtest.liquidScored >= 30)
               .map((p) => `${p.name}는 100번 중 ${Math.round(p.backtest.liquidRatePct ?? 0)}번`)
               .join(', ')}{' '}
-            아침 8시 하이퍼리퀴드가 움직인 방향대로 시작했어요.
+            아침 8시 직전 하이퍼리퀴드가 움직인 방향대로 시작했어요.
             <span className="faint"> (4월 13일부터, 하이퍼리퀴드 거래가 충분했던 밤 기준)</span>
           </Fact>
         )}
