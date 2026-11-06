@@ -9,7 +9,7 @@ import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, f
 import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
 import { predictionReady } from '../components/NextOpenState'
-import { ChartController, css, ct, MA_COLORS, STEP_MS, type Lookup } from './chartController'
+import { ChartController, css, ct, MA_COLORS, rightGapPx, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
 import type { Span } from './primitives'
 import type { ChartSettings, IndicatorParams } from './settings'
@@ -168,7 +168,13 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const lastT = Math.max(data.perp.at(-1)?.t ?? 0, data.krx.at(-1)?.t ?? 0)
       // Daily: the last year; intraday: about a session or two
       const spanMs = interval === '1d' ? 365 * 86400_000 : interval === '1h' ? 10 * 86400_000 : interval === '15m' ? 3 * 86400_000 : interval === '5m' ? 86400_000 : 8 * 3600_000
-      c.chart.timeScale().setVisibleRange({ from: ct(lastT - spanMs), to: ct(lastT) })
+      const ts = c.chart.timeScale()
+      ts.setVisibleRange({ from: ct(lastT - spanMs), to: ct(lastT) })
+      // setVisibleRange pins the last bar to the edge; push it left by the same gap the price tags need
+      const r = ts.getVisibleLogicalRange()
+      const w = ts.width()
+      const gap = rightGapPx(w)
+      if (r && w > gap) ts.setVisibleLogicalRange({ from: r.from, to: r.to + ((r.to - r.from) * gap) / (w - gap) })
     }
   }, [data, spans, news, events, prediction, ready, interval])
 
