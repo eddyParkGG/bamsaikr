@@ -20,6 +20,14 @@ const ENDPOINTS: [string, string, string][] = [
   ['GET', '/api/v1/account/perp?user=0x...', '하이퍼리퀴드 지갑의 포지션·미체결 (기본 테스트넷, 실제 포지션은 &network=mainnet)'],
 ]
 
+const MCP_TOOLS: [string, string, string][] = [
+  ['get_arbitrage', 'asset (선택)', '두 시장 가격 차이, 평소 차이, 비용 뺀 수익. 비우면 비교 가능한 4종 전체 (SMSN·SKHX·HYUNDAI·SKHY)'],
+  ['predict_open', 'asset', '다음 국내 개장 기준 밤사이 하이퍼리퀴드 가격, 미국장 단계, 이 시간대에 그 방향대로 열린 비율, 보통 시작 범위. 장중엔 개장 직전 가격(preOpen). 국내 주식 3종만'],
+  ['get_convergence_history', 'asset, limit', '지난 개장 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 실제 시작 움직임, 방향대로 열렸는지. 최근 20일(limit로 변경). 국내 주식 3종만'],
+  ['get_news', 'asset', '날짜별 대표 이슈 (하루 1건)'],
+  ['preview_pair_order', 'asset, notionalKrw, direction', '시세차익 페어 주문 미리보기: 주식 수량과 하이퍼리퀴드 주문 내용. 실제 주문은 보내지 않아요 (하이퍼리퀴드는 테스트넷 가격 기준)'],
+]
+
 function Copy({ text, label, onCopy }: { text: string; label: string; onCopy?: () => void }) {
   const [done, setDone] = useState(false)
   return (
@@ -55,9 +63,25 @@ export default function Developers() {
         </div>
         <p className="muted" style={{ fontSize: 13 }}>Claude, Cursor 같은 에이전트 설정에 넣으면 아래 도구를 바로 쓸 수 있어요.</p>
         <pre className="code">{mcpJson}</pre>
-        <p className="faint" style={{ fontSize: 13, margin: 0 }}>
-          도구: get_arbitrage · predict_open · get_convergence_history · get_news · preview_pair_order
-        </p>
+        <div className="table-wrap">
+          <table className="table">
+            <tbody>
+              {MCP_TOOLS.map(([name, args, desc]) => (
+                <tr key={name}>
+                  <td style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13, textAlign: 'left' }}>
+                    {name}
+                    <span className="faint" style={{ display: 'block', fontSize: 12, fontWeight: 500 }}>
+                      {args}
+                    </span>
+                  </td>
+                  <td className="muted" style={{ textAlign: 'left', whiteSpace: 'normal', fontWeight: 500 }}>
+                    {desc}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="panel panel__body stack" style={{ marginTop: 16 }}>
