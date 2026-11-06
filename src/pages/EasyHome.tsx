@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { arbText } from '../lib/arb'
+import { arbText, depthNote } from '../lib/arb'
 import { predictionReady, ThinTag } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
@@ -116,7 +116,7 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
         )}
         {t.kind === 'go' && (
           <p className="easy-row__sub" data-fit>
-            1천만원 기준
+            {depthNote(s) ?? '1천만원 기준'}
           </p>
         )}
       </div>
