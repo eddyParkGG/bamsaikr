@@ -2632,6 +2632,9 @@ body {
   font-size: 13px;
   color: var(--text-2);
 }
+.stock-card__label--gap {
+  margin-top: 10px;
+}
 .stock-card__foot {
   margin-top: 6px;
   font-size: 12px;

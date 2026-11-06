@@ -75,12 +75,13 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
             )}
           </p>
           {s && p.preOpen && (
-            <p className="stock-card__sub num">
-              개장 전 {PERP_PLAIN} {fmtPrice(p.preOpen.krw)}원{' '}
-              <span className={tone(p.preOpen.krw / s.krx.prevClose - 1)}>{fmtPct((p.preOpen.krw / s.krx.prevClose - 1) * 100)}</span>
-            </p>
+            <>
+              <p className="stock-card__label stock-card__label--gap">미국장 닫힌 뒤 · 국내 개장 직전 {PERP_PLAIN}</p>
+              <p className="stock-card__sub num" data-fit>
+                {fmtPrice(p.preOpen.krw)}원 <span className={tone(p.preOpen.krw / s.krx.prevClose - 1)}>{fmtPct((p.preOpen.krw / s.krx.prevClose - 1) * 100)}</span>
+              </p>
+            </>
           )}
-          <p className="stock-card__foot">저녁 8시부터 밤사이 가격을 보여드려요</p>
         </>
       )}
     </Link>
