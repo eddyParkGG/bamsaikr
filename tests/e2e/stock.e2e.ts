@@ -77,7 +77,8 @@ test('stock detail: pan, zoom, interval, market toggle and a sub-pane', async ({
   // Sub-pane indicator: RSI adds a pane with its title
   const panes = (await view(page))!.panes
   await page.locator('.chart-tools').getByRole('button', { name: /지표/ }).click()
-  await page.getByRole('menuitemcheckbox', { name: /^RSI/ }).click()
+  // Click the label side: the row also holds an 'RSI 설정' gear button, which the row's center can land on
+  await page.getByRole('menuitemcheckbox', { name: /^RSI/ }).click({ position: { x: 12, y: 12 } })
   await expect.poll(async () => (await view(page))!.panes).toBe(panes + 1)
   await expect(page.locator('.pane-label', { hasText: 'RSI 14' })).toBeVisible()
 })
