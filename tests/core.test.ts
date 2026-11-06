@@ -112,13 +112,21 @@ describe('api usage events', () => {
 })
 
 describe('toss request queue', () => {
-  it('lets at most TOSS_PER_SEC calls through per second', async () => {
-    const { tossSlot, TOSS_PER_SEC } = await import('../server/sources/toss')
+  it('maps paths to Toss API groups', async () => {
+    const { tossGroup } = await import('../server/sources/toss')
+    expect(tossGroup('/api/v1/market-indicators/KOSPI/candles?interval=1m').name).toBe('indicator_chart')
+    expect(tossGroup('/api/v1/candles?symbol=005930').name).toBe('chart')
+    expect(tossGroup('/api/v1/prices?symbols=005930').name).toBe('market_data')
+    expect(tossGroup('/api/v1/market-calendar/KR').name).toBe('market_info')
+  })
+  it('lets at most perSec calls of a group through per second', async () => {
+    const { tossSlot } = await import('../server/sources/toss')
+    const g = { name: 'test', perSec: 5 }
     const start = Date.now()
     const done: number[] = []
-    await Promise.all(Array.from({ length: TOSS_PER_SEC + 3 }, () => tossSlot().then(() => done.push(Date.now() - start))))
+    await Promise.all(Array.from({ length: 7 }, () => tossSlot(g).then(() => done.push(Date.now() - start))))
     done.sort((a, b) => a - b)
-    expect(done[TOSS_PER_SEC - 1]).toBeLessThan(200)
-    expect(done[TOSS_PER_SEC]).toBeGreaterThanOrEqual(950)
+    expect(done[4]).toBeLessThan(200)
+    expect(done[5]).toBeGreaterThanOrEqual(950)
   })
 })
