@@ -103,7 +103,7 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
       <div>
         <p className="easy-row__name" data-fit>{a.name}</p>
         <p className="easy-row__sub" data-fit>
-          {s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff} · 평소 ${fmtPct(s.normalPremiumPct)}`}
+          {s.mode === 'gap' ? `종가보다 해외 가격이 ${diff}` : `해외 가격이 ${diff} · 보통은 ${fmtPct(Math.abs(s.normalPremiumPct), 2, false)} ${s.normalPremiumPct >= 0 ? '비싸요' : '싸요'}`}
         </p>
       </div>
       <div className="easy-row__right">
@@ -160,7 +160,7 @@ export default function EasyHome() {
 
 
       <div className="easy-section-title">
-        <h2>지금 시세차익 기회</h2>
+        <h2>해외 가격과 시세차익 기회</h2>
         <span className="faint" style={{ fontSize: 12 }}>
           수수료·세금·환전 비용 뺀 금액
         </span>
