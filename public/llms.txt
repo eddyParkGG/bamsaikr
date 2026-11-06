@@ -5,6 +5,10 @@ https://bamsai.kr
 > 국내 주식시장이 닫힌 밤과 주말에도 하이퍼리퀴드(trade.xyz HIP-3)에서 거래되는 한국 주식 무기한 선물 가격을 업비트 원/USDC로 환산해, 미국장 단계별로 과거에 국내 시장이 그 방향대로 열린 비율과 비용을 뺀 시세차익 기회를 함께 보여주는 웹앱이에요. 장 시작 가격은 사용자가 직접 가늠해요.
 > Bamsai shows Korean stocks' overnight and weekend prices from Hyperliquid perpetuals, converted to KRW with Upbit KRW-USDC, with how often past opens followed that price at the same stage of the US session, and the net spread after costs.
 
+## Who it's for
+- First: people who run their own trading bots with an LLM (any agent) on Korean stocks, including those who also trade the Hyperliquid Korean stock perps. The bot reads the numbers through the API or MCP
+- Then: everyday Korean stock investors who check the pre-open price on the web
+
 ## What it answers
 - "SK하이닉스 밤사이 해외에선 얼마나 움직였어?" — tonight's Hyperliquid price in KRW vs the domestic close, its price when the US session closed, how often past opens went that way at this stage of the night (before / during / after the US session), and the range the open usually lands in (80% band)
 - "지금 해외 가격이랑 국내 가격 차이로 남는 돈이 있나?" — how far the premium sits from its usual level (median of the last 5 trading days' regular session), and what that leaves after fees, tax, FX and funding
@@ -30,7 +34,7 @@ https://bamsai.kr
 - GET /api/v1/convergence?asset=SMSN — per-open history: Hyperliquid move vs actual re-open move, follow, overnight Hyperliquid volume (nightUsd, nightKrw at that night's rate)
 - GET /api/v1/series?asset=SKHX&interval=1h — overlaid candles (KRX + Hyperliquid in KRW), premium, funding, Hyperliquid listing time (listedAt)
 - GET /api/v1/perps — Hyperliquid state for every asset
-- MCP server: /api/mcp (Streamable HTTP, read-only tools + pair-order preview)
+- MCP server: /api/mcp (Streamable HTTP, read-only tools + pair-order preview). Listed on the official MCP Registry as io.github.eddyParkGG/bamsai and on Glama as kr.bamsai/bamsai
 - Orders: bamsai.kr only returns previews (dryRun). Live orders need a self-hosted copy with the owner's own Toss Securities / Hyperliquid keys
 
 ## Pages
@@ -40,4 +44,5 @@ https://bamsai.kr
 - [API](/developers): REST, OpenAPI and MCP usage
 
 ## Notes
+- Hyperliquid prices are tied to the trade.xyz oracle. Right after the domestic open (08:00 KST), a single thin print can move the perp and trigger liquidations (2026-07-28: one SK hynix pre-market share at the limit-down price → perp −17.9%). Spreads are still computed from the actual order book.
 - Reference information, not investment advice. Hyperliquid products are not covered by Korean investor protection.
