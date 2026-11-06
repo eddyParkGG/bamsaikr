@@ -32,14 +32,38 @@ export function tossToken(): Promise<string> {
   })
 }
 
-async function call<T>(path: string, init: RequestInit & { account?: boolean } = {}, retry = 2): Promise<T> {
+/**
+ * One queue for every Toss REST call. Toss caps request rates (the chart API at 20/sec); one page load fans out
+ * to quotes, charts, indices and flows at once, and several visitors stack up, so bursts went over the cap and
+ * came back empty. Keep the whole server under TOSS_PER_SEC
+ */
+export const TOSS_PER_SEC = 15
+let recent: number[] = []
+export async function tossSlot(now = () => Date.now()) {
+  for (;;) {
+    const t = now()
+    recent = recent.filter((s) => t - s < 1000)
+    if (recent.length < TOSS_PER_SEC) {
+      recent.push(t)
+      return
+    }
+    await new Promise((r) => setTimeout(r, 1000 - (t - recent[0]) + 5))
+  }
+}
+
+async function call<T>(path: string, init: RequestInit & { account?: boolean } = {}, retry = 3): Promise<T> {
   if (!tossEnabled()) throw new TossError(503, 'no-key', '증권사 API 키가 설정되지 않았어요')
   const token = await tossToken()
+  await tossSlot()
   const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   if (init.account) headers['X-Tossinvest-Account'] = String(await accountSeq())
   const res = await fetch(`${BASE}${path}`, { ...init, headers, signal: AbortSignal.timeout(8000) })
-  if (res.status === 429 && retry > 0) {
-    await new Promise((r) => setTimeout(r, Number(res.headers.get('Retry-After') ?? 1) * 1000))
+  // Toss reports the cap as HTTP 429 or as error code rate-limit-exceeded; peek without consuming the body
+  const limited = res.status === 429 || (res.status >= 400 && (await res.clone().text()).includes('rate-limit-exceeded'))
+  if (limited && retry > 0) {
+    console.log(JSON.stringify({ evt: 'toss_429', path: path.split('?')[0], retry }))
+    // Back off a little longer each time (1s, 2s, 3s) unless Toss says how long
+    await new Promise((r) => setTimeout(r, Number(res.headers.get('Retry-After') ?? 4 - retry) * 1000))
     return call(path, init, retry - 1)
   }
   const j = (await res.json()) as { result?: T; error?: { code: string; message: string } }
