@@ -16,7 +16,7 @@ export function arbKind(s: ArbSnapshot): ArbKind {
 }
 
 /** Lists and the bottom bar keep two cases only: money left after costs, or none */
-const NONE = '시세차익 기회가 없어요'
+const NONE = '아직 시세차익 기회가 없어요'
 
 const p2 = (v: number) => fmtPct(Math.abs(v), 2, false)
 
