@@ -4,7 +4,6 @@
 **① 밤사이 해외 가격과, 과거에 국내 시장이 그 방향대로 열린 비율**, **② 지금 두 시장 사이 시세차익 기회가 있는지** 알려주는 서비스. 장 시작 가격은 사용자가 직접 가늠함
 
 - 웹앱: **https://bamsai.kr**
-- GitHub: https://github.com/eddyParkGG/bamsaikr
 - API 문서: [bamsai.kr/api/openapi.json](https://bamsai.kr/api/openapi.json) · MCP: `https://bamsai.kr/api/mcp` · 화면 안내: [bamsai.kr/developers](https://bamsai.kr/developers)
 - 제출용 1~2장 요약 PRD: [docs/prd-submission.md](docs/prd-submission.md)
 
