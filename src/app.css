@@ -743,15 +743,17 @@ body.is-resizing * {
 }
 .table th {
   text-align: right;
-  font-weight: 500;
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 20px;
   color: var(--text-3);
-  padding: 10px 12px;
+  padding: 8px 12px;
   white-space: nowrap;
 }
 .table td {
   text-align: right;
-  padding: 11px 12px;
+  padding: 9px 12px;
+  line-height: 20px;
   border-top: 1px solid var(--line);
   white-space: nowrap;
   font-weight: 600;
@@ -1723,47 +1725,43 @@ body.is-resizing * {
   background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--line);
 }
-.fbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px 16px 12px;
+/* Column-header buttons (Toss screener): the label is the button, a fill on hover, key tint when a filter is on */
+.th-btn {
+  padding: 4px 4px !important;
 }
-.fchip-wrap {
-  position: relative;
-}
-.fchip {
+.thbtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   height: 28px;
   padding: 4px 8px;
   border-radius: 7px;
-  background: rgba(214, 224, 239, 0.09);
-  box-shadow: inset 0 0 0 0.5px rgba(209, 209, 253, 0.05);
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(242, 246, 255, 0.9);
+  font: inherit;
+  color: inherit;
   white-space: nowrap;
+  transition: background-color 0.1s;
 }
-.fchip svg {
-  color: rgba(217, 223, 235, 0.8);
+.thbtn:hover,
+.thbtn[aria-expanded='true'] {
+  background: var(--fill);
+  color: var(--text-2);
 }
-.fchip--on,
-.fchip--on svg {
+.thbtn svg {
+  opacity: 0.7;
+}
+.thbtn--on,
+.thbtn--on:hover {
   background: rgba(67, 122, 223, 0.2);
   color: #4391ff;
 }
-:root[data-theme='light'] .fchip {
-  background: var(--fill);
-  color: var(--text);
-}
-:root[data-theme='light'] .fchip--on {
+:root[data-theme='light'] .thbtn--on {
   background: #e8f3ff;
   color: #3182f6;
 }
 .fpop {
   position: absolute;
+  text-align: left;
+  font-weight: 400;
   top: calc(100% + 6px);
   left: 0;
   z-index: 30;
@@ -2114,8 +2112,7 @@ button.ob2__px:active::after {
 
 /* Investor flows: won amount under the share count, same sign colour but lighter */
 .flow-won {
-  display: block;
-  margin-top: 2px;
+  margin-left: 6px;
   font-size: 12px;
   font-weight: 500;
   opacity: 0.6;

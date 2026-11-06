@@ -182,15 +182,16 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
 })
 
 /** Brokerage-style filter chip: opens a popover with options, applies on 보기 */
+/** Column-header filter: the header label is the button (Toss screener style); the popup is fixed so the scrolling table can't clip it */
 function FilterChip({ label, options, value, onApply }: { label: string; options: [string, string][]; value: string; onApply: (v: string) => void }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState<{ top: number; left: number } | null>(null)
   const [draft, setDraft] = useState(value)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
     setDraft(value)
-    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(null)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null)
     document.addEventListener('mousedown', close)
     window.addEventListener('keydown', esc)
     return () => {
@@ -201,12 +202,20 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
   const current = options.find(([v]) => v === value)?.[1]
   return (
     <div className="fchip-wrap" ref={ref}>
-      <button className={`fchip ${value ? 'fchip--on' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button
+        className={`thbtn ${value ? 'thbtn--on' : ''}`}
+        aria-expanded={!!open}
+        onClick={(e) => {
+          if (open) return setOpen(null)
+          const r = e.currentTarget.getBoundingClientRect()
+          setOpen({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left, window.innerWidth - 328)) })
+        }}
+      >
         {current ? `${label} · ${current}` : label}
         <Chevron />
       </button>
       {open && (
-        <div className="fpop" role="dialog" aria-label={label}>
+        <div className="fpop" role="dialog" aria-label={label} style={{ position: 'fixed', top: open.top, left: open.left }}>
           <p className="fpop__title">{label}</p>
           <div className="fpop__list" role="radiogroup">
             {options.map(([v, l]) => (
@@ -224,7 +233,7 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
               disabled={draft === value}
               onClick={() => {
                 onApply(draft)
-                setOpen(false)
+                setOpen(null)
               }}
             >
               보기
@@ -291,13 +300,12 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
   const thin = q.data.backtest.thinUsd
   const scored = rows.filter((e) => e.follow !== 'flat')
   const followPct = scored.length ? Math.round((scored.filter((e) => e.follow === 'yes').length / scored.length) * 100) : null
+  const head = (key: keyof Filters) => {
+    const x = FILTERS.find((y) => y.key === key)!
+    return <FilterChip label={x.label} options={x.options} value={f[key]} onApply={(v) => setF({ ...f, [key]: v })} />
+  }
   return (
     <>
-      <div className="fbar">
-        {FILTERS.map((x) => (
-          <FilterChip key={x.key} label={x.label} options={x.options} value={f[x.key]} onApply={(v) => setF({ ...f, [x.key]: v })} />
-        ))}
-      </div>
       <div className="table-wrap" style={{ padding: '0 4px 8px' }}>
         <table className="table num">
           <thead>
@@ -305,15 +313,19 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
               <th>
                 개장일 · {rows.length}개{followPct != null && ` · 방향대로 ${followPct}%`}
               </th>
-              <th>닫혀 있던 시간</th>
-              <th>하이퍼리퀴드 차이</th>
-              <th>실제 시작 차이</th>
+              <th className="th-btn">{head('regime')}</th>
+              <th className="th-btn">{head('gap')}</th>
+              <th className="th-btn">{head('open')}</th>
               <th title="저녁 8시~아침 8시 하이퍼리퀴드 거래대금(원화 환산). 100만 달러(약 13억 원)보다 적으면 덜 믿을 만해요">밤사이 거래</th>
-              <th className="th-key" title="밤사이 하이퍼리퀴드가 오르거나 내린 방향대로 아침 8시 국내 시장이 시작했는지예요">
-                하이퍼리퀴드 방향대로
+              <th className="th-btn th-key" title="밤사이 하이퍼리퀴드가 오르거나 내린 방향대로 아침 8시 국내 시장이 시작했는지예요">
+                {head('follow')}
               </th>
-              <th title="실제 차이 ÷ 하이퍼리퀴드 차이예요. 100%면 하이퍼리퀴드가 보여준 그대로 시작한 거예요">따라간 정도</th>
-              <th title="아침 8시~9시 동안 두 가격이 어디서 만났는지예요">만난 지점</th>
+              <th className="th-btn" title="실제 차이 ÷ 하이퍼리퀴드 차이예요. 100%면 하이퍼리퀴드가 보여준 그대로 시작한 거예요">
+                {head('absorb')}
+              </th>
+              <th className="th-btn" title="아침 8시~9시 동안 두 가격이 어디서 만났는지예요">
+                {head('meet')}
+              </th>
             </tr>
           </thead>
           <tbody>
