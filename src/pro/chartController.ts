@@ -141,18 +141,20 @@ export class ChartController {
     // anything keeps the user's zoom and scroll exactly as they left it.
     this.axis = this.chart.addSeries(LineSeries, { visible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null }, 0)
     this.sync(settings, params)
-    this.resize = new ResizeObserver(() => this.chart.applyOptions({ timeScale: { rightOffsetPixels: rightGapPx(el.clientWidth) } }))
+    // Next frame: changing the chart inside the observer callback would trigger another resize in the same frame
+    this.resize = new ResizeObserver(() => requestAnimationFrame(() => this.resize && this.chart.applyOptions({ timeScale: { rightOffsetPixels: rightGapPx(el.clientWidth) } })))
     this.resize.observe(el)
   }
 
   private axis: ISeriesApi<'Line'>
-  private resize: ResizeObserver
+  private resize: ResizeObserver | null
   /** Logical index of the latest real bar on the axis (-1 before the first data) */
   private lastIdx = -1
   private axisTimes: number[] = []
 
   destroy() {
-    this.resize.disconnect()
+    this.resize?.disconnect()
+    this.resize = null
     this.chart.remove()
   }
 
