@@ -83,13 +83,13 @@ describe('night stage before the next open (US session in KST, DST-aware)', () =
     expect(nightStage(fri8, kst('2026-11-05T21:00')).stage).toBe('before')
     expect(nightStage(fri8, kst('2026-11-06T01:00')).stage).toBe('during')
     expect(nightStage(fri8, kst('2026-11-06T06:30')).stage).toBe('after')
-    expect(nightStage(fri8, kst('2026-11-05T21:00')).when).toBe('새벽 6시 이후가 가장 정확해요')
+    expect(nightStage(fri8, kst('2026-11-05T21:00')).when).toBe('미국장이 닫히는 새벽 6시 이후가 가장 정확해요')
   })
   it('daylight saving: US open 22:30, close 05:00 KST', () => {
     const thu8 = kst('2026-10-15T08:00')
     expect(nightStage(thu8, kst('2026-10-14T22:45')).stage).toBe('during')
     expect(nightStage(thu8, kst('2026-10-15T05:30')).stage).toBe('after')
-    expect(nightStage(thu8, kst('2026-10-14T21:00')).when).toBe('새벽 5시 이후가 가장 정확해요')
+    expect(nightStage(thu8, kst('2026-10-14T21:00')).when).toBe('미국장이 닫히는 새벽 5시 이후가 가장 정확해요')
   })
   it('weekend: Friday night session still ahead, then settled until Monday', () => {
     const mon8 = kst('2026-11-09T08:00')
