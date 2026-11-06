@@ -2690,11 +2690,18 @@ body {
   z-index: 3;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-2);
   pointer-events: auto;
+}
+.pane-label .help {
+  margin-left: 2px;
+}
+.pane-label .help svg {
+  width: 12px;
+  height: 12px;
 }
 /* Near the chart's left edge: open the tooltip to the right instead of centring it */
 .pane-label .help__tip {
