@@ -33,36 +33,65 @@ export function tossToken(): Promise<string> {
 }
 
 /**
- * One queue for every Toss REST call. Toss caps request rates (the chart API at 20/sec); one page load fans out
- * to quotes, charts, indices and flows at once, and several visitors stack up, so bursts went over the cap and
- * came back empty. Toss caps each API group at roughly 1–10/sec (lower around 09:00 KST), and the chart API still
- * hit 429 at 15/sec, so keep the whole server under TOSS_PER_SEC
+ * Toss caps request rates per API group (published table, 2026-08: chart 20/s, quotes 15/s, index candles 5/s,
+ * calendar 3/s, ...). One page load fans out to quotes, charts, indices and flows at once and visitors stack up,
+ * so bursts went over and came back empty. Each group gets its own queue, set below the published cap
  */
-export const TOSS_PER_SEC = 8
-let recent: number[] = []
-export async function tossSlot(now = () => Date.now()) {
+const GROUPS: [RegExp, string, number][] = [
+  [/^\/api\/v1\/market-indicators\/[^/]+\/candles/, 'indicator_chart', 4],
+  [/^\/api\/v1\/market-indicators/, 'indicator', 8],
+  [/^\/api\/v1\/candles/, 'chart', 15],
+  [/^\/api\/v1\/(prices|orderbook)/, 'market_data', 12],
+  [/^\/api\/v1\/stocks\/[^/]+\/investor/, 'trading_trend', 8],
+  [/^\/api\/v1\/market-calendar/, 'market_info', 2],
+  [/^\/api\/v1\/accounts/, 'account', 1],
+  [/^\/api\/v1\/orders/, 'order', 8],
+]
+export function tossGroup(path: string): { name: string; perSec: number } {
+  const g = GROUPS.find(([re]) => re.test(path))
+  return g ? { name: g[1], perSec: g[2] } : { name: 'other', perSec: 4 }
+}
+
+const recent = new Map<string, number[]>()
+export async function tossSlot(group: { name: string; perSec: number }, now = () => Date.now()) {
   for (;;) {
     const t = now()
-    recent = recent.filter((s) => t - s < 1000)
-    if (recent.length < TOSS_PER_SEC) {
-      recent.push(t)
+    const list = (recent.get(group.name) ?? []).filter((s) => t - s < 1000)
+    recent.set(group.name, list)
+    if (list.length < group.perSec) {
+      list.push(t)
       return
     }
-    await new Promise((r) => setTimeout(r, 1000 - (t - recent[0]) + 5))
+    await new Promise((r) => setTimeout(r, 1000 - (t - list[0]) + 5))
   }
 }
+
+// Per-minute tally in the logs: calls and rate-limit hits per group, to tune the caps above against reality
+const tally = new Map<string, { calls: number; limited: number }>()
+const bump = (g: string, k: 'calls' | 'limited') => {
+  const v = tally.get(g) ?? { calls: 0, limited: 0 }
+  v[k]++
+  tally.set(g, v)
+}
+setInterval(() => {
+  if (!tally.size) return
+  console.log(JSON.stringify({ evt: 'toss_minute', groups: Object.fromEntries(tally) }))
+  tally.clear()
+}, 60_000).unref?.()
 
 async function call<T>(path: string, init: RequestInit & { account?: boolean } = {}, retry = 3): Promise<T> {
   if (!tossEnabled()) throw new TossError(503, 'no-key', '증권사 API 키가 설정되지 않았어요')
   const token = await tossToken()
-  await tossSlot()
+  const group = tossGroup(path)
+  await tossSlot(group)
+  bump(group.name, 'calls')
   const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
   if (init.account) headers['X-Tossinvest-Account'] = String(await accountSeq())
   const res = await fetch(`${BASE}${path}`, { ...init, headers, signal: AbortSignal.timeout(8000) })
   // Toss reports the cap as HTTP 429 or as error code rate-limit-exceeded; peek without consuming the body
   const limited = res.status === 429 || (res.status >= 400 && (await res.clone().text()).includes('rate-limit-exceeded'))
   if (limited && retry > 0) {
-    console.log(JSON.stringify({ evt: 'toss_429', path: path.split('?')[0], retry }))
+    bump(group.name, 'limited')
     // Back off a little longer each time (1s, 2s, 3s) unless Toss says how long
     await new Promise((r) => setTimeout(r, Number(res.headers.get('Retry-After') ?? 4 - retry) * 1000))
     return call(path, init, retry - 1)
