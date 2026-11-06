@@ -45,7 +45,7 @@ export function pageMeta(path: string): PageMeta {
       h1: '밤사이 API · MCP',
       body: [
         'REST API(/api/v1)로 두 시장 가격 차이, 밤사이 하이퍼리퀴드 가격과 미국장 단계별 적중률, 지난 개장 기록, 차트용 캔들, 호가, 뉴스, 투자자 동향을 조회할 수 있어요. OpenAPI 문서는 /api/openapi.json에 있어요.',
-        'MCP 서버(/api/mcp)는 Claude, Cursor 같은 AI 에이전트에서 get_arbitrage, predict_open, get_convergence_history, get_news, preview_pair_order 도구로 바로 쓸 수 있어요.',
+        '자동매매 봇·AI 에이전트가 붙여 쓰는 MCP 서버(/api/mcp)는 Claude, ChatGPT, Cursor 같은 에이전트에서 get_arbitrage, predict_open, get_convergence_history, get_news, preview_pair_order 도구로 바로 쓸 수 있어요.',
         'bamsai.kr은 실제 주문을 보내지 않고 미리보기만 돌려줘요.',
       ],
     }
