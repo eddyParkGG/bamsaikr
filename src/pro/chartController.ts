@@ -153,6 +153,29 @@ export class ChartController {
   private lastIdx = -1
   private axisTimes: number[] = []
 
+  /**
+   * A live tick opened a new bar (between data refreshes). Do what setInput does for a refresh: move the view along
+   * when the latest bar is on screen, and stretch the session background over the new bar. Without this, live bars
+   * filled the empty space on the right (the axis already holds future time points) and ran past the background
+   */
+  followLive(t: number, kind: Span['kind']) {
+    if (!this.input || this.lastIdx < 0) return
+    const time = ct(t) as number
+    if (time <= this.axisTimes[this.lastIdx]) return
+    const idx = this.axisTimes.indexOf(time)
+    if (idx > this.lastIdx) {
+      const ts = this.chart.timeScale()
+      const view = ts.getVisibleLogicalRange()
+      if (view && view.to >= this.lastIdx) ts.setVisibleLogicalRange({ from: view.from + idx - this.lastIdx, to: view.to + idx - this.lastIdx })
+      this.lastIdx = idx
+    }
+    const spans = this.input.spans
+    const last = spans[spans.length - 1]
+    if (last && last.kind === kind) last.to = time
+    else spans.push({ from: time, to: time, kind })
+    this.decorate()
+  }
+
   /** Every sub-pane on screen and its top (px from the chart's top), for HTML titles laid over them */
   subPaneTops(): { pane: SubPane; top: number }[] {
     const root = this.chart.chartElement().getBoundingClientRect().top
