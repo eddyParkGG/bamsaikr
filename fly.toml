@@ -11,6 +11,16 @@ primary_region = "nrt"
   auto_start_machines = true
   min_machines_running = 1
 
+# Liveness only (/api/health?live=1). Data freshness is in GET /api/health (503 when Hyperliquid or Upbit is stale
+# for 5 min, see docs/ops/runbook.md); it is not the Fly check because one unhealthy machine would drop all traffic.
+# The endpoint answers within ~3 s; the grace period covers boot. Checks only, nothing here adds machines
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "30s"
+  timeout = "5s"
+  method = "GET"
+  path = "/api/health?live=1"
+
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"

@@ -390,7 +390,7 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
         <div ref={arbEl} className="cnote cnote--arb" hidden>
           <span className="cnote__label">시세차익</span>
           <span>
-            1천만원이면 약 <b className="up">{fmtWon(Math.round(arb.net.netKrw))}원</b> 남아요
+            1천만원이면 약 <b className="up">{fmtWon(Math.round(arb.net.netKrw ?? arb.net.netKrwPer10m))}원</b> 남아요
           </span>
           <button className="cnote__btn cnote__btn--key" onClick={onArb}>
             시세차익 내기
