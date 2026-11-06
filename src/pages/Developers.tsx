@@ -78,10 +78,12 @@ export default function Developers() {
                   <td style={{ width: 56 }}>
                     <span className={`badge ${m === 'POST' ? 'badge--live' : ''}`}>{m}</span>
                   </td>
-                  <td className="num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13 }}>
+                  <td className="num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13, textAlign: 'left' }}>
                     {path}
                   </td>
-                  <td className="muted">{desc}</td>
+                  <td className="muted" style={{ textAlign: 'left', whiteSpace: 'normal', fontWeight: 500 }}>
+                    {desc}
+                  </td>
                 </tr>
               ))}
             </tbody>
