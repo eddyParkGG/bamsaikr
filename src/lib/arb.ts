@@ -28,7 +28,7 @@ export function depthNote(s: ArbSnapshot) {
 /** Full sentence for the chart note; `short` for list rows and the bottom bar */
 export function arbText(s: ArbSnapshot) {
   const k = arbKind(s)
-  const won = fmtWon(Math.round(s.net.netKrw))
+  const won = fmtWon(Math.round(s.net.netKrw ?? s.net.netKrwPer10m))
   switch (k) {
     case 'gap':
       return { kind: k, text: '시세차익 계산은 국장 중에만 가능해요 · 국장이 닫혀 있으면 국내 주식을 사고팔 수 없어요', short: '시세차익 계산은 국장 중에만 가능해요' }
