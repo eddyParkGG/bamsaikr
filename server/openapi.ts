@@ -11,7 +11,7 @@ export const openapi = {
     title: '밤사이 API',
     version: '1.0.0',
     description:
-      'Compares Hyperliquid Korean stock perps with KRX quotes to report the premium (arbitrage) and the next opening price. All prices are in KRW (perps converted via Upbit KRW/USDC). Orders default to dryRun; live orders require a Bearer token.',
+      'Compares Hyperliquid Korean stock perps with KRX quotes to report the premium (arbitrage) and the next opening price. All prices are in KRW (perps converted via Upbit KRW/USDC). Orders default to dryRun. This public server (bamsai.kr) never places live orders; live orders work only on a self-hosted copy with the owner’s own keys (domestic: Toss Securities Open API only) and a Bearer token.',
   },
   servers: [{ url: '/api' }],
   components: { securitySchemes: { bearer: { type: 'http', scheme: 'bearer' } } },
@@ -60,7 +60,7 @@ export const openapi = {
     '/v1/orders/krx': {
       post: {
         operationId: 'orderKrx',
-        summary: 'Domestic stock order (KIS). dryRun defaults to true',
+        summary: 'Domestic stock order via Toss Securities Open API. dryRun defaults to true; live only on a self-hosted server with TOSS_LIVE_ORDERS=1',
         parameters: [asset],
         security: auth,
         requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['side', 'qty'], properties: { side: { enum: ['buy', 'sell'] }, qty: { type: 'integer' }, price: { type: 'number', description: 'Market order if omitted' }, exchange: { enum: ['KRX', 'NXT', 'SOR'] }, dryRun: { type: 'boolean', default: true } } } } } },
@@ -70,7 +70,7 @@ export const openapi = {
     '/v1/orders/perp': {
       post: {
         operationId: 'orderPerp',
-        summary: 'Hyperliquid perp order (server agent wallet). dryRun defaults to true, testnet by default',
+        summary: "Hyperliquid perp order signed by the server owner's agent wallet. dryRun defaults to true, testnet by default; live only on a self-hosted server",
         parameters: [asset],
         security: auth,
         requestBody: { content: { 'application/json': { schema: { type: 'object', required: ['side', 'size'], properties: { side: { enum: ['buy', 'sell'] }, size: { type: 'number', description: 'Contracts (1 = 1 share)' }, price: { type: 'number', description: 'IOC market order if omitted' }, leverage: { type: 'integer' }, reduceOnly: { type: 'boolean' }, network: { enum: ['testnet', 'mainnet'], default: 'testnet' }, dryRun: { type: 'boolean', default: true } } } } } },
