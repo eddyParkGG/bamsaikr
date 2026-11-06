@@ -50,7 +50,7 @@ export default function Developers() {
   const curl = `curl "${origin}/api/v1/predict?asset=SKHX"`
   return (
     <div style={{ maxWidth: 960, padding: '20px 0 40px' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: '8px 0 8px' }}>에이전트에 붙여 쓰는 API</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: '8px 0 8px' }}>자동매매 봇·AI 에이전트에 붙여 쓰는 API</h1>
       <p className="muted" style={{ margin: '0 0 32px', fontSize: 16 }}>
         화면에서 보는 숫자는 전부 같은 API에서 나와요. 키 없이 조회할 수 있고, 주문은 기본이 미리보기예요.
       </p>
@@ -61,7 +61,7 @@ export default function Developers() {
           <span className="spacer" />
           <Copy text={mcpJson} label="설정 복사" onCopy={() => track('mcp_copy')} />
         </div>
-        <p className="muted" style={{ fontSize: 13 }}>Claude, Cursor 같은 에이전트 설정에 넣으면 아래 도구를 바로 쓸 수 있어요.</p>
+        <p className="muted" style={{ fontSize: 13 }}>Claude, ChatGPT, Cursor 등 MCP를 지원하는 에이전트 설정에 넣으면 아래 도구를 바로 쓸 수 있어요. 공식 MCP Registry(io.github.eddyParkGG/bamsai)와 Glama에서도 찾을 수 있어요.</p>
         <pre className="code">{mcpJson}</pre>
         <div className="table-wrap">
           <table className="table">
@@ -135,6 +135,7 @@ export default function Developers() {
           <li>하이퍼리퀴드 주문은 기본이 테스트넷(연습용 네트워크)이에요. 실제 돈으로 거래하려면 network=mainnet을 넣어요.</li>
           <li>하이퍼리퀴드 주문은 출금 권한이 없는 지갑으로 서명해요. 키가 새어도 돈이 빠져나가지 않아요.</li>
           <li>MCP(AI 에이전트 연결)는 조회와 시세차익 페어 주문 미리보기만 돼요.</li>
+          <li>하이퍼리퀴드 가격은 trade.xyz 오라클에 묶여 있어요. 국내 개장 직후(08:00)처럼 국내 체결이 적을 때 체결 하나로 급변하고 청산이 날 수 있어요(2026-07-28 SK하이닉스 프리마켓 1주 하한가 → perp −17.9%). 봇은 08:00 직후 순간 가격 하나로 주문하지 않는 걸 권해요.</li>
           <li>조회는 키 없이 쓸 수 있어요. 대신 IP당 1분에 300번까지예요(REST와 MCP 합산). 넘으면 429 응답이 와요.</li>
         </ul>
       </section>
