@@ -91,10 +91,10 @@ function comparableOf(c: Context): Asset {
 /**
  * Live order authorization
  * - Domestic (Toss Securities) has no paper trading, so only when the server owner sets TOSS_LIVE_ORDERS=1 (orders.ts)
- * - Orders from the same-site UI need no token; external (agent) calls require API_TOKEN
+ * - Every live order, cancel and account read requires API_TOKEN, including requests that look same-site:
+ *   the sec-fetch-site header can be set by any client, so it must not unlock a real account
  * - Hyperliquid mainnet always requires the token; testnet is open
  */
-const isExternal = (c: Context) => c.req.header('sec-fetch-site') !== 'same-origin'
 function requireToken(c: Context) {
   const token = process.env.API_TOKEN
   if (!token) throw new OrderError(403, '이 서버는 실주문을 받지 않아요 (API_TOKEN 미설정). dryRun 으로 확인해 주세요')
@@ -239,17 +239,17 @@ v1.get('/stream/krx', async (c) => {
 v1.post('/orders/krx', async (c) => {
   const body = await c.req.json()
   const asset = assetOf(c)
-  if (body.dryRun === false && isExternal(c)) requireToken(c)
+  if (body.dryRun === false) requireToken(c)
   return c.json(await placeKrxOrder(asset, body))
 })
 
 v1.delete('/orders/krx/:orderId', async (c) => {
-  if (isExternal(c)) requireToken(c)
+  requireToken(c)
   return c.json(await cancelKrxOrder(c.req.param('orderId')))
 })
 
 v1.get('/account/krx', async (c) => {
-  if (isExternal(c)) requireToken(c)
+  requireToken(c)
   return c.json(await krxAccount())
 })
 
@@ -271,7 +271,7 @@ v1.get('/account/perp', async (c) => {
 
 v1.post('/orders/pair', async (c) => {
   const body = await c.req.json()
-  if (body.dryRun === false && (isExternal(c) || body.network === 'mainnet')) requireToken(c)
+  if (body.dryRun === false) requireToken(c)
   return c.json(await placePairOrder(assetOf(c), body))
 })
 
