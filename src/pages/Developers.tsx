@@ -5,7 +5,7 @@ const origin = typeof location !== 'undefined' ? location.origin : ''
 
 const ENDPOINTS: [string, string, string][] = [
   ['GET', '/api/v1/arb', '두 시장 가격 차이, 평소 차이, 비용 뺀 수익 (전체 또는 ?asset=)'],
-  ['GET', '/api/v1/predict?asset=SMSN', '밤사이 하이퍼리퀴드 가격(원화)과 국내 마지막 가격 대비 %, 미국장 마감 때 가격, 지금 시간대에 국내 시장이 그 방향대로 열린 비율(night.follow), 보통 시작하는 범위, 방향 적중률'],
+  ['GET', '/api/v1/predict?asset=SMSN', '국내 주식 3종만. 밤사이 하이퍼리퀴드 가격(원화)과 국내 마지막 가격 대비 %, 미국장 마감 때 가격, 지금 시간대에 국내 시장이 그 방향대로 열린 비율(night.follow), 보통 시작하는 범위. 장중엔 오늘 개장 직전 하이퍼리퀴드 가격(preOpen)'],
   ['GET', '/api/v1/convergence?asset=SKHX', '지난 개장 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 아침 8시 국내 움직임, 방향대로 열렸는지'],
   ['GET', '/api/v1/perps', '하이퍼리퀴드 한국 상품 7개 시세·펀딩·미결제약정'],
   ['GET', '/api/v1/series?asset=SMSN&interval=5m', '차트용 캔들(두 시장), USDC 환율, 가격 차이, 펀딩비'],
@@ -17,7 +17,7 @@ const ENDPOINTS: [string, string, string][] = [
   ['POST', '/api/v1/orders/perp?asset=SMSN', '하이퍼리퀴드 주문 미리보기 (실주문은 직접 띄운 서버에서만, 기본 테스트넷)'],
   ['POST', '/api/v1/orders/pair?asset=SMSN', '시세차익 페어 주문 미리보기 (하이퍼리퀴드 + 주식 반대 방향)'],
   ['GET', '/api/v1/account/krx', '국내 계좌 잔고 (직접 띄운 서버에서 본인 계좌만)'],
-  ['GET', '/api/v1/account/perp?user=0x...', 'HL 포지션·미체결'],
+  ['GET', '/api/v1/account/perp?user=0x...', '하이퍼리퀴드 지갑의 포지션·미체결 (기본 테스트넷, 실제 포지션은 &network=mainnet)'],
 ]
 
 function Copy({ text, label, onCopy }: { text: string; label: string; onCopy?: () => void }) {
@@ -110,7 +110,8 @@ export default function Developers() {
           <li>직접 띄운 서버에서도 기본은 미리보기예요. 실제로 보내려면 dryRun=false와 Authorization: Bearer API_TOKEN 헤더가 필요해요.</li>
           <li>하이퍼리퀴드 주문은 기본이 테스트넷(연습용 네트워크)이에요. 실제 돈으로 거래하려면 network=mainnet을 넣어요.</li>
           <li>하이퍼리퀴드 주문은 출금 권한이 없는 지갑으로 서명해요. 키가 새어도 돈이 빠져나가지 않아요.</li>
-          <li>MCP(AI 에이전트 연결)는 조회와 주문 미리보기만 돼요.</li>
+          <li>MCP(AI 에이전트 연결)는 조회와 시세차익 페어 주문 미리보기만 돼요.</li>
+          <li>조회는 키 없이 쓸 수 있어요. 대신 IP당 1분에 300번까지예요(REST와 MCP 합산). 넘으면 429 응답이 와요.</li>
         </ul>
       </section>
     </div>
