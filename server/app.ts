@@ -106,7 +106,7 @@ function costFrom(c: Context): CostInput {
     const v = c.req.query(k)
     return v == null || v === '' || !Number.isFinite(+v) ? DEFAULT_COST[k] : +v
   }
-  return { stockFeeBps: q('stockFeeBps'), stockTaxBps: q('stockTaxBps'), perpFeeBps: q('perpFeeBps'), fxFeeBps: q('fxFeeBps'), leverage: q('leverage'), holdHours: q('holdHours') }
+  return { stockFeeBps: q('stockFeeBps'), stockTaxBps: q('stockTaxBps'), perpFeeBps: q('perpFeeBps'), fxFeeBps: q('fxFeeBps'), leverage: q('leverage'), holdHours: q('holdHours'), notionalKrw: q('notionalKrw'), lagSec: q('lagSec') }
 }
 
 const v1 = new Hono()
