@@ -2,7 +2,7 @@
 // Orders are error-prone, so MCP only offers dry-run
 import { Hono } from 'hono'
 import { ASSET_BY_ID, ASSETS, canPredict, hasKrx, isAssetId } from '../shared/assets.js'
-import { arbAll, arbSnapshot } from './services/arb.js'
+import { arbAll, arbSnapshot, DEFAULT_COST } from './services/arb.js'
 import { loadHistory, predictOpen } from './services/predict.js'
 import { newsMarkers } from './services/news.js'
 import { placePairOrder } from './services/orders.js'
@@ -28,9 +28,17 @@ function stockOf(id: string) {
 const TOOLS = [
   {
     name: 'get_arbitrage',
-    description: 'Premium between Hyperliquid perp and KRX price, its usual level (5-day regular-session median) and the net left after costs on the gap beyond that level. All assets if asset is omitted',
-    inputSchema: { type: 'object', properties: { asset: comparableProp } },
-    run: async (a: Record<string, string>) => (a.asset ? arbSnapshot(comparableOf(a.asset)) : arbAll()),
+    description:
+      'Premium between Hyperliquid perp (mid) and KRX price, its usual level (5-day regular-session median) and the net left after costs on the gap beyond that level. net.netPct subtracts fees, tax, FX, funding, order-book slippage for notionalKrw (net.costs.slippage, net.fills: volume-weighted fill prices per leg) and the price move during the gap between the two orders (net.costs.latency = 1-minute volatility × √(lagSec/60)). net.depthLimited / net.maxNotionalKrw: the visible book can fill less than notionalKrw. All assets if asset is omitted',
+    inputSchema: {
+      type: 'object',
+      properties: { asset: comparableProp, notionalKrw: { type: 'number', description: 'Trade size per leg in KRW (default 10000000)' }, lagSec: { type: 'number', description: 'Seconds between the two orders (default 3)' } },
+    },
+    run: async (a: Record<string, string>) => {
+      const num = (v: unknown, d: number) => (v == null || v === '' || !Number.isFinite(Number(v)) ? d : Number(v))
+      const cost = { ...DEFAULT_COST, notionalKrw: num(a.notionalKrw, DEFAULT_COST.notionalKrw), lagSec: num(a.lagSec, DEFAULT_COST.lagSec) }
+      return a.asset ? arbSnapshot(comparableOf(a.asset), cost) : arbAll(cost)
+    },
   },
   {
     name: 'predict_open',
@@ -58,7 +66,7 @@ const TOOLS = [
     description: 'Preview (dry-run) of an arbitrage pair order: stock quantity and the Hyperliquid order it would send. Nothing is ever sent from this server. Hyperliquid side is priced on testnet (the default network), so its price can differ from mainnet',
     inputSchema: {
       type: 'object',
-      properties: { asset: assetProp, notionalKrw: { type: 'number' }, direction: { type: 'string', enum: ['perp_short_stock_long', 'perp_long_stock_short'] } },
+      properties: { asset: assetProp, notionalKrw: { type: 'number', description: 'Trade size in KRW. get_arbitrage with the same notionalKrw shows the expected fill prices, slippage and net for this size' }, direction: { type: 'string', enum: ['perp_short_stock_long', 'perp_long_stock_short'] } },
       required: ['asset', 'notionalKrw', 'direction'],
     },
     run: async (a: Record<string, string>) =>

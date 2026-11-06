@@ -169,9 +169,11 @@ export async function tossCandles(code: string, interval: '1m' | '1d', since: nu
   const head = cached(`toss:candles:head:${code}:${interval}`, interval === '1d' ? 60_000 : 10_000, async () =>
     (await call<{ candles: RawCandle[] }>(`${base}&count=200`)).candles.map(mapCandle),
   )
+  // Await both together: awaiting one at a time leaves the other's rejection unhandled, which kills the process
+  const [fullBars, headBars] = await Promise.all([full, head])
   const byTime = new Map<number, TossCandle>()
-  for (const k of await full) byTime.set(k.t, k)
-  for (const k of await head) byTime.set(k.t, k)
+  for (const k of fullBars) byTime.set(k.t, k)
+  for (const k of headBars) byTime.set(k.t, k)
   return [...byTime.values()].filter((k) => k.t >= since - step).sort((a, b) => a.t - b.t)
 }
 
