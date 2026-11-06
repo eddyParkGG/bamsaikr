@@ -1,4 +1,5 @@
 import { cached, fetchJson } from '../lib/cache.js'
+import { markOk } from '../lib/health.js'
 
 const MAINNET = 'https://api.hyperliquid.xyz'
 const TESTNET = 'https://api.hyperliquid-testnet.xyz'
@@ -7,11 +8,13 @@ async function info<T>(body: object, testnet = false): Promise<T> {
   // Retry briefly: several cold history loads at once can hit the public rate limit
   for (let attempt = 0; ; attempt++) {
     try {
-      return await fetchJson<T>(`${testnet ? TESTNET : MAINNET}/info`, {
+      const r = await fetchJson<T>(`${testnet ? TESTNET : MAINNET}/info`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      if (!testnet) markOk('hyperliquid')
+      return r
     } catch (e) {
       if (attempt >= 3) throw e
       await new Promise((r) => setTimeout(r, 400 * 2 ** attempt))

@@ -2,6 +2,7 @@
 // REST: https://openapi.tossinvest.com  /  live: wss://openapi-ws.tossinvest.com/ws/v1
 // Callable only from servers on the allowed IP list
 import { cached, invalidate } from '../lib/cache.js'
+import { markOk } from '../lib/health.js'
 
 const BASE = 'https://openapi.tossinvest.com'
 
@@ -103,6 +104,7 @@ async function call<T>(path: string, init: RequestInit & { account?: boolean } =
     return call(path, init, 0)
   }
   if (!res.ok || j.error) throw new TossError(res.status, j.error?.code ?? String(res.status), j.error?.message ?? '증권사 API 오류')
+  markOk('toss')
   return j.result as T
 }
 
