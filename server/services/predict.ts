@@ -19,7 +19,7 @@ import { getPerpCtxs, getPerpHourlySince, type Candle } from '../sources/hyperli
 import { domesticDays, type DomesticDay } from '../sources/domesticDays.js'
 import { krxHolidays, krxQuote } from '../sources/krx.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
-import { nightStageAt, usSessions, type NightStage } from '../../shared/night.js'
+import { nightStageAt, type NightStage } from '../../shared/night.js'
 
 const H = 3600_000
 const LONG_GAP_HOURS = 20 // close-to-open over 20h is treated as weekend/holiday
@@ -329,12 +329,12 @@ export async function predictOpen(asset: Asset) {
   const usCloseKrw = closeBar ? (asset.fx ? closeBar.c * fx!.rate : closeBar.c) : null
   const typicalNightUsd = recentNights.length ? recentNights[recentNights.length >> 1] : 0
 
-  // While the domestic market trades: Hyperliquid at this morning's US close, to compare with the live domestic price
-  let lastUsClose: { at: number; krw: number } | null = null
+  // While the domestic market trades: Hyperliquid at today's 08:00 open (after the US close), to compare with the live price
+  let preOpen: { at: number; krw: number } | null = null
   if (inSession) {
-    const at = usSessions(now - 4 * 86400_000, now).filter((s) => s.close <= now).at(-1)?.close
-    const bar = at ? candleAt(await getPerpHourlySince(asset.perp, at - 2 * H), at - H) : undefined
-    if (at && bar) lastUsClose = { at, krw: Math.round((asset.fx ? bar.c * fx!.rate : bar.c) * 100) / 100 }
+    const at = now - ((now + 9 * H) % (24 * H)) + 8 * H
+    const bar = candleAt(await getPerpHourlySince(asset.perp, at - 2 * H), at - H)
+    if (bar) preOpen = { at, krw: Math.round((asset.fx ? bar.c * fx!.rate : bar.c) * 100) / 100 }
   }
 
   const bucket = (lo: number, hi: number) => normCdf((hi - mu) / sigma) - normCdf((lo - mu) / sigma)
@@ -376,7 +376,7 @@ export async function predictOpen(asset: Asset) {
       usClosePct: usCloseKrw ? r((usCloseKrw / refClose - 1) * 100) : null,
       follow: backtest.followByStage[regime][ns.stage],
     },
-    lastUsClose,
+    preOpen,
     lastEvent: last ?? null,
     updatedAt: now,
   }
