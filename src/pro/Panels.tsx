@@ -402,7 +402,7 @@ export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) 
       </p>
     )
   return (
-    <div className="table-wrap">
+    <div className="table-wrap" style={{ padding: '0 4px 8px' }}>
       <table className="table num">
         <thead>
           <tr>
