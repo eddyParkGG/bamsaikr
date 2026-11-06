@@ -5,7 +5,7 @@ import { subscribeKrx } from './sources/tossWs.js'
 import { regularSessions } from './sources/krxSessions.js'
 import { ASSET_BY_ID, ASSETS, canPredict, hasKrx, isAssetId, PREDICTABLE, type Asset } from '../shared/assets.js'
 import { nextDomesticOpen, nextRegularOpen, prevRegularClose, sessionAt } from '../shared/session.js'
-import { TossError, tossEnabled, tossInvestors } from './sources/toss.js'
+import { TossError, tossEnabled, tossInvestors, tossPrices } from './sources/toss.js'
 import { getPerpBook, getPerpCtxs } from './sources/hyperliquid.js'
 import { krxHolidays, krxOrderbook, krxSource } from './sources/krx.js'
 import { arbAll, arbSnapshot, DEFAULT_COST, type CostInput } from './services/arb.js'
@@ -29,6 +29,8 @@ import { mcp } from './mcp.js'
 import { compress } from 'hono/compress'
 import { clientIp, createLimiter } from './lib/rateLimit.js'
 import { sendApiCall } from './lib/gaEvents.js'
+import { lastOkAt, type Source } from './lib/health.js'
+import { getUsdcKrw } from './sources/upbit.js'
 
 export const app = new Hono().basePath('/api')
 
@@ -43,7 +45,7 @@ app.use('*', compress({ encoding: 'gzip', threshold: 0, contentTypeFilter: /^app
 const limiter = createLimiter()
 app.use('*', async (c, next) => {
   const peer = c.req.header('fly-client-ip')
-  if (peer && limiter.hit(clientIp(c.req.header('x-forwarded-for'), peer), peer)) {
+  if (peer && c.req.path !== '/api/health' && limiter.hit(clientIp(c.req.header('x-forwarded-for'), peer), peer)) {
     c.header('Retry-After', '60')
     return c.json({ error: '요청이 너무 많아요. 1분 뒤에 다시 시도해 주세요' }, 429)
   }
@@ -53,7 +55,7 @@ app.use('*', async (c, next) => {
 // For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in the server logs)
 app.use('*', async (c, next) => {
   await next()
-  if (c.req.header('sec-fetch-site') === 'same-origin') return
+  if (c.req.header('sec-fetch-site') === 'same-origin' || c.req.path === '/api/health') return
   const ua = c.req.header('user-agent')?.slice(0, 80)
   const mcpCall = c.res.headers.get('x-mcp-call')
   console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined }))
@@ -271,6 +273,29 @@ v1.post('/orders/pair', async (c) => {
   const body = await c.req.json()
   if (body.dryRun === false && (isExternal(c) || body.network === 'mainnet')) requireToken(c)
   return c.json(await placePairOrder(assetOf(c), body))
+})
+
+// Health for Fly's check and for people (docs/ops/runbook.md): when each upstream last answered successfully.
+// Probes go through the normal caches, so with traffic they cost nothing; without traffic they keep the timestamps
+// honest. Hyperliquid and Upbit are core (no KRW price without both): stale → 503. Toss only marks it degraded
+const HEALTH_STALE_MS = 5 * 60_000
+const HEALTH_CORE: Source[] = ['hyperliquid', 'upbit']
+app.get('/health', async (c) => {
+  // ?live=1 is the Fly check: answers whenever the process is up. With one machine, failing it on stale upstream data
+  // would take the whole API off the proxy, so data freshness is reported here but never used to pull traffic
+  if (c.req.query('live')) return c.json({ status: 'alive', uptimeSec: Math.round(process.uptime()) })
+  const probes = [getPerpCtxs(), getUsdcKrw(), tossEnabled() ? tossPrices([ASSET_BY_ID.SMSN.krxCode]) : null]
+  await Promise.race([Promise.allSettled(probes), new Promise((r) => setTimeout(r, 3000))])
+  const now = Date.now()
+  const source = (s: Source, enabled = true) => {
+    const at = lastOkAt(s)
+    return { core: HEALTH_CORE.includes(s), enabled, fresh: enabled && at != null && now - at < HEALTH_STALE_MS, lastOkAt: at, ageSec: at == null ? null : Math.round((now - at) / 1000) }
+  }
+  const sources = { hyperliquid: source('hyperliquid'), upbit: source('upbit'), toss: source('toss', tossEnabled()) }
+  const coreFresh = HEALTH_CORE.every((s) => sources[s as keyof typeof sources].fresh)
+  const ok = coreFresh && Object.values(sources).every((s) => s.fresh || !s.enabled)
+  c.header('Cache-Control', 'no-store')
+  return c.json({ status: ok ? 'ok' : 'degraded', coreFresh, now, uptimeSec: Math.round(process.uptime()), staleAfterSec: HEALTH_STALE_MS / 1000, sources }, coreFresh ? 200 : 503)
 })
 
 app.route('/v1', v1)
