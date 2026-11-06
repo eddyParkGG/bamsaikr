@@ -26,20 +26,25 @@ function Spark({ data, base, up, window: win }: { data: [number, number][]; base
   const y = (v: number) => 25 - ((v - min) / (max - min || 1)) * 22
   const pts = data.map(([t, v]) => [x(t), y(v)] as const)
   const line = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('')
-  const lastX = pts[pts.length - 1][0]
+  const [lastX, lastY] = pts[pts.length - 1]
   const color = up ? 'var(--up)' : 'var(--down)'
   return (
-    <svg width="48" height="28" viewBox="0 0 48 28" aria-hidden className="spark-mini">
-      <defs>
-        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor={color} stopOpacity="0.28" />
-          <stop offset="1" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <line x1="0" x2="48" y1={y(base)} y2={y(base)} stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="3" />
-      <path d={`${line}L${lastX.toFixed(1)},28L${pts[0][0].toFixed(1)},28Z`} fill={`url(#${id})`} />
-      <path d={line} fill="none" stroke={color} strokeWidth="1.4" strokeLinejoin="round" />
-    </svg>
+    <span className="spark-mini" aria-hidden>
+      <svg width="48" height="28" viewBox="0 0 48 28" style={{ overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor={color} stopOpacity="0.28" />
+            <stop offset="1" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <line x1="0" x2="48" y1={y(base)} y2={y(base)} stroke="var(--line-strong)" strokeWidth="1" strokeDasharray="3" />
+        <path d={`${line}L${lastX.toFixed(1)},28L${pts[0][0].toFixed(1)},28Z`} fill={`url(#${id})`} />
+        <path d={line} fill="none" stroke={color} strokeWidth="1.4" strokeLinejoin="round" />
+        <circle cx={lastX} cy={lastY} r="2" fill={color} />
+      </svg>
+      {/* Toss home pulse: a 4px dot on the last point that grows and fades */}
+      <span className="spark-pulse" style={{ background: color, left: lastX - 2, top: lastY - 2 }} />
+    </span>
   )
 }
 
