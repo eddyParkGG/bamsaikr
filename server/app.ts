@@ -26,11 +26,17 @@ import {
 } from './services/orders.js'
 import { openapi } from './openapi.js'
 import { mcp } from './mcp.js'
+import { compress } from 'hono/compress'
 import { clientIp, createLimiter } from './lib/rateLimit.js'
 
 export const app = new Hono().basePath('/api')
 
 app.use('*', cors())
+
+// Compress JSON ourselves (gzip, every size). Otherwise Fly's proxy compressed it with zstd when Vercel asked for zstd,
+// and Vercel's CDN served that cached zstd body to browsers that cannot read it (older iPhone Safari → blank screen).
+// JSON only: the live SSE stream must stay uncompressed
+app.use('*', compress({ encoding: 'gzip', threshold: 0, contentTypeFilter: /^application\/json/ }))
 
 // Bot/flood guard. Only on Fly (Fly-Client-IP is set by its proxy); local dev is never limited
 const limiter = createLimiter()
