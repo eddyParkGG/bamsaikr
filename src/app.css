@@ -2001,6 +2001,11 @@ button.ob2__px:active::after {
   font-size: 13px !important;
   color: var(--up) !important;
 }
+.launch__note {
+  margin-top: 8px;
+  font-size: 12px !important;
+  color: var(--text-3) !important;
+}
 .launch__icon {
   width: 52px;
   height: 52px;
