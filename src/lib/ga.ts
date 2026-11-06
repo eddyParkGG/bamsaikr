@@ -73,7 +73,7 @@ export type GaEvent =
   | 'news_open' // asset, date, kind
   | 'convergence_view'
   | 'order_submit' // order intent: orders are not live yet, a launch sign-up sheet opens
-  | 'launch_notify_signup' // email left for the order launch (not stored)
+  | 'launch_notify_signup' // order-launch sign-up count; the email itself goes to the Google Sheet, never to GA
   | 'api_docs_view'
   | 'mcp_copy'
 
