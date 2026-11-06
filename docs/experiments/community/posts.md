@@ -6,6 +6,7 @@ Plan and metrics: [H2](../H2-preopen-return.md). One row per post; read GA4 by `
 |---|---|---|---|---|---|---|
 | 2026-11-05 (Thu) ~21:15 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7334766&page=1) | A (forecast) | `smsn_thu_A` | 삼전 202,100 (+0.3%) up 56% · 하닉 1,263,400 (+0.1%) up 52% | [smsn-chart.png](smsn-chart.png) |
 | 2026-11-05 (Thu) 21:21 | DC 주식 갤러리 | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7334780&page=1) | B (fact) | `skhx_thu_B` (source tag `dc_skhynix`, see notes) | 하닉 −9.6% today; Hyperliquid +0.1% vs close 1,262,000 | [skhx-chart.png](skhx-chart.png) |
+| 2026-11-06 (Fri) 10:25 | DC 주식 갤러리 | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7335194&page=1) | Result (last night's forecast vs actual open) | `result_fri_A` | 21:00 삼전 +0.3% 하닉 +0.1% → HL 07:00 −9.5% / −8% → actual 08:00–08:10 −11.9% / −13.9% | none (text only) |
 | 2026-11-05 (Thu) ~21:30 | Naver 종목토론방 삼성전자 (`naver_jongto`) | [431708763](https://stock.naver.com/domestic/stock/005930/discussion/431708763) — **deleted within minutes** | A (forecast) | `smsn_thu_A` | (posted by the owner directly) | — |
 
 ## Notes
@@ -51,6 +52,9 @@ session_start 2, arb_view 1. Standard (non-realtime) GA reports were still empty
   JSON and stay on the skeleton. Checked 15 requests with an iPhone Safari profile: 10 came back zstd. Fix pending.
 - Forecast in the posts was a 21:00 snapshot; Hyperliquid kept falling overnight (SMSN 200,569 → 182,326 KRW by 07:00).
   Actual 08:00–08:10 VWAP: SMSN 177,495 (−11.9%), SKHX 1,086,809 (−13.9%). Direction right by the open, size larger.
+- 10:28 prices for comparison: SMSN 186,500 (−7.4% vs 201,500), SKHX 1,131,000 (−10.5% vs 1,264,000) — both rebounded from
+  the 08:00–08:10 low toward where Hyperliquid stood at 07:00.
+- DC shows its own outbound-link warning on these posts (`OutLink.renderOutLinkWarning`), one more step before the visit.
 - Decision: no conclusion on H2 (0 tracked visitors). Fix the compression bug, register GA custom dimensions, exclude the
   owner's IP, then repost.
 
