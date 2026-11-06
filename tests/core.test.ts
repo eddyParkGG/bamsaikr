@@ -110,3 +110,15 @@ describe('api usage events', () => {
     expect(callerKind('')).toBe('unknown')
   })
 })
+
+describe('toss request queue', () => {
+  it('lets at most TOSS_PER_SEC calls through per second', async () => {
+    const { tossSlot, TOSS_PER_SEC } = await import('../server/sources/toss')
+    const start = Date.now()
+    const done: number[] = []
+    await Promise.all(Array.from({ length: TOSS_PER_SEC + 3 }, () => tossSlot().then(() => done.push(Date.now() - start))))
+    done.sort((a, b) => a - b)
+    expect(done[TOSS_PER_SEC - 1]).toBeLessThan(200)
+    expect(done[TOSS_PER_SEC]).toBeGreaterThanOrEqual(950)
+  })
+})
