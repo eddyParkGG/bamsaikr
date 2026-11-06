@@ -886,6 +886,20 @@ body.is-resizing * {
   color: var(--text-2);
   margin-bottom: 8px;
 }
+.explain__table {
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 4px 0 6px;
+}
+.explain__table td {
+  padding: 4px 0;
+}
+.explain__table td:last-child {
+  padding-left: 24px;
+  text-align: right;
+  color: var(--text);
+}
 
 .easy-detail {
   max-width: 600px;
