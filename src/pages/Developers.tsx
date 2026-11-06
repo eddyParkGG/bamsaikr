@@ -94,7 +94,7 @@ export default function Developers() {
           <Copy text={curl} label="예시 복사" />
         </div>
         <pre className="code">{curl}</pre>
-        <div className="table-wrap">
+        <div className="table-wrap table-wrap--full">
           <table className="table">
             <tbody>
               {ENDPOINTS.map(([m, path, desc]) => (

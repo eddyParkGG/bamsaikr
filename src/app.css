@@ -1748,6 +1748,10 @@ body.is-resizing * {
   max-height: calc(100vh - 260px);
   overflow: auto;
 }
+.table-wrap--full {
+  max-height: none;
+  overflow-y: visible;
+}
 .table-wrap thead th {
   position: sticky;
   top: 0;
