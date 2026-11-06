@@ -760,6 +760,9 @@ body.is-resizing * {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
+.table tbody tr {
+  height: 40px;
+}
 .table th:first-child,
 .table td:first-child {
   text-align: left;
