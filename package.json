@@ -11,6 +11,7 @@
     "dev:local": "API_TARGET=http://localhost:8787 concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "vite",
     "dev:api": "tsx watch server/dev.ts",
+    "mcp:stdio": "tsx server/stdio.ts",
     "build": "tsc -b && vite build && tsx scripts/prerender.ts",
     "typecheck": "tsc -b",
     "test": "vitest run",
