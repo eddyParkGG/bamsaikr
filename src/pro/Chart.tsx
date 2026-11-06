@@ -316,8 +316,8 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
       )}
       {prediction && !predictionReady(prediction) && (
         <div className="cnote--top" style={{ top: legendBottom + 4 }}>
-          <span className="cnote__label">내일 예측</span>
-          <span className="faint">장 마감 후 예측해요</span>
+          <span className="cnote__label">밤사이 해외 가격</span>
+          <span className="faint">저녁 8시 국내 시장이 닫히면 보여드려요</span>
         </div>
       )}
     </>

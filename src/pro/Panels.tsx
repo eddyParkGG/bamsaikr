@@ -20,10 +20,7 @@ const HELP = {
   follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
   liquid: '밤사이 하이퍼리퀴드에서 100만 달러(약 13억 원) 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
   big: '하이퍼리퀴드가 밤사이 1% 이상 움직인 날만 센 비율이에요. 크게 움직인 밤일수록 더 잘 맞았어요.',
-  coverage: '예상 범위는 10번 중 8번 들어오게 잡았어요. 실제로 그 안에서 시작한 비율이 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
-  mae: '예상 시작 가격이 실제 시작 가격과 평균 몇 % 차이 났는지예요. 아래 두 줄보다 작아야 예측이 쓸모 있어요.',
-  perpRaw: '예측 없이 "지금 하이퍼리퀴드 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
-  naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
+  coverage: '보통 시작 범위는 10번 중 8번 들어오게 잡았어요. 실제로 그 안에서 시작한 비율이 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
 }
 
 function Row({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
@@ -159,25 +156,16 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
             <Row label="1% 이상 움직인 밤만" help={HELP.big}>
               {bt.bigRatePct?.toFixed(1)}% <span className="faint">({bt.bigScored}번 중 {bt.bigYes}번)</span>
             </Row>
-            <Row label="예상 범위 안에서 시작" help={HELP.coverage}>
+            <Row label="보통 시작 범위 안에서 시작" help={HELP.coverage}>
               {bt.coverage80Pct?.toFixed(1)}%{' '}
               <span className="faint">
                 ({bt.tested}번 중 ·{' '}
                 {(bt.coverage80Pct ?? 80) > 87 ? '범위가 조금 넓어요' : (bt.coverage80Pct ?? 80) < 73 ? '범위가 좁아요' : '적당해요'})
               </span>
             </Row>
-            <Row label="예상 가격과의 차이" help={HELP.mae}>
-              평균 {bt.maePct}%p
-            </Row>
-            <Row label="하이퍼리퀴드 가격 그대로라면" help={HELP.perpRaw}>
-              평균 {bt.perpRawMaePct}%p
-            </Row>
-            <Row label="어제 마지막 가격 그대로라면" help={HELP.naive}>
-              평균 {bt.naiveMaePct}%p
-            </Row>
           </dl>
           <p className="faint" style={{ fontSize: 12, marginTop: 8 }}>
-            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요. 예상 가격은 앞 {bt.opens - bt.tested}번으로 배운 뒤 나머지 {bt.tested}번으로 채점했어요.
+            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요. 범위는 앞 {bt.opens - bt.tested}번으로 배운 뒤 나머지 {bt.tested}번으로 채점했어요.
           </p>
         </div>
       </section>

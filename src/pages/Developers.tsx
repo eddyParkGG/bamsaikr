@@ -6,7 +6,7 @@ const origin = typeof location !== 'undefined' ? location.origin : ''
 const ENDPOINTS: [string, string, string][] = [
   ['GET', '/api/v1/arb', '두 시장 가격 차이, 평소 차이, 비용 뺀 수익 (전체 또는 ?asset=)'],
   ['GET', '/api/v1/predict?asset=SMSN', '밤사이 하이퍼리퀴드 가격(원화)과 국내 마지막 가격 대비 %, 미국장 마감 때 가격, 지금 시간대에 국내 시장이 그 방향대로 열린 비율(night.follow), 보통 시작하는 범위, 방향 적중률'],
-  ['GET', '/api/v1/convergence?asset=SKHX', '예측 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 아침 8시 국내 움직임, 방향대로 열렸는지'],
+  ['GET', '/api/v1/convergence?asset=SKHX', '지난 개장 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 아침 8시 국내 움직임, 방향대로 열렸는지'],
   ['GET', '/api/v1/perps', '하이퍼리퀴드 한국 상품 7개 시세·펀딩·미결제약정'],
   ['GET', '/api/v1/series?asset=SMSN&interval=5m', '차트용 캔들(두 시장), USDC 환율, 가격 차이, 펀딩비'],
   ['GET', '/api/v1/orderbook?asset=SMSN', '하이퍼리퀴드 호가 + 국내 호가'],

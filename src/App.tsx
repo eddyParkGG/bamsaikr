@@ -50,7 +50,7 @@ export default function App() {
         : path === '/developers'
           ? `API · MCP · ${base}`
           : asset
-            ? `${asset.name} 밤사이 시세 · 내일 장 시작 가격 예측 | ${base}`
+            ? `${asset.name} 밤사이 시세 · 장 시작 전 해외 가격 | ${base}`
             : `${base} · 국장이 닫힌 사이, 내일 가격을 먼저 보는 곳`
     document.title = t
     const d = asset

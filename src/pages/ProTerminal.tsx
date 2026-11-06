@@ -35,7 +35,7 @@ const MENU: { group: string; items: { k: keyof ChartSettings; label: string; hel
       { k: 'bands', label: '장 시간대 배경', help: '국내 시장이 열린 시간과 닫힌 시간(휴장)을 배경색으로 나눠 보여줘요' },
       { k: 'news', label: '뉴스 말풍선', help: '가격이 크게 움직인 날의 주요 뉴스를 차트 위에 표시해요' },
       { k: 'convergence', label: '따라간 정도 %', help: '밤사이 하이퍼리퀴드가 1% 이상 움직인 날, 그 움직임을 아침 8시 국내 시장이 몇 % 따라 시작했는지 차트 아래 막대로 보여줘요. 점선(100%)에 닿으면 그대로, 절반 높이면 절반만 따라간 거예요' },
-      { k: 'forecast', label: '내일 아침 예상 가격 · 범위', help: '국내 시장이 닫힌 밤에, 내일 아침 8시 국내 시장이 다시 열릴 때 예상 가격과 10번 중 8번은 들어올 범위를 그려요' },
+      { k: 'forecast', label: '밤사이 해외 가격 · 보통 시작 범위', help: '국내 시장이 닫힌 밤에, 지금 하이퍼리퀴드 가격과 내일 아침 국내 시장이 10번 중 8번은 시작한 범위를 그려요' },
     ],
   },
   {
@@ -422,8 +422,8 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   const tabs: [Tab, string][] = predictable
     ? [
         ['chart', '차트 · 호가'],
-        ['predict', '개장 예측'],
-        ['conv', '예측 기록'],
+        ['predict', '개장 전 가격'],
+        ['conv', '지난 개장 기록'],
         ['flows', '투자자 동향'],
       ]
     : [['chart', '차트 · 호가']]
@@ -607,7 +607,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       {tab === 'conv' && (
         <section className="panel panel--fill" style={{ marginTop: 8, height: chartH }}>
           <div className="panel__head">
-            <span className="panel__title">예측 기록</span>
+            <span className="panel__title">지난 개장 기록</span>
             <span className="faint" style={{ fontSize: 12, marginLeft: 6 }}>
               하이퍼리퀴드가 미리 보여준 차이를 다음 날 장 시작 가격이 얼마나 따라갔는지 보여줘요
             </span>
