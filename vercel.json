@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -8,8 +9,8 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
-  "buildCommand": "vite build"
+  "buildCommand": "vite build && tsx scripts/prerender.ts"
 }
