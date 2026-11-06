@@ -10,6 +10,7 @@ import { SessionLine, useNow } from '../lib/market'
 import { followText, nightStage } from '../lib/night'
 import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
+import { subscribeHl, subscribeUsdc, useLive } from '../lib/live'
 import { StockLogo } from '../components/Brand'
 
 function StatusLine({ s }: { s?: Status }) {
@@ -28,14 +29,22 @@ function StatusLine({ s }: { s?: Status }) {
 }
 
 /**
- * One card per stock: tonight's Hyperliquid price against the domestic close, the price when the US session closed,
- * and how often past opens followed it at this time of night. While the domestic market trades, its live price instead
+ * One card per stock, same shape day and night: the domestic price on top, the global (Hyperliquid) price below.
+ * In session: live domestic price vs the global price right before today's open (after the US close).
+ * After the domestic close: the domestic close vs the live global price, with where the US session stands
  */
 function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number }) {
   const a = ASSET_BY_ID[p.asset]
   const ready = predictionReady(p)
   const night = nightStage(p.targetOpenAt, now)
   const follow = followText(p)
+  useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: a.perp }), [a.perp])
+  const ctx = useLive((st) => st.ctx[a.perp])
+  const usdc = useLive((st) => st.usdc)
+  const liveKrw = ctx?.mid && (!a.fx || usdc) ? ctx.mid * (a.fx ? usdc!.rate : 1) : p.perpKrw
+  const pct = (v: number, base: number) => (
+    <span className={tone(v / base - 1)}>{fmtPct((v / base - 1) * 100)}</span>
+  )
   return (
     <Link href={`/s/${p.asset}`} className="panel stock-card" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
       <div className="stock-card__head">
@@ -47,11 +56,15 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
       </div>
       {ready ? (
         <>
-          <p className="stock-card__label">{night.stage === 'after' ? `미국장 닫힌 뒤 ${PERP_PLAIN}` : `${PERP_PLAIN} 지금`}</p>
+          <p className="stock-card__label">국내 종가</p>
           <p className="stock-card__big num" data-fit>
-            {fmtPrice(p.perpKrw)}원 <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
+            {fmtPrice(p.refClose)}원 {s && pct(p.refClose, s.krx.prevClose)}
           </p>
-          {night.stage !== 'after' && <p className="stock-card__sub">{night.text}</p>}
+          <p className="stock-card__label stock-card__label--gap">지금 글로벌 가격 · 국내 종가 대비</p>
+          <p className="stock-card__sub num" data-fit>
+            {fmtPrice(liveKrw)}원 {pct(liveKrw, p.refClose)}
+          </p>
+          {night.stage !== 'after' && <p className="stock-card__foot">{night.text}</p>}
           {follow && <p className="stock-card__foot">{follow}</p>}
         </>
       ) : (
@@ -60,7 +73,7 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
           <p className="stock-card__big num" data-fit>
             {s ? (
               <>
-                {fmtPrice(s.krx.price)}원 <span className={tone(s.krx.changePct)}>{fmtPct(s.krx.changePct)}</span>
+                {fmtPrice(s.krx.price)}원 {pct(s.krx.price, s.krx.prevClose)}
               </>
             ) : (
               '-'
@@ -68,9 +81,9 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
           </p>
           {s && p.preOpen && (
             <>
-              <p className="stock-card__label stock-card__label--gap">미국장 닫힌 뒤 · 국내 개장 직전 {PERP_PLAIN}</p>
+              <p className="stock-card__label stock-card__label--gap">미국장 닫힌 뒤 · 국내 개장 직전 글로벌 가격</p>
               <p className="stock-card__sub num" data-fit>
-                {fmtPrice(p.preOpen.krw)}원 <span className={tone(p.preOpen.krw / s.krx.prevClose - 1)}>{fmtPct((p.preOpen.krw / s.krx.prevClose - 1) * 100)}</span>
+                {fmtPrice(p.preOpen.krw)}원 {pct(p.preOpen.krw, s.krx.prevClose)}
               </p>
             </>
           )}
@@ -116,6 +129,7 @@ export default function EasyHome() {
   const now = useNow(60_000)
   const preds = usePredictions()
   const arb = useArb()
+  useEffect(() => subscribeUsdc(), [])
 
   useEffect(() => {
     if (preds.data && status.data) track('prediction_view', { from: 'home', session: status.data.session })
@@ -193,7 +207,7 @@ export default function EasyHome() {
           에서 볼 수 있어요.
         </p>
         <p>
-          시세차익은 두 시장 가격 차이가 평소보다 더 벌어졌을 때, 수수료·세금·환전 비용·펀딩비를 빼고도 남는 금액이에요. 남지 않으면 &lsquo;기회가 없어요&rsquo;로 보여드려요.
+          시세차익은 두 시장 가격 차이가 평소보다 더 벌어졌을 때, 수수료·세금·환전 비용·펀딩비를 빼고도 남는 금액이에요. 남지 않으면 &lsquo;아직 시세차익 기회가 없어요&rsquo;로 보여드려요.
         </p>
         <p className="faint" style={{ fontSize: 12 }}>
           참고 정보예요. 과거 비율이 앞으로도 같다는 보장은 없고, 투자 결과는 본인에게 돌아가요. 하이퍼리퀴드 거래는 국내 투자자 보호 대상이 아니에요.
