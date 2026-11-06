@@ -145,14 +145,18 @@ type RawCandle = { timestamp: string; openPrice: string; highPrice: string; lowP
 const mapCandle = (k: RawCandle): TossCandle => ({ t: Date.parse(k.timestamp), o: +k.openPrice, h: +k.highPrice, l: +k.lowPrice, c: +k.closePrice, v: +k.volume })
 
 /** Candles (1m, 1d). 200 per call, so page backwards to `since` and concatenate. Returns ascending */
-export function tossCandles(code: string, interval: '1m' | '1d', since: number, indicator = false): Promise<TossCandle[]> {
+/**
+ * Candles since `since`. Past bars never change, so the full history is cached for long (10 min for minutes,
+ * 1 h for days) and only the newest page of 200 is refetched often (10 s / 60 s) and laid over it.
+ * Before, minute charts refetched days of bars every 10 s: the index sparklines alone took ~50 calls a minute
+ */
+export async function tossCandles(code: string, interval: '1m' | '1d', since: number, indicator = false): Promise<TossCandle[]> {
   const step = interval === '1d' ? 86400_000 : 60_000
   const bucket = Math.floor(since / (interval === '1d' ? 86400_000 : 600_000))
-  const ttl = interval === '1d' ? 60_000 : 10_000
-  return cached(`toss:candles:${code}:${interval}:${bucket}`, ttl, async () => {
+  const base = indicator ? `/api/v1/market-indicators/${code}/candles?interval=${interval}` : `/api/v1/candles?symbol=${code}&interval=${interval}`
+  const full = cached(`toss:candles:${code}:${interval}:${bucket}`, interval === '1d' ? 3600_000 : 10 * 60_000, async () => {
     const out: TossCandle[] = []
     let before: string | undefined
-    const base = indicator ? `/api/v1/market-indicators/${code}/candles?interval=${interval}` : `/api/v1/candles?symbol=${code}&interval=${interval}`
     for (let i = 0; i < 60; i++) {
       const r = await call<{ candles: RawCandle[]; nextBefore: string | null }>(`${base}&count=200${before ? `&before=${encodeURIComponent(before)}` : ''}`)
       if (!r.candles.length) break
@@ -160,8 +164,15 @@ export function tossCandles(code: string, interval: '1m' | '1d', since: number, 
       if (!r.nextBefore || Date.parse(r.nextBefore) < since) break
       before = r.nextBefore
     }
-    return out.filter((k) => k.t >= since - step).sort((a, b) => a.t - b.t)
+    return out
   })
+  const head = cached(`toss:candles:head:${code}:${interval}`, interval === '1d' ? 60_000 : 10_000, async () =>
+    (await call<{ candles: RawCandle[] }>(`${base}&count=200`)).candles.map(mapCandle),
+  )
+  const byTime = new Map<number, TossCandle>()
+  for (const k of await full) byTime.set(k.t, k)
+  for (const k of await head) byTime.set(k.t, k)
+  return [...byTime.values()].filter((k) => k.t >= since - step).sort((a, b) => a.t - b.t)
 }
 
 /** `count` candles before a given time (to inspect a past day). Historical, so cached long */
@@ -184,7 +195,7 @@ export async function tossMinutes(code: string, since: number): Promise<TossCand
   const oneDay = (d: number) => {
     const dayStart = d * 86400_000 - KST // 00:00 of that KST date
     const isPast = dayStart + 86400_000 < Date.now()
-    return cached(`toss:minday:${code}:${d}`, isPast ? 24 * 3600_000 : 15_000, async () => {
+    const day = cached(`toss:minday:${code}:${d}`, isPast ? 24 * 3600_000 : 10 * 60_000, async () => {
       const out: TossCandle[] = []
       let before = Math.min(Date.now(), dayStart + 20 * 3600_000 + 60_000)
       for (let i = 0; i < 5; i++) {
@@ -197,6 +208,18 @@ export async function tossMinutes(code: string, since: number): Promise<TossCand
         if (before < dayStart + 8 * 3600_000) break
       }
       return out
+    })
+    if (isPast) return day
+    // Today: the pages already fetched stay for 10 min; only the newest 200 bars are refetched every 10 s
+    // Same request and cache key as tossCandles' newest page, so the two share one call
+    const head = cached(`toss:candles:head:${code}:1m`, 10_000, async () =>
+      (await call<{ candles: RawCandle[] }>(`/api/v1/candles?symbol=${code}&interval=1m&count=200`)).candles.map(mapCandle),
+    ).then((rows) => rows.filter((k) => k.t >= dayStart))
+    return Promise.all([day, head]).then(([a, b]) => {
+      const byTime = new Map<number, TossCandle>()
+      for (const k of a) byTime.set(k.t, k)
+      for (const k of b) byTime.set(k.t, k)
+      return [...byTime.values()]
     })
   }
   const all: TossCandle[] = []
