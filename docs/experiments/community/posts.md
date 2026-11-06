@@ -1,6 +1,7 @@
 # Community test posts (H2 · first run `bamsai_test1`)
 
 Plan and metrics: [H2](../H2-preopen-return.md). One row per post; read GA4 by `first_source` / `first_content`.
+H2 counts all visits from 2026-11-06 00:00 KST (internal traffic excluded); UTM only compares posts.
 
 | Posted (KST) | Channel | Post | Message | `utm_content` | Numbers in the post | Image |
 |---|---|---|---|---|---|---|

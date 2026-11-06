@@ -12,6 +12,7 @@ to check it again. That return is the habit the product needs.
 | Duration | 4 days (Thu 20:00 → Mon 08:00) |
 | Message A/B | A forecast: run 1 (11/05) used "내일 장 시작 가격, 오를 확률 56%"; from 11/07 A posts after the US close: "미국장 마감 때 하이퍼리퀴드 -x% · 과거 이 시간대엔 n%가 이 방향대로 열렸어요" / B fact: "지금 해외에선 삼성전자 -2.6%" |
 | Links | `https://bamsai.kr/?utm_source=dc_stock&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
+| Measurement window | All visits from 2026-11-06 00:00 KST (the day after the first post), internal traffic excluded. People who first came through a post link may later come back by typing the address, so visits are not limited to UTM-tagged ones; UTM is only for comparing posts and messages |
 | Minimum sample | 200 visitors; below that, no conclusion and one more post |
 | Rules | Information-sharing format, one link per post, no buy/sell wording (avoid unregistered-advisory misreading), a 밤사이 screenshot whose numbers match the text, different wording each post |
 | Log | Every post (time, gallery, link, message, numbers, image): [community/posts.md](community/posts.md) |
