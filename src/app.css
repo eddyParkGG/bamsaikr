@@ -76,7 +76,38 @@
   margin-left: 4px;
 }
 .spark-mini {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
   flex-shrink: 0;
+}
+.spark-mini svg {
+  display: block;
+}
+/* Same as Toss home's index sparklines: 1.5s linear, starts a third of the way in */
+.spark-pulse {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform-origin: center center;
+  animation: spark-pulse 1.5s linear -0.5s infinite;
+}
+@keyframes spark-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  66% {
+    opacity: 0.2;
+    transform: scale(3.33);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(5);
+  }
 }
 
 /* Today's issues */
@@ -743,20 +774,25 @@ body.is-resizing * {
 }
 .table th {
   text-align: right;
-  font-weight: 500;
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 20px;
   color: var(--text-3);
-  padding: 10px 12px;
+  padding: 8px 12px;
   white-space: nowrap;
 }
 .table td {
   text-align: right;
-  padding: 11px 12px;
+  padding: 9px 12px;
+  line-height: 20px;
   border-top: 1px solid var(--line);
   white-space: nowrap;
   font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+.table tbody tr {
+  height: 40px;
 }
 .table th:first-child,
 .table td:first-child {
@@ -860,24 +896,6 @@ body.is-resizing * {
   background: var(--up);
   box-shadow: 2px 0 0 var(--bg);
 }
-.updown {
-  margin-top: 16px;
-}
-.updown__labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 6px;
-}
-.updown__up {
-  display: block;
-  height: 100%;
-  margin-left: auto;
-  background: var(--up);
-  box-shadow: -2px 0 0 var(--bg);
-}
 .prob__bar {
   height: 10px;
   border-radius: 5px;
@@ -903,6 +921,20 @@ body.is-resizing * {
   line-height: 1.75;
   color: var(--text-2);
   margin-bottom: 8px;
+}
+.explain__table {
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 4px 0 6px;
+}
+.explain__table td {
+  padding: 4px 0;
+}
+.explain__table td:last-child {
+  padding-left: 24px;
+  text-align: right;
+  color: var(--text);
 }
 
 .easy-detail {
@@ -1482,7 +1514,7 @@ body.is-resizing * {
   align-items: center;
   gap: 10px;
   font-size: 11px;
-  color: var(--text-3);
+  color: var(--text-2);
   white-space: nowrap;
 }
 .band-legend span {
@@ -1723,47 +1755,43 @@ body.is-resizing * {
   background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--line);
 }
-.fbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px 16px 12px;
+/* Column-header buttons (Toss screener): the label is the button, a fill on hover, key tint when a filter is on */
+.th-btn {
+  padding: 4px 4px !important;
 }
-.fchip-wrap {
-  position: relative;
-}
-.fchip {
+.thbtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   height: 28px;
   padding: 4px 8px;
   border-radius: 7px;
-  background: rgba(214, 224, 239, 0.09);
-  box-shadow: inset 0 0 0 0.5px rgba(209, 209, 253, 0.05);
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(242, 246, 255, 0.9);
+  font: inherit;
+  color: inherit;
   white-space: nowrap;
+  transition: background-color 0.1s;
 }
-.fchip svg {
-  color: rgba(217, 223, 235, 0.8);
+.thbtn:hover,
+.thbtn[aria-expanded='true'] {
+  background: var(--fill);
+  color: var(--text-2);
 }
-.fchip--on,
-.fchip--on svg {
+.thbtn svg {
+  opacity: 0.7;
+}
+.thbtn--on,
+.thbtn--on:hover {
   background: rgba(67, 122, 223, 0.2);
   color: #4391ff;
 }
-:root[data-theme='light'] .fchip {
-  background: var(--fill);
-  color: var(--text);
-}
-:root[data-theme='light'] .fchip--on {
+:root[data-theme='light'] .thbtn--on {
   background: #e8f3ff;
   color: #3182f6;
 }
 .fpop {
   position: absolute;
+  text-align: left;
+  font-weight: 400;
   top: calc(100% + 6px);
   left: 0;
   z-index: 30;
@@ -2001,6 +2029,11 @@ button.ob2__px:active::after {
   font-size: 13px !important;
   color: var(--up) !important;
 }
+.launch__note {
+  margin-top: 8px;
+  font-size: 12px !important;
+  color: var(--text-3) !important;
+}
 .launch__icon {
   width: 52px;
   height: 52px;
@@ -2114,8 +2147,7 @@ button.ob2__px:active::after {
 
 /* Investor flows: won amount under the share count, same sign colour but lighter */
 .flow-won {
-  display: block;
-  margin-top: 2px;
+  margin-left: 6px;
   font-size: 12px;
   font-weight: 500;
   opacity: 0.6;
@@ -2491,6 +2523,17 @@ body {
 .cnote__label {
   color: var(--text-3);
 }
+/* Small grey line under the forecast note: how far the number can still move tonight */
+.cnote__sub {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-shadow: 0 0 4px var(--bg), 0 0 2px var(--bg);
+  pointer-events: none;
+}
 .cnote__btn {
   height: 22px;
   padding: 0 8px;
@@ -2581,3 +2624,61 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Home: one card per stock, the first thing under the intro */
+.stock-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  color: inherit;
+  transition: background 0.15s;
+}
+.stock-card:hover {
+  background: var(--bg-layer);
+}
+.stock-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+.stock-card__go {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.stock-card__label {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.stock-card__big {
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.stock-card__sub {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.stock-card__label--gap {
+  margin-top: 10px;
+}
+.stock-card__foot {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@media (max-width: 720px) {
+  .stock-cards {
+    grid-template-columns: 1fr;
+  }
+}
+

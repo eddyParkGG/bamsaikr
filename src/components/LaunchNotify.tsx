@@ -7,6 +7,14 @@ export function openLaunchNotify(what: string) {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+/** Apps Script web app that appends sign-ups to the owner's Google Sheet (docs/launch-notify). Emails never go to GA */
+const NOTIFY_URL = import.meta.env.VITE_NOTIFY_URL as string | undefined
+
+function saveSignup(email: string, what: string) {
+  if (!NOTIFY_URL) return
+  // text/plain + no-cors: a "simple" request, so no CORS preflight that Apps Script cannot answer
+  fetch(NOTIFY_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ email, what, page: location.pathname }) }).catch(() => {})
+}
 
 export function LaunchNotify() {
   const [what, setWhat] = useState<string | null>(null)
@@ -57,6 +65,7 @@ export function LaunchNotify() {
               e.preventDefault()
               setTouched(true)
               if (!valid) return
+              saveSignup(email.trim(), what)
               track('launch_notify_signup', { what })
               setDone(true)
             }}
@@ -81,6 +90,7 @@ export function LaunchNotify() {
               />
             </label>
             {touched && !valid && <p className="launch__error">이메일 주소를 다시 확인해 주세요</p>}
+            <p className="launch__note">주문 출시 알림에만 쓰고, 알림을 보낸 뒤 지워요.</p>
             <div className="row" style={{ marginTop: 20, gap: 8 }}>
               <button type="button" className="btn btn--lg btn--fill" style={{ flex: 1 }} onClick={close}>
                 닫기

@@ -1,4 +1,4 @@
-# H2 — "오를 확률" brings people back before the next open
+# H2 — tonight's Hyperliquid price and "how often the open followed it" bring people back before the next open
 
 **Claim.** People who see the next-open probability come back before the domestic market re-opens (06:00–08:00 KST; Nextrade opens at 08:00)
 to check it again. That return is the habit the product needs.
@@ -10,7 +10,7 @@ to check it again. That return is the habit the product needs.
 | Channels | DC Inside 주식 갤러리. Stock-specific minor galleries were checked and skipped as nearly inactive (SK하이닉스: a few posts a day; 하이퍼리퀴드, 삼성전자 주주: none for months). Naver stock forum dropped: its rules ban ads/promotion, the first post was removed within minutes, and body URLs are not linked |
 | Timing | Post 21:00–22:00 (after the 20:00 close, when the forecast exists) on Thu, Fri, Sun → measure Fri and Mon pre-open returns (weekend gap included). Thu: one A and one B post, spaced apart (back-to-back posts read as spam) |
 | Duration | 4 days (Thu 20:00 → Mon 08:00) |
-| Message A/B | A forecast: "내일 장 시작 가격, 오를 확률 56%" / B fact: "지금 해외에선 삼성전자 -2.6%" |
+| Message A/B | A forecast: run 1 (11/05) used "내일 장 시작 가격, 오를 확률 56%"; from 11/07 A posts after the US close: "미국장 마감 때 하이퍼리퀴드 -x% · 과거 이 시간대엔 n%가 이 방향대로 열렸어요" / B fact: "지금 해외에선 삼성전자 -2.6%" |
 | Links | `https://bamsai.kr/?utm_source=dc_stock&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
 | Minimum sample | 200 visitors; below that, no conclusion and one more post |
 | Rules | Information-sharing format, one link per post, no buy/sell wording (avoid unregistered-advisory misreading), a 밤사이 screenshot whose numbers match the text, different wording each post |

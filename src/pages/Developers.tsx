@@ -5,19 +5,19 @@ const origin = typeof location !== 'undefined' ? location.origin : ''
 
 const ENDPOINTS: [string, string, string][] = [
   ['GET', '/api/v1/arb', '두 시장 가격 차이, 평소 차이, 비용 뺀 수익 (전체 또는 ?asset=)'],
-  ['GET', '/api/v1/predict?asset=SMSN', '내일 아침 8시 국내 시장 예상: 오를 확률, 예상 가격, 예상 범위(10번 중 8번 들어오는 범위), 하이퍼리퀴드 방향 적중률'],
-  ['GET', '/api/v1/convergence?asset=SKHX', '예측 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 아침 8시 국내 움직임, 방향대로 열렸는지'],
+  ['GET', '/api/v1/predict?asset=SMSN', '국내 주식 3종만. 밤사이 하이퍼리퀴드 가격(원화)과 국내 마지막 가격 대비 %, 미국장 마감 때 가격, 지금 시간대에 국내 시장이 그 방향대로 열린 비율(night.follow), 보통 시작하는 범위. 장중엔 오늘 개장 직전 하이퍼리퀴드 가격(preOpen)'],
+  ['GET', '/api/v1/convergence?asset=SKHX', '지난 개장 기록: 날짜별 밤사이 하이퍼리퀴드 움직임, 아침 8시 국내 움직임, 방향대로 열렸는지'],
   ['GET', '/api/v1/perps', '하이퍼리퀴드 한국 상품 7개 시세·펀딩·미결제약정'],
   ['GET', '/api/v1/series?asset=SMSN&interval=5m', '차트용 캔들(두 시장), USDC 환율, 가격 차이, 펀딩비'],
   ['GET', '/api/v1/orderbook?asset=SMSN', '하이퍼리퀴드 호가 + 국내 호가'],
   ['GET', '/api/v1/news?asset=SKHX', '날짜별 대표 이슈 (하루 1건)'],
   ['GET', '/api/v1/flows?asset=SMSN', '투자자별 순매수 (개인·외국인·기관, 주식 수와 그날 종가)'],
   ['GET', '/api/v1/status', '지금 장 상태, 다음 국내 개장(08:00)·정규장 시각'],
-  ['POST', '/api/v1/orders/krx?asset=SMSN', '국내 주식 주문 (기본 dryRun)'],
-  ['POST', '/api/v1/orders/perp?asset=SMSN', '하이퍼리퀴드 주문 (기본 dryRun, 테스트넷)'],
-  ['POST', '/api/v1/orders/pair?asset=SMSN', '시세차익 페어 주문 (하이퍼리퀴드 + 주식 반대 방향)'],
-  ['GET', '/api/v1/account/krx', '국내 계좌 잔고 (실주문을 켠 서버만)'],
-  ['GET', '/api/v1/account/perp?user=0x...', 'HL 포지션·미체결'],
+  ['POST', '/api/v1/orders/krx?asset=SMSN', '국내 주식 주문 미리보기 (실주문은 직접 띄운 서버에서만, 토스증권)'],
+  ['POST', '/api/v1/orders/perp?asset=SMSN', '하이퍼리퀴드 주문 미리보기 (실주문은 직접 띄운 서버에서만, 기본 테스트넷)'],
+  ['POST', '/api/v1/orders/pair?asset=SMSN', '시세차익 페어 주문 미리보기 (하이퍼리퀴드 + 주식 반대 방향)'],
+  ['GET', '/api/v1/account/krx', '국내 계좌 잔고 (직접 띄운 서버에서 본인 계좌만)'],
+  ['GET', '/api/v1/account/perp?user=0x...', '하이퍼리퀴드 지갑의 포지션·미체결 (기본 테스트넷, 실제 포지션은 &network=mainnet)'],
 ]
 
 function Copy({ text, label, onCopy }: { text: string; label: string; onCopy?: () => void }) {
@@ -78,10 +78,12 @@ export default function Developers() {
                   <td style={{ width: 56 }}>
                     <span className={`badge ${m === 'POST' ? 'badge--live' : ''}`}>{m}</span>
                   </td>
-                  <td className="num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13 }}>
+                  <td className="num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13, textAlign: 'left' }}>
                     {path}
                   </td>
-                  <td className="muted">{desc}</td>
+                  <td className="muted" style={{ textAlign: 'left', whiteSpace: 'normal', fontWeight: 500 }}>
+                    {desc}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -92,10 +94,24 @@ export default function Developers() {
       <section className="panel panel__body stack" style={{ marginTop: 16 }}>
         <h2 className="strong" style={{ fontSize: 15, fontWeight: 700 }}>주문 안전장치</h2>
         <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.9, fontSize: 14 }}>
-          <li>주문은 기본이 미리보기예요. 보낼 주문 내용만 돌려주고 실제로 보내지 않아요. 실제로 보내려면 dryRun=false와 발급받은 API 키(Authorization: Bearer 헤더)가 필요해요.</li>
+          <li>bamsai.kr 서버는 실제 주문을 보내지 않아요. 국내 주식도 하이퍼리퀴드도 보낼 주문 내용(미리보기)만 돌려줘요. 다른 사람 계좌로 대신 주문하지 않아요.</li>
+          <li>
+            실제로 주문하려면 각자 서버를 직접 띄워야 해요.{' '}
+            <a className="link" href="https://github.com/eddyParkGG/bamsaikr" target="_blank" rel="noreferrer">
+              공개 저장소
+            </a>{' '}
+            코드에 본인 키를 넣어 실행하면, 주문은 그 키의 본인 계좌로만 나가요.
+            <ul style={{ paddingLeft: 18 }}>
+              <li>국내 주식: 토스증권 Open API만 지원해요. 본인 키 발급 + 서버 IP를 허용 IP로 등록 + TOSS_LIVE_ORDERS=1</li>
+              <li>하이퍼리퀴드: 본인 지갑에서 승인한 에이전트 키(HL_AGENT_KEY, HL_ACCOUNT). 실제 돈(메인넷)은 HL_ALLOW_MAINNET=1까지 켜야 해요</li>
+              <li>외부에서 호출할 때 쓸 API_TOKEN</li>
+            </ul>
+          </li>
+          <li>직접 띄운 서버에서도 기본은 미리보기예요. 실제로 보내려면 dryRun=false와 Authorization: Bearer API_TOKEN 헤더가 필요해요.</li>
           <li>하이퍼리퀴드 주문은 기본이 테스트넷(연습용 네트워크)이에요. 실제 돈으로 거래하려면 network=mainnet을 넣어요.</li>
           <li>하이퍼리퀴드 주문은 출금 권한이 없는 지갑으로 서명해요. 키가 새어도 돈이 빠져나가지 않아요.</li>
-          <li>MCP(AI 에이전트 연결)는 조회와 주문 미리보기만 돼요.</li>
+          <li>MCP(AI 에이전트 연결)는 조회와 시세차익 페어 주문 미리보기만 돼요.</li>
+          <li>조회는 키 없이 쓸 수 있어요. 대신 IP당 1분에 300번까지예요(REST와 MCP 합산). 넘으면 429 응답이 와요.</li>
         </ul>
       </section>
     </div>

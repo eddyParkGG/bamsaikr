@@ -15,6 +15,9 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
+
+/** Empty space right of the last bar so the price tags ('하이퍼리퀴드', '국내 시장') don't cover it: 12% of the width, 80–160px */
+export const rightGapPx = (width: number) => Math.round(Math.min(160, Math.max(80, width * 0.12)))
 import type { ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import { bollinger, ichimoku, macd, RIBBON, rsi, sma, vwap, type Bar, type Pt } from './indicators'
 import { NewsPins, SessionBands, VLine, type Span } from './primitives'
@@ -120,7 +123,7 @@ export class ChartController {
       },
       // Fixed axis width: price tags stay flush right even when the number of digits changes
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.16, bottom: 0.12 }, textColor: c.text2, minimumWidth: 92 },
-      timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffset: 6, minBarSpacing: 1 },
+      timeScale: { borderVisible: false, timeVisible: interval !== '1d', secondsVisible: false, rightOffsetPixels: rightGapPx(el.clientWidth), minBarSpacing: 1 },
       localization: {
         locale: 'ko-KR',
         priceFormatter: (p: number) => Math.round(p).toLocaleString('ko-KR'),
@@ -138,11 +141,20 @@ export class ChartController {
     // anything keeps the user's zoom and scroll exactly as they left it.
     this.axis = this.chart.addSeries(LineSeries, { visible: false, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null }, 0)
     this.sync(settings, params)
+    // Next frame: changing the chart inside the observer callback would trigger another resize in the same frame
+    this.resize = new ResizeObserver(() => requestAnimationFrame(() => this.resize && this.chart.applyOptions({ timeScale: { rightOffsetPixels: rightGapPx(el.clientWidth) } })))
+    this.resize.observe(el)
   }
 
   private axis: ISeriesApi<'Line'>
+  private resize: ResizeObserver | null
+  /** Logical index of the latest real bar on the axis (-1 before the first data) */
+  private lastIdx = -1
+  private axisTimes: number[] = []
 
   destroy() {
+    this.resize?.disconnect()
+    this.resize = null
     this.chart.remove()
   }
 
@@ -408,9 +420,27 @@ export class ChartController {
       perp: new Map(d.perpKrw.map((k, i) => [ct(k.t) as number, { ...k, usd: d.perp[i]?.c ?? 0 }])),
       prem: new Map(d.premium.map((p) => [ct(p.t) as number, { v: p.v, live: p.live }])),
     }
+    // Keep the view where the user left it as bars come and go (the window drops old bars as new ones arrive,
+    // so logical indices shift). Latest bar on screen: keep its distance from the right edge, so new bars push the
+    // chart left. Scrolled back into history: keep the same times on screen
+    const ts = this.chart.timeScale()
+    const view = this.axisTimes.length ? ts.getVisibleLogicalRange() : null
+    const prevLast = this.lastIdx
+    const prevTimes = this.axisTimes
     this.feedAxis()
     this.feedAll()
     this.decorate()
+    if (view && prevLast >= 0) {
+      const width = view.to - view.from
+      if (view.to >= prevLast) {
+        const gap = view.to - prevLast
+        ts.setVisibleLogicalRange({ from: this.lastIdx + gap - width, to: this.lastIdx + gap })
+      } else {
+        const anchor = Math.max(0, Math.min(prevTimes.length - 1, Math.round(view.from)))
+        const at = this.axisTimes.indexOf(prevTimes[anchor])
+        if (at >= 0) ts.setVisibleLogicalRange({ from: at + (view.from - anchor), to: at + (view.from - anchor) + width })
+      }
+    }
   }
 
   private feedAxis() {
@@ -421,7 +451,9 @@ export class ChartController {
     for (const k of d.krx) times.add(ct(k.t))
     const last = Math.max(d.perp.at(-1)?.t ?? 0, d.krx.at(-1)?.t ?? 0)
     for (let i = 1; i <= ICHIMOKU_SHIFT; i++) times.add(ct(last + i * step))
-    this.axis.setData([...times].sort((a, b) => a - b).map((t) => ({ time: t as UTCTimestamp })))
+    this.axisTimes = [...times].sort((a, b) => a - b)
+    this.lastIdx = this.axisTimes.indexOf(ct(last) as number)
+    this.axis.setData(this.axisTimes.map((t) => ({ time: t as UTCTimestamp })))
   }
 
   private feedAll() {
@@ -471,8 +503,8 @@ export class ChartController {
       this.priceLines.forEach((l) => host.removePriceLine(l))
       this.priceLines = []
       if (s.forecast && prediction && prediction.status === 'pre-open') {
+        // Where the open usually lands; the Hyperliquid line itself carries tonight's price
         this.priceLines = [
-          host.createPriceLine({ price: prediction.expectedOpen, color: c.text, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true, title: '' }),
           host.createPriceLine({ price: prediction.band80.high, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '범위' }),
           host.createPriceLine({ price: prediction.band80.low, color: c.text3, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false, title: '범위' }),
         ]
