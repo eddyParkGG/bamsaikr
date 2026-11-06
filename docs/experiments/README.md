@@ -33,3 +33,4 @@ Append one row per readout. Keep raw exports next to this folder, not in the rep
 | 2026-11-05 | H1 (20:00 → 08:00–08:10 VWAP) | 134 / 137 / 135 scored opens (2026-04-13 → 11-05) | 85.8% / 85.4% / 66.7% | Superseded the same day by the liquidity condition below |
 | 2026-11-05 | H1 + liquidity (≥ $1M overnight on Hyperliquid) | 119 / 130 / 7 liquid nights | 88.2% / 85.4% / n/a | Pass for Samsung and SK hynix. Thin nights flagged 거래 적어 덜 정확; Hyundai undecided |
 | 2026-11-05 | H2 (channels) | First posts | Naver stock forum post removed within minutes (ads/promotion ban; links not clickable) | Run on the DC 주식 갤러리 only — see [community/posts.md](community/posts.md) |
+| 2026-11-06 | H2 | 2 DC posts (+29 / +54 views overnight) | 0 tracked visits; iPhone Safari likely saw a blank page (zstd from the CDN cache) | Fix the bug, register custom dimensions, exclude owner IP, repost |
