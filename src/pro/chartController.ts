@@ -471,7 +471,9 @@ export class ChartController {
     this.decorate()
     if (view && prevLast >= 0) {
       const width = view.to - view.from
-      if (view.to >= prevLast) {
+      if (this.lastIdx < prevLast) {
+        // The new data ends earlier than what is on screen: leave the view alone rather than step back
+      } else if (view.to >= prevLast) {
         const gap = view.to - prevLast
         ts.setVisibleLogicalRange({ from: this.lastIdx + gap - width, to: this.lastIdx + gap })
       } else {
