@@ -347,7 +347,7 @@
 | sitemap · robots | sitemap은 빌드마다 갱신일을 새로 씀. robots는 주문·계좌 API만 막고 GPTBot·ClaudeBot·PerplexityBot·Google-Extended를 명시적으로 허용 |
 | llms.txt | 서비스 요약, 지원 종목, 계산 방법과 수치(기준일 표기), API·MCP 사용법, 페이지 안내를 AI가 읽기 쉬운 형식으로 공개 |
 | 에이전트 접근 | OpenAPI 문서(`/api/openapi.json`)와 MCP 서버(`/api/mcp`)를 열어 AI 답변이 숫자를 직접 가져가 인용할 수 있게 함 |
-| 남은 것 | 구글 서치콘솔·네이버 서치어드바이저 사이트 등록과 sitemap 제출 (소유 확인 필요) |
+| 검색엔진 등록 | 2026-11-06 구글 서치콘솔(도메인 속성, DNS 확인)과 네이버 서치어드바이저(HTML 태그 확인)에 등록. 구글은 sitemap 제출 성공, 페이지 10개 발견 |
 
 ## 8. 다음 액션 (개선 포인트)
 
