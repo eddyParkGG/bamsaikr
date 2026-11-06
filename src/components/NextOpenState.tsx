@@ -12,8 +12,8 @@ export const predictionReady = (p: Prediction | null | undefined) => !!p && p.st
 
 export const IN_SESSION = {
   title: '지금은 국내 시장이 열려 있어요',
-  short: '저녁 8시 이후 예측',
-  body: '국내 시장(넥스트레이드 포함)이 열려 있을 땐 지금 국내 가격이 곧 답이에요. 저녁 8시에 모두 닫히면 내일 아침 가격을 예측해 보여드려요.',
+  short: '저녁 8시 이후 보여드려요',
+  body: '국내 시장(넥스트레이드 포함)이 열려 있을 땐 지금 국내 가격이 곧 답이에요. 저녁 8시에 모두 닫히면 밤사이 하이퍼리퀴드 가격과, 지난 개장일마다 그 방향대로 열린 비율을 보여드려요.',
 }
 
 /** Notice shown wherever a prediction would be. `compact` for list rows and small panels */

@@ -3,7 +3,8 @@ import type { ISeriesApi, UTCTimestamp } from 'lightweight-charts'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { sessionAt } from '../../shared/session'
-import { SESSION_LABEL, venueAt } from '../lib/market'
+import { SESSION_LABEL, useNow, venueAt } from '../lib/market'
+import { followText, nightStage } from '../lib/night'
 import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit, tone } from '../lib/format'
 import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
@@ -256,6 +257,8 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
   // Only a tradable spread gets a note (and its line); the usual gap is not news
   const arbPrice = arb && arbKind(arb) === 'go' ? arb.perpKrw : null
   const fc = prediction && predictionReady(prediction) ? prediction : null
+  const now = useNow(60_000)
+  const night = nightStage(prediction?.targetOpenAt ?? now, now)
 
   useEffect(() => {
     ctl.current?.setArbLine(arbPrice)
@@ -278,12 +281,12 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
     }
     const tick = () => {
       place(arbEl.current, arbPrice)
-      place(fcEl.current, fc?.expectedOpen ?? null)
+      place(fcEl.current, fc?.perpKrw ?? null)
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [ctl, arbPrice, fc?.expectedOpen])
+  }, [ctl, arbPrice, fc?.perpKrw])
 
   return (
     <>
@@ -300,19 +303,21 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
       )}
       {fc && (
         <div ref={fcEl} className="cnote" hidden>
-          <span className="cnote__label">내일 아침 예상</span>
+          <span className="cnote__label">하이퍼리퀴드 지금</span>
           <span>
-            {fmtPrice(fc.expectedOpen)}원 <b className={tone(fc.expectedGapPct)}>{fmtPct(fc.expectedGapPct)}</b>
+            {fmtPrice(fc.perpKrw)}원 <b className={tone(fc.perpGapPct)}>{fmtPct(fc.perpGapPct)}</b>
           </span>
           <button className="cnote__btn" onClick={onPredict}>
             자세히
           </button>
+          {/* How much this number can still move before the open (US session) */}
+          <span className="cnote__sub">{[night.text, followText(fc)].filter(Boolean).join(' · ')}</span>
         </div>
       )}
       {prediction && !predictionReady(prediction) && (
         <div className="cnote--top" style={{ top: legendBottom + 4 }}>
-          <span className="cnote__label">내일 예측</span>
-          <span className="faint">장 마감 후 예측해요</span>
+          <span className="cnote__label">밤사이 해외 가격</span>
+          <span className="faint">저녁 8시 국내 시장이 닫히면 보여드려요</span>
         </div>
       )}
     </>

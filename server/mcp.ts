@@ -18,7 +18,7 @@ const TOOLS = [
   },
   {
     name: 'predict_open',
-    description: 'Forecast of the next domestic re-open (08:00–08:10 average on KRX/NXT, vs the 20:00 close): probability of rising (probUp), expected price, 80% band, and how often the re-open followed the Hyperliquid direction (backtest.followRatePct)',
+    description: 'Forecast of the next domestic re-open (08:00–08:10 average on KRX/NXT, vs the 20:00 close): the Hyperliquid price in KRW now and at the US close, how often past re-opens followed Hyperliquid at this stage of the night (night.follow.ratePct), the 80% band, and the overall follow rate (backtest.followRatePct). probUp and the expected price are model output, not a promise',
     inputSchema: { type: 'object', properties: { asset: assetProp }, required: ['asset'] },
     run: async (a: Record<string, string>) => predictOpen(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID]),
   },

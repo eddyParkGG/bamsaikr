@@ -1,16 +1,17 @@
 import { useEffect } from 'react'
 import { arbText } from '../lib/arb'
-import { IN_SESSION, InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
+import { predictionReady, ThinTag } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
-import { probLabel, verdict, PERP_PLAIN } from '../lib/copy'
+import { PERP_PLAIN } from '../lib/copy'
 import { track } from '../lib/ga'
-import { fmtPct, fmtPrice, openDayText } from '../lib/format'
-import { SessionLine } from '../lib/market'
+import { fmtPct, fmtPrice, tone } from '../lib/format'
+import { SessionLine, useNow } from '../lib/market'
+import { followText, nightStage } from '../lib/night'
 import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
+import { subscribeHl, subscribeUsdc, useLive } from '../lib/live'
 import { StockLogo } from '../components/Brand'
-import { TodayIssue } from '../components/TodayIssue'
 
 function StatusLine({ s }: { s?: Status }) {
   if (!s) return <div className="skeleton" style={{ width: 280, height: 18 }} />
@@ -27,43 +28,67 @@ function StatusLine({ s }: { s?: Status }) {
   )
 }
 
-function PredictRow({ p }: { p: Prediction }) {
+/**
+ * One card per stock, same shape day and night: the domestic price on top, the global (Hyperliquid) price below.
+ * In session: live domestic price vs the global price right before today's open (after the US close).
+ * After the domestic close: the domestic close vs the live global price, with where the US session stands
+ */
+function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number }) {
   const a = ASSET_BY_ID[p.asset]
-  const pl = probLabel(p.probUp)
-  const v = verdict(p.probUp)
-  if (!predictionReady(p))
-    return (
-      <Link href={`/s/${p.asset}`} className="easy-row">
-        <StockLogo id={p.asset} size={36} />
-        <div>
-          <p className="easy-row__name" data-fit>{a.name}</p>
-          <p className="easy-row__sub" data-fit>{IN_SESSION.title}</p>
-        </div>
-        <div className="easy-row__right">
-          <InSessionNotice compact />
-        </div>
-      </Link>
-    )
+  const ready = predictionReady(p)
+  const night = nightStage(p.targetOpenAt, now)
+  const follow = followText(p)
+  useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: a.perp }), [a.perp])
+  const ctx = useLive((st) => st.ctx[a.perp])
+  const usdc = useLive((st) => st.usdc)
+  const liveKrw = ctx?.mid && (!a.fx || usdc) ? ctx.mid * (a.fx ? usdc!.rate : 1) : p.perpKrw
+  const pct = (v: number, base: number) => (
+    <span className={tone(v / base - 1)}>{fmtPct((v / base - 1) * 100)}</span>
+  )
   return (
-    <Link href={`/s/${p.asset}`} className="easy-row" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
-      <StockLogo id={p.asset} size={36} />
-      <div>
-        <p className="easy-row__name" data-fit>
-          {a.name} <ThinTag p={p} help={false} />
-        </p>
-        <p className="easy-row__sub num" data-fit>
-          예상 시작 가격 {fmtPrice(p.expectedOpen, a.kind === 'index')}
-          {a.kind === 'stock' ? '원' : ''} <span className={p.expectedGapPct >= 0 ? 'up' : 'down'}>{fmtPct(p.expectedGapPct, 1)}</span>
-        </p>
+    <Link href={`/s/${p.asset}`} className="panel stock-card" onClick={() => track('prediction_detail_open', { asset: p.asset, from: 'home' })}>
+      <div className="stock-card__head">
+        <StockLogo id={p.asset} size={28} />
+        <b>{a.name}</b>
+        {ready && <ThinTag p={p} help={false} />}
+        <span className="spacer" />
+        <span className="stock-card__go">차트·자세히 ›</span>
       </div>
-      <div className="easy-row__right">
-        <p className={`easy-row__big num ${v.tone}`} data-fit>
-          {pl.label} {pl.value}%
-        </p>
-        <div className="prob-mini">
-          <i style={{ width: `${p.probUp * 100}%` }} />
-        </div>
-      </div>
+      {ready ? (
+        <>
+          <p className="stock-card__label">국내 종가</p>
+          <p className="stock-card__big num" data-fit>
+            {fmtPrice(p.refClose)}원 {s && pct(p.refClose, s.krx.prevClose)}
+          </p>
+          <p className="stock-card__label stock-card__label--gap">지금 글로벌 가격 · 국내 종가 대비</p>
+          <p className="stock-card__sub num" data-fit>
+            {fmtPrice(liveKrw)}원 {pct(liveKrw, p.refClose)}
+          </p>
+          {night.stage !== 'after' && <p className="stock-card__foot">{night.text}</p>}
+          {follow && <p className="stock-card__foot">{follow}</p>}
+        </>
+      ) : (
+        <>
+          <p className="stock-card__label">국내 지금</p>
+          <p className="stock-card__big num" data-fit>
+            {s ? (
+              <>
+                {fmtPrice(s.krx.price)}원 {pct(s.krx.price, s.krx.prevClose)}
+              </>
+            ) : (
+              '-'
+            )}
+          </p>
+          {s && p.preOpen && (
+            <>
+              <p className="stock-card__label stock-card__label--gap">미국장 닫힌 뒤 · 국내 개장 직전 글로벌 가격</p>
+              <p className="stock-card__sub num" data-fit>
+                {fmtPrice(p.preOpen.krw)}원 {pct(p.preOpen.krw, s.krx.prevClose)}
+              </p>
+            </>
+          )}
+        </>
+      )}
     </Link>
   )
 }
@@ -101,50 +126,38 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
 
 export default function EasyHome() {
   const status = useStatus()
+  const now = useNow(60_000)
   const preds = usePredictions()
   const arb = useArb()
+  useEffect(() => subscribeUsdc(), [])
 
   useEffect(() => {
     if (preds.data && status.data) track('prediction_view', { from: 'home', session: status.data.session })
   }, [!!preds.data, !!status.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const day = status.data ? openDayText(status.data.nextOpen) : '다음'
-  const inSession = !!status.data && status.data.session !== 'closed'
 
   return (
     <div className="easy">
       <section className="easy-hero">
-        <h1>{inSession ? '장이 끝나고 내일 가격이 어떨지 추측할 수 있어요' : `${day} 아침 장 시작 가격, 오를까요?`}</h1>
+        <h1>국장 시작 전, 가격을 먼저 가늠해 보세요</h1>
         <p className="easy-intro">
-          국내 주식시장이 닫힌 밤과 주말에도, 탈중앙 거래소 하이퍼리퀴드에서는 삼성전자·SK하이닉스·현대차 가격을 따라가는 선물이 24시간 거래돼요. 그 가격으로 다음 날 아침 국내 장이 얼마에 시작할지 예측해요.
+          국내 주식시장이 닫힌 밤과 주말에도, 탈중앙 거래소 하이퍼리퀴드에서는 삼성전자·SK하이닉스·현대차 가격을 따라가는 선물이 24시간 거래돼요. 그 가격을 원화로 바꾸고, 지난 개장일마다 국내 시장이 그 방향대로 열린 비율을 함께 보여드려요.
         </p>
         <StatusLine s={status.data} />
       </section>
 
-      <TodayIssue limit={3} />
-      <div style={{ height: 8 }} />
+      <div className="easy-section-title">
+        <h2>밤사이 해외 가격과 비교</h2>
+        <span className="faint" style={{ fontSize: 12 }}>
+          {status.data ? nightStage(status.data.nextOpen, now).short : `${PERP_PLAIN} 가격 기준`}
+        </span>
+      </div>
+      <div className="stock-cards">
+        {preds.data
+          ? preds.data.items.map((p) => <StockCard key={p.asset} p={p} s={arb.data?.items.find((x) => x.asset === p.asset)} now={now} />)
+          : [0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 168, borderRadius: 16 }} />)}
+      </div>
 
-      <section className="panel easy-list">
-        <div className="panel__head">
-          <span className="panel__title">다음 장 시작 가격 예측</span>
-          <span className="spacer" />
-          <span className="faint" style={{ fontSize: 12 }}>
-            {PERP_PLAIN} 가격 기준
-          </span>
-        </div>
-        <div className="panel__body">
-          {!preds.data ? (
-            <div className="skeleton" style={{ height: 260, margin: 8 }} />
-          ) : preds.data.items.every((p) => !predictionReady(p)) ? (
-            // During regular hours: one notice instead of the same line on every row
-            <div style={{ padding: '12px 12px 8px' }}>
-              <InSessionNotice />
-            </div>
-          ) : (
-            preds.data.items.map((p) => <PredictRow key={p.asset} p={p} />)
-          )}
-        </div>
-      </section>
 
       <div className="easy-section-title">
         <h2>지금 시세차익 기회</h2>
@@ -158,21 +171,46 @@ export default function EasyHome() {
 
       <section className="explain">
         <div className="easy-section-title" style={{ marginLeft: 0 }}>
-          <h2>어떻게 미리 알 수 있나요?</h2>
+          <h2>밤사이 가격, 언제 봐야 맞나요?</h2>
         </div>
         <p>
-          국내 시장은 넥스트레이드까지 저녁 8시면 닫히지만, 하이퍼리퀴드에서는 삼성전자·SK하이닉스 가격을 밤에도 주말에도 사고팔아요. 이 가격을 원화로
-          바꿔서 다음 날 장이 어떤 가격에서 시작할지 계산해요.
+          하이퍼리퀴드 가격은 미국장이 열려 있는 동안 가장 크게 움직여요. 그래서 언제 본 가격이냐에 따라, 국내 시장이 그 방향대로 열린 비율이 달라요.
+        </p>
+        <table className="explain__table num">
+          <tbody>
+            <tr>
+              <td>저녁 9시 가격</td>
+              <td>약 49%</td>
+            </tr>
+            <tr>
+              <td>새벽 1시 가격</td>
+              <td>약 72%</td>
+            </tr>
+            <tr>
+              <td>
+                미국장 마감 뒤 가격 <span className="faint">(겨울 새벽 6시 · 여름 새벽 5시)</span>
+              </td>
+              <td>
+                <b>약 86%</b>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="faint" style={{ fontSize: 12 }}>
+          평일 밤 108번, 삼성전자·SK하이닉스 기준 (4/13 이후)
         </p>
         <p>
-          지난 개장일마다 이 방법이 얼마나 맞았는지도 매일 다시 계산해요. 맞힌 비율은 종목 상세와{' '}
+          비율은 매일 아침 개장 결과로 다시 세요. 종목별 숫자는 종목 상세와{' '}
           <Link href="/about" className="link">
             소개
           </Link>
           에서 볼 수 있어요.
         </p>
+        <p>
+          시세차익은 두 시장 가격 차이가 평소보다 더 벌어졌을 때, 수수료·세금·환전 비용·펀딩비를 빼고도 남는 금액이에요. 남지 않으면 &lsquo;아직 시세차익 기회가 없어요&rsquo;로 보여드려요.
+        </p>
         <p className="faint" style={{ fontSize: 12 }}>
-          투자 판단을 돕는 참고 정보예요. 예측이 틀릴 수 있고, 투자 결과는 본인에게 돌아가요. 하이퍼리퀴드 거래는 국내 투자자 보호 대상이 아니에요.
+          참고 정보예요. 과거 비율이 앞으로도 같다는 보장은 없고, 투자 결과는 본인에게 돌아가요. 하이퍼리퀴드 거래는 국내 투자자 보호 대상이 아니에요.
         </p>
       </section>
     </div>

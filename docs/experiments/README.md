@@ -7,7 +7,7 @@ Analytics wiring for every metric is in [ga-events.md](ga-events.md).
 | # | Hypothesis | Status | Primary metric | Pass line | Doc |
 |---|---|---|---|---|---|
 | H1 | On nights with ≥ $1M traded on Hyperliquid while the domestic market is closed (20:00 → 08:00), it re-opens the way Hyperliquid moved | **Passed** for Samsung 88.2 / SK hynix 85.4%; Hyundai undecided (7 liquid nights) | Hyperliquid-direction rate | ≥ 80% | [H1](H1-hyperliquid-direction.md) |
-| H2 | Showing "오를 확률" brings people back before the next open | **Running** (community test from 2026-11-05) | Pre-open return of first-time visitors | ≥ 15% | [H2](H2-preopen-return.md) |
+| H2 | Showing tonight's Hyperliquid price and how often past opens followed it brings people back before the next open | **Running** (community test from 2026-11-05) | Pre-open return of first-time visitors | ≥ 15% | [H2](H2-preopen-return.md) |
 | H3 | Showing the record makes people trust and act on the forecast | Planned | Evidence-check rate | ≥ 10% | [H3](H3-trust.md) |
 | H4 | Showing the net spread turns viewing into an order intent | Planned | Spread viewed → order button | ≥ 5% | [H4](H4-spread-to-order.md) |
 | H5 | Opening the API/MCP creates off-site (agent) usage | Planned | Weekly external API calls | 1,000 / week | [H5](H5-agents.md) |

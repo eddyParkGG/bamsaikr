@@ -19,6 +19,7 @@ import { getPerpCtxs, getPerpHourlySince, type Candle } from '../sources/hyperli
 import { domesticDays, type DomesticDay } from '../sources/domesticDays.js'
 import { krxHolidays, krxQuote } from '../sources/krx.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
+import { nightStageAt, type NightStage } from '../../shared/night.js'
 
 const H = 3600_000
 const LONG_GAP_HOURS = 20 // close-to-open over 20h is treated as weekend/holiday
@@ -229,8 +230,30 @@ export function loadHistory(asset: Asset) {
       if (Math.abs(e.gapPct) >= 1 && e.follow === 'yes') bigYes++
       if (Math.abs(e.gapPct) >= 1 && e.follow === 'no') bigNo++
     }
+    // Hour by hour through each night: had someone checked Hyperliquid at that moment, would the open have gone that way?
+    // Grouped by where the moment sits against the US session. Each open counts once per stage (the share of that
+    // stage's hours that pointed the right way), so a 60-hour weekend does not outweigh a 12-hour weeknight
+    const krw = (px: number, t: number) => (asset.fx ? (rateAt(fx, t) ?? NaN) * px : px)
+    const STAGES: NightStage[] = ['before', 'during', 'after']
+    const byStage = { overnight: {} as Record<NightStage, number[]>, weekend: {} as Record<NightStage, number[]> }
+    for (const rg of ['overnight', 'weekend'] as const) for (const st of STAGES) byStage[rg][st] = []
+    for (const e of events) {
+      if (Math.abs(e.openGapPct) < FLAT_PCT) continue
+      const tOpen = kstToMs(e.date, '0800')
+      const hits: Record<NightStage, number[]> = { before: [], during: [], after: [] }
+      for (let t = tOpen - Math.round(e.closedHours) * H + H; t <= tOpen; t += H) {
+        const bar = candleAt(perp, t - H) // the bar ending at t
+        if (!bar) continue
+        const g = (krw(bar.c, t) / e.prevClose - 1) * 100
+        if (!Number.isFinite(g) || Math.abs(g) < FLAT_PCT) continue
+        hits[nightStageAt(tOpen, t).stage].push(Math.sign(g) === Math.sign(e.openGapPct) ? 1 : 0)
+      }
+      for (const st of STAGES) if (hits[st].length) byStage[e.regime][st].push(hits[st].reduce((a, b) => a + b, 0) / hits[st].length)
+    }
     const model = fit(events, vol)
     const r2 = (x: number) => Math.round(x * 100) / 100
+    const stageRate = (v: number[]) => ({ ratePct: v.length ? r2((v.reduce((a, b) => a + b, 0) / v.length) * 100) : null, opens: v.length })
+    const stageRates = (rg: 'overnight' | 'weekend') => ({ before: stageRate(byStage[rg].before), during: stageRate(byStage[rg].during), after: stageRate(byStage[rg].after) })
     return {
       model,
       events,
@@ -257,6 +280,8 @@ export function loadHistory(asset: Asset) {
         maePct: tested ? r2(absErr / tested) : null,
         perpRawMaePct: tested ? r2(perpRawAbsErr / tested) : null, // using the raw perp price as the open
         naiveMaePct: tested ? r2(naiveAbsErr / tested) : null, // assumes 'open = previous close'
+        /** Hourly checks through every night, by US-session stage: how often the open went the way Hyperliquid stood */
+        followByStage: { overnight: stageRates('overnight'), weekend: stageRates('weekend') },
       },
     }
   })
@@ -297,7 +322,20 @@ export async function predictOpen(asset: Asset) {
   const tonight = await getPerpHourlySince(asset.perp, refCloseAt - H)
   const tonightUsd = notional(tonight, refCloseAt, now)
   const recentNights = events.slice(-20).map((e) => e.nightUsd).sort((a, b) => a - b)
+
+  // Where tonight is against the US session, and Hyperliquid at the US close once it has closed
+  const ns = nightStageAt(target, now)
+  const closeBar = ns.stage === 'after' && ns.usClose ? candleAt(tonight, ns.usClose - H) : undefined
+  const usCloseKrw = closeBar ? (asset.fx ? closeBar.c * fx!.rate : closeBar.c) : null
   const typicalNightUsd = recentNights.length ? recentNights[recentNights.length >> 1] : 0
+
+  // While the domestic market trades: Hyperliquid at today's 08:00 open (after the US close), to compare with the live price
+  let preOpen: { at: number; krw: number } | null = null
+  if (inSession) {
+    const at = now - ((now + 9 * H) % (24 * H)) + 8 * H
+    const bar = candleAt(await getPerpHourlySince(asset.perp, at - 2 * H), at - H)
+    if (bar) preOpen = { at, krw: Math.round((asset.fx ? bar.c * fx!.rate : bar.c) * 100) / 100 }
+  }
 
   const bucket = (lo: number, hi: number) => normCdf((hi - mu) / sigma) - normCdf((lo - mu) / sigma)
   const r = (x: number) => Math.round(x * 10000) / 10000
@@ -330,6 +368,15 @@ export async function predictOpen(asset: Asset) {
     ],
     model: { alpha: r(model.alpha), beta: r(model.beta), sigmaPct: { overnight: r(model.sigma.overnight * 100), weekend: r(model.sigma.weekend * 100) }, n: model.n },
     backtest,
+    /** Tonight against the US session; `follow` = past opens that went the way Hyperliquid stood at this stage */
+    night: {
+      stage: ns.stage,
+      usCloseAt: ns.usClose,
+      usCloseKrw: usCloseKrw ? Math.round(usCloseKrw * 100) / 100 : null,
+      usClosePct: usCloseKrw ? r((usCloseKrw / refClose - 1) * 100) : null,
+      follow: backtest.followByStage[regime][ns.stage],
+    },
+    preOpen,
     lastEvent: last ?? null,
     updatedAt: now,
   }

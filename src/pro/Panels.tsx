@@ -1,3 +1,4 @@
+import { followAtStage, nightStage } from '../lib/night'
 import { Chevron } from '../components/Icon'
 import { memo, useEffect, useRef, useState } from 'react'
 import type { OpenEvent, Prediction } from '../../shared/api'
@@ -11,18 +12,15 @@ import { InSessionNotice, predictionReady, ThinTag } from '../components/NextOpe
 
 const HELP = {
   ref: '국내 시장(넥스트레이드 포함)에서 마지막으로 거래된 가격이에요. 저녁 8시 종가예요.',
-  perp: '국내 시장이 닫힌 동안 하이퍼리퀴드에서 거래된 지금 가격을 원화로 바꾼 값이에요.',
-  expected: '내일 아침 8시 국내 시장이 다시 열렸을 때(8시~8시 10분 평균) 예상되는 가격이에요.',
-  band: '10번 중 8번은 이 범위 안에서 시작한다는 뜻이에요. 장 열리기까지 시간이 많이 남을수록 넓어져요.',
-  up: '기준 가격보다 높게 시작할 확률이에요.',
+  perp: '국내 시장이 닫힌 동안 하이퍼리퀴드에서 거래된 지금 가격을 원화로 바꾼 값이에요. 기준 가격 대비 몇 %인지 같이 보여줘요.',
+  usClose: '미국장이 닫힐 때(겨울 새벽 6시, 여름 새벽 5시) 하이퍼리퀴드 가격이에요. 다음 날 국내 시장 시작 가격과 가장 가까운 시점이에요.',
+  followStage: '지금과 같은 시간대(미국장 열리기 전·열려 있는 동안·닫힌 뒤)에 하이퍼리퀴드 가격을 봤을 때, 다음 날 국내 시장이 그 방향(오름/내림)으로 시작한 비율이에요. 지난 개장일마다 한 번씩 세었어요.',
+  band: '지난 기록으로 보면 10번 중 8번은 이 범위 안에서 시작했어요. 장 열리기까지 시간이 많이 남을수록 넓어져요.',
   dist: '내일 아침 국내 시장이 기준 가격보다 몇 % 오르거나 내려서 시작할지, 구간별 확률이에요. 막대가 길수록 그 구간일 가능성이 커요.',
   follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
   liquid: '밤사이 하이퍼리퀴드에서 100만 달러(약 13억 원) 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
   big: '하이퍼리퀴드가 밤사이 1% 이상 움직인 날만 센 비율이에요. 크게 움직인 밤일수록 더 잘 맞았어요.',
-  coverage: '예상 범위는 10번 중 8번 들어오게 잡았어요. 실제로 그 안에서 시작한 비율이 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
-  mae: '예상 시작 가격이 실제 시작 가격과 평균 몇 % 차이 났는지예요. 아래 두 줄보다 작아야 예측이 쓸모 있어요.',
-  perpRaw: '예측 없이 "지금 하이퍼리퀴드 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
-  naive: '아무 정보 없이 "어제 저녁 8시 가격 그대로 시작한다"고 봤을 때의 평균 차이예요.',
+  coverage: '보통 시작 범위는 10번 중 8번 들어오게 잡았어요. 실제로 그 안에서 시작한 비율이 80%보다 높으면 범위가 넓은 거고, 낮으면 좁은 거예요.',
 }
 
 function Row({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
@@ -51,6 +49,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
   const isIdx = asset.kind === 'index'
   const maxP = Math.max(...p.distribution.map((d) => d.p))
   const bt = p.backtest
+  const night = nightStage(p.targetOpenAt)
   return (
     <div className="cols3">
       <section className="panel">
@@ -67,20 +66,32 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
             <InSessionNotice />
           ) : (
             <dl>
-              <Row label="기준 가격" help={HELP.ref}>
+              <Row label="국내 마지막 가격" help={HELP.ref}>
                 {fmtKrw(p.refClose, isIdx)}
               </Row>
+              <Row label="미국장 마감 때 하이퍼리퀴드" help={HELP.usClose}>
+                {p.night?.usCloseKrw != null && p.night.usClosePct != null ? (
+                  <>
+                    {fmtKrw(p.night.usCloseKrw, isIdx)} <span className={tone(p.night.usClosePct)}>{fmtPct(p.night.usClosePct)}</span>
+                  </>
+                ) : (
+                  <span className="faint">새벽 {night.closeHour}시 미국장이 닫히면 나와요</span>
+                )}
+              </Row>
               <Row label="하이퍼리퀴드 지금" help={HELP.perp}>
-                {fmtKrw(p.perpKrw, isIdx)} <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
+                <b>{fmtKrw(p.perpKrw, isIdx)}</b> <span className={tone(p.perpGapPct)}>{fmtPct(p.perpGapPct)}</span>
               </Row>
-              <Row label="예상 시작 가격" help={HELP.expected}>
-                <b>{fmtKrw(p.expectedOpen, isIdx)}</b> <span className={tone(p.expectedGapPct)}>{fmtPct(p.expectedGapPct)}</span>
+              <Row label="이 방향대로 열린 비율" help={HELP.followStage}>
+                {followAtStage(p) != null ? (
+                  <>
+                    <b>{Math.round(followAtStage(p)!)}%</b> <span className="faint">과거 {p.regime === 'weekend' ? '주말·연휴' : '평일 밤'} 이 시간대</span>
+                  </>
+                ) : (
+                  '-'
+                )}
               </Row>
-              <Row label="예상 범위" help={HELP.band}>
+              <Row label="보통 이 안에서 시작" help={HELP.band}>
                 {fmtPrice(p.band80.low, isIdx)} ~ {fmtKrw(p.band80.high, isIdx)}
-              </Row>
-              <Row label="오를 확률" help={HELP.up}>
-                <b className={p.probUp >= 0.5 ? 'up' : 'down'}>{Math.round(p.probUp * 100)}%</b>
               </Row>
             </dl>
           )}
@@ -108,21 +119,11 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
                   </div>
                 ))}
               </div>
-              {/* Same numbers folded into one split bar: falls on the left, rises on the right */}
-              <div className="updown num">
-                <div className="updown__labels">
-                  <span>
-                    내릴 확률 <b className="down">{100 - Math.round(p.probUp * 100)}%</b>
-                  </span>
-                  <span>
-                    오를 확률 <b className="up">{Math.round(p.probUp * 100)}%</b>
-                  </span>
-                </div>
-                <div className="prob__bar">
-                  <i className="updown__up" style={{ width: `${p.probUp * 100}%` }} />
-                </div>
-              </div>
               <p className="faint" style={{ fontSize: 12, marginTop: 12 }}>
+                {night.text}
+                {night.stage !== 'after' && ` · ${night.when}`}
+              </p>
+              <p className="faint" style={{ fontSize: 12, marginTop: 4 }}>
                 {p.regime === 'weekend' ? '주말·연휴를 건너는 밤' : '평일 밤'} · 장 열리기까지 {p.hoursToOpen}시간 남아서 그만큼 범위를 넓혔어요
               </p>
             </>
@@ -155,25 +156,16 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
             <Row label="1% 이상 움직인 밤만" help={HELP.big}>
               {bt.bigRatePct?.toFixed(1)}% <span className="faint">({bt.bigScored}번 중 {bt.bigYes}번)</span>
             </Row>
-            <Row label="예상 범위 안에서 시작" help={HELP.coverage}>
+            <Row label="보통 시작 범위 안에서 시작" help={HELP.coverage}>
               {bt.coverage80Pct?.toFixed(1)}%{' '}
               <span className="faint">
                 ({bt.tested}번 중 ·{' '}
                 {(bt.coverage80Pct ?? 80) > 87 ? '범위가 조금 넓어요' : (bt.coverage80Pct ?? 80) < 73 ? '범위가 좁아요' : '적당해요'})
               </span>
             </Row>
-            <Row label="예상 가격과의 차이" help={HELP.mae}>
-              평균 {bt.maePct}%p
-            </Row>
-            <Row label="하이퍼리퀴드 가격 그대로라면" help={HELP.perpRaw}>
-              평균 {bt.perpRawMaePct}%p
-            </Row>
-            <Row label="어제 마지막 가격 그대로라면" help={HELP.naive}>
-              평균 {bt.naiveMaePct}%p
-            </Row>
           </dl>
           <p className="faint" style={{ fontSize: 12, marginTop: 8 }}>
-            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요. 예상 가격은 앞 {bt.opens - bt.tested}번으로 배운 뒤 나머지 {bt.tested}번으로 채점했어요.
+            하이퍼리퀴드가 아침 8시 가격을 제공하는 {bt.since ? `${+bt.since.slice(4, 6)}월 ${+bt.since.slice(6, 8)}일` : ''}부터 {bt.opens}번의 장 시작을 봤어요. 범위는 앞 {bt.opens - bt.tested}번으로 배운 뒤 나머지 {bt.tested}번으로 채점했어요.
           </p>
         </div>
       </section>

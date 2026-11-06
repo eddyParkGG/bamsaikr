@@ -860,24 +860,6 @@ body.is-resizing * {
   background: var(--up);
   box-shadow: 2px 0 0 var(--bg);
 }
-.updown {
-  margin-top: 16px;
-}
-.updown__labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 6px;
-}
-.updown__up {
-  display: block;
-  height: 100%;
-  margin-left: auto;
-  background: var(--up);
-  box-shadow: -2px 0 0 var(--bg);
-}
 .prob__bar {
   height: 10px;
   border-radius: 5px;
@@ -903,6 +885,20 @@ body.is-resizing * {
   line-height: 1.75;
   color: var(--text-2);
   margin-bottom: 8px;
+}
+.explain__table {
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 4px 0 6px;
+}
+.explain__table td {
+  padding: 4px 0;
+}
+.explain__table td:last-child {
+  padding-left: 24px;
+  text-align: right;
+  color: var(--text);
 }
 
 .easy-detail {
@@ -2491,6 +2487,17 @@ body {
 .cnote__label {
   color: var(--text-3);
 }
+/* Small grey line under the forecast note: how far the number can still move tonight */
+.cnote__sub {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-shadow: 0 0 4px var(--bg), 0 0 2px var(--bg);
+  pointer-events: none;
+}
 .cnote__btn {
   height: 22px;
   padding: 0 8px;
@@ -2581,3 +2588,61 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Home: one card per stock, the first thing under the intro */
+.stock-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  color: inherit;
+  transition: background 0.15s;
+}
+.stock-card:hover {
+  background: var(--bg-layer);
+}
+.stock-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+.stock-card__go {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.stock-card__label {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.stock-card__big {
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.stock-card__sub {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.stock-card__label--gap {
+  margin-top: 10px;
+}
+.stock-card__foot {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+@media (max-width: 720px) {
+  .stock-cards {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -6,7 +6,7 @@ https://bamsai.kr
 > Bamsai shows Korean stocks' overnight and weekend prices from Hyperliquid perpetuals, converted to KRW with Upbit KRW-USDC, to forecast the next KRX opening price and the net spread after costs.
 
 ## What it answers
-- "SK하이닉스 내일 장 시작하면 오를까?" — probability of an up open, expected opening price and the range it lands in 8 times out of 10 (80% band)
+- "SK하이닉스 밤사이 해외에선 얼마나 움직였어?" — tonight's Hyperliquid price in KRW vs the domestic close, its price when the US session closed, how often past opens went that way at this stage of the night (before / during / after the US session), and the range the open usually lands in (80% band)
 - "지금 해외 가격이랑 국내 가격 차이로 남는 돈이 있나?" — how far the premium sits from its usual level (median of the last 5 trading days' regular session), and what that leaves after fees, tax, FX and funding
 - "이 예측 얼마나 맞았어?" — walk-forward backtest hit rate, band coverage and error per stock
 
