@@ -7,9 +7,12 @@ Plan and metrics: [H2](../H2-preopen-return.md). One row per post; read GA4 by `
 | 2026-11-05 (Thu) ~21:15 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7334766&page=1) | A (forecast) | `smsn_thu_A` | 삼전 202,100 (+0.3%) up 56% · 하닉 1,263,400 (+0.1%) up 52% | [smsn-chart.png](smsn-chart.png) |
 | 2026-11-05 (Thu) 21:21 | DC 주식 갤러리 | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7334780&page=1) | B (fact) | `skhx_thu_B` (source tag `dc_skhynix`, see notes) | 하닉 −9.6% today; Hyperliquid +0.1% vs close 1,262,000 | [skhx-chart.png](skhx-chart.png) |
 | 2026-11-06 (Fri) 10:25 | DC 주식 갤러리 | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7335194&page=1) | Result (last night's forecast vs actual open) | `result_fri_A` | 21:00 삼전 +0.3% 하닉 +0.1% → HL 07:00 −9.5% / −8% → actual 08:00–08:10 −11.9% / −13.9% | none (text only) |
+| 2026-11-06 (Fri) 12:07 | DC 주식 갤러리 | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7335294&page=1) | Fact, in session (Hyperliquid right before the open vs live domestic price) | `smsn_fri_lunch` | 삼전 HL before 08:00 181,500 (−9.9%) → low 175,300 (−13%) → 12:01 194,500 (−3.5%); 하닉 HL −9.5% → low −15% → −5.4% | [smsn-lunch.png](smsn-lunch.png) (full service screen, local build) |
 | 2026-11-05 (Thu) ~21:30 | Naver 종목토론방 삼성전자 (`naver_jongto`) | [431708763](https://stock.naver.com/domestic/stock/005930/discussion/431708763) — **deleted within minutes** | A (forecast) | `smsn_thu_A` | (posted by the owner directly) | — |
 
 ## Notes
+
+- 11/06 12:07 lunch post: the image is the new screen from the local build; bamsai.kr still served the previous release (with '오를 확률') until main is deployed, so early visitors may see a different screen. Views at 12:08 = 1 (our own check).
 
 - Naver 종목토론방: the post was gone ("이미 삭제되었거나 존재하지 않는 토론글입니다") minutes after posting.
   Its rules ban ads/promotion ("광고, 홍보, 도배"), and the body URL was not turned into a link, so even a surviving post
