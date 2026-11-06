@@ -153,16 +153,31 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     ;(c as unknown as { renderLegend?: (t: null) => void }).renderLegend?.(null)
   }, [settings, params, ready])
 
+  // Bars built from live ticks, kept until the REST series catches up: it lags a minute or two, and swapping it in
+  // used to wipe the newest bars until the next refresh, so they blinked in and out
+  const liveKrx = useRef(new Map<number, Bar>())
+  const livePerp = useRef(new Map<number, ChartSeries['perp'][number]>())
+  const livePerpKrw = useRef(new Map<number, Bar>())
+  const krxLast = useRef<Bar | null>(null)
+
   // Data: replace series data, then set the default range once per chart
   const placed = useRef(false)
   useEffect(() => {
     placed.current = false
     setCard(null)
+    liveKrx.current.clear()
+    livePerp.current.clear()
+    livePerpKrw.current.clear()
   }, [asset.id, interval, theme]) // the chart is rebuilt on a theme change, so place the range again
   useEffect(() => {
     const c = ctl.current
     if (!c) return
-    c.setInput({ data, spans, news, events, prediction })
+    const krx = mergeLive(data.krx, liveKrx.current)
+    const perp = mergeLive(data.perp, livePerp.current)
+    const perpKrw = mergeLive(data.perpKrw, livePerpKrw.current)
+    krxLast.current = krx.at(-1) ? { ...krx.at(-1)! } : null
+    const merged = krx === data.krx && perp === data.perp && perpKrw === data.perpKrw ? data : { ...data, krx, perp, perpKrw }
+    c.setInput({ data: merged, spans, news, events, prediction })
     ;(c as unknown as { renderLegend?: (t: null) => void }).renderLegend?.(null)
     if (!placed.current) {
       placed.current = true
@@ -171,11 +186,15 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const spanMs = interval === '1d' ? 365 * 86400_000 : interval === '1h' ? 10 * 86400_000 : interval === '15m' ? 3 * 86400_000 : interval === '5m' ? 86400_000 : 8 * 3600_000
       const ts = c.chart.timeScale()
       ts.setVisibleRange({ from: ct(lastT - spanMs), to: ct(lastT) })
-      // setVisibleRange pins the last bar to the edge; push it left by the same gap the price tags need
-      const r = ts.getVisibleLogicalRange()
-      const w = ts.width()
-      const gap = rightGapPx(w)
-      if (r && w > gap) ts.setVisibleLogicalRange({ from: r.from, to: r.to + ((r.to - r.from) * gap) / (w - gap) })
+      // setVisibleRange pins the last bar to the edge; push it left by the same gap the price tags need.
+      // Next frame: a chart created a moment ago has no width yet, and the gap would come out as 0
+      requestAnimationFrame(() => {
+        if (ctl.current !== c) return
+        const r = ts.getVisibleLogicalRange()
+        const w = ts.width()
+        const gap = rightGapPx(w)
+        if (r && w > gap) ts.setVisibleLogicalRange({ from: r.from, to: r.to + ((r.to - r.from) * gap) / (w - gap) })
+      })
     }
   }, [data, spans, news, events, prediction, ready, interval])
 
@@ -201,6 +220,8 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const last = data.perp.at(-1)
       if (!rate || (last && k.t < last.t)) return
       const { line, candle } = c.perpSeries
+      livePerp.current.set(k.t, { t: k.t, o: k.o, h: k.h, l: k.l, c: k.c, v: k.v, krw: k.c * rate })
+      livePerpKrw.current.set(k.t, { t: k.t, o: k.o * rate, h: k.h * rate, l: k.l * rate, c: k.c * rate, v: k.v })
       c.followLive(k.t, liveKind(k.t))
       try {
         candle?.update({ time: ct(k.t), open: k.o * rate, high: k.h * rate, low: k.l * rate, close: k.c * rate })
@@ -212,10 +233,6 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
   }, [asset, interval, data.perp, arb?.fx?.rate])
 
   // Live: last KRX bar from Toss Securities trades
-  const krxLast = useRef<Bar | null>(null)
-  useEffect(() => {
-    krxLast.current = data.krx.at(-1) ? { ...data.krx.at(-1)! } : null
-  }, [data.krx])
   useEffect(() => {
     const step = STEP_MS[interval]
     return useLive.subscribe((s, prev) => {
@@ -228,6 +245,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       if (last && t < last.t) return
       const bar: Bar = last && last.t === t ? { ...last, h: Math.max(last.h, tr.price), l: Math.min(last.l, tr.price), c: tr.price, v: last.v + tr.volume } : { t, o: tr.price, h: tr.price, l: tr.price, c: tr.price, v: tr.volume }
       krxLast.current = bar
+      liveKrx.current.set(bar.t, bar)
       ctl.current?.followLive(bar.t, liveKind(bar.t))
       try {
         series.update({ time: ct(bar.t) as UTCTimestamp, open: bar.o, high: bar.h, low: bar.l, close: bar.c })
@@ -268,6 +286,23 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       {asset.kind === 'stock' && <ChartNotes ctl={ctl} legend={legend} ready={ready} arb={arb} prediction={settings.forecast ? prediction : null} onPredict={onPredict} onArb={onArb} />}
     </div>
   )
+}
+
+/**
+ * REST bars plus any newer bars built from live ticks. Live bars the REST data already covers are dropped;
+ * for the bar both have, keep the REST open and take the live close and the wider high/low
+ */
+function mergeLive<T extends Bar>(rest: T[], live: Map<number, T>): T[] {
+  const restLast = rest.at(-1)?.t ?? -Infinity
+  for (const t of [...live.keys()]) if (t < restLast) live.delete(t)
+  if (!live.size) return rest
+  const out = rest.slice()
+  for (const b of [...live.values()].sort((x, y) => x.t - y.t)) {
+    const r = out[out.length - 1]
+    if (r && r.t === b.t) out[out.length - 1] = { ...r, ...b, o: r.o, h: Math.max(r.h, b.h), l: Math.min(r.l, b.l), v: Math.max(r.v, b.v) }
+    else out.push(b)
+  }
+  return out
 }
 
 /** Title and plain explanation for each sub-pane */
