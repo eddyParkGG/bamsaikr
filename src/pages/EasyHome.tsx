@@ -11,7 +11,6 @@ import { followText, nightStage } from '../lib/night'
 import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
 import { StockLogo } from '../components/Brand'
-import { TodayIssue } from '../components/TodayIssue'
 
 function StatusLine({ s }: { s?: Status }) {
   if (!s) return <div className="skeleton" style={{ width: 280, height: 18 }} />
@@ -167,8 +166,6 @@ export default function EasyHome() {
           : [0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 168, borderRadius: 16 }} />)}
       </div>
 
-      <TodayIssue limit={3} />
-      <div style={{ height: 8 }} />
 
       <div className="easy-section-title">
         <h2>지금 시세차익 기회</h2>
