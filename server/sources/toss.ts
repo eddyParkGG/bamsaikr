@@ -35,9 +35,10 @@ export function tossToken(): Promise<string> {
 /**
  * One queue for every Toss REST call. Toss caps request rates (the chart API at 20/sec); one page load fans out
  * to quotes, charts, indices and flows at once, and several visitors stack up, so bursts went over the cap and
- * came back empty. Keep the whole server under TOSS_PER_SEC
+ * came back empty. Toss caps each API group at roughly 1–10/sec (lower around 09:00 KST), and the chart API still
+ * hit 429 at 15/sec, so keep the whole server under TOSS_PER_SEC
  */
-export const TOSS_PER_SEC = 15
+export const TOSS_PER_SEC = 8
 let recent: number[] = []
 export async function tossSlot(now = () => Date.now()) {
   for (;;) {
