@@ -186,6 +186,9 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     return () => window.removeEventListener('keydown', onKey)
   }, [card])
 
+  // Session kind of a live bar, read the same way as the background spans above
+  const liveKind = (t: number): Span['kind'] => (sessionAt(interval === '1d' ? t + 3600_000 : t, holidays) === 'closed' ? 'closed' : 'open')
+
   // Live: last perp bar from the Hyperliquid WS (converted with the live Upbit rate)
   useEffect(() => {
     return useLive.subscribe((s, prev) => {
@@ -198,6 +201,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       const last = data.perp.at(-1)
       if (!rate || (last && k.t < last.t)) return
       const { line, candle } = c.perpSeries
+      c.followLive(k.t, liveKind(k.t))
       try {
         candle?.update({ time: ct(k.t), open: k.o * rate, high: k.h * rate, low: k.l * rate, close: k.c * rate })
         line?.update({ time: ct(k.t), value: k.c * rate })
@@ -224,6 +228,7 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
       if (last && t < last.t) return
       const bar: Bar = last && last.t === t ? { ...last, h: Math.max(last.h, tr.price), l: Math.min(last.l, tr.price), c: tr.price, v: last.v + tr.volume } : { t, o: tr.price, h: tr.price, l: tr.price, c: tr.price, v: tr.volume }
       krxLast.current = bar
+      ctl.current?.followLive(bar.t, liveKind(bar.t))
       try {
         series.update({ time: ct(bar.t) as UTCTimestamp, open: bar.o, high: bar.h, low: bar.l, close: bar.c })
       } catch {
