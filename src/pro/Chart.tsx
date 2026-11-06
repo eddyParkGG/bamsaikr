@@ -9,6 +9,7 @@ import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, f
 import { useLive } from '../lib/live'
 import { arbKind } from '../lib/arb'
 import { predictionReady } from '../components/NextOpenState'
+import { Help } from '../components/Help'
 import { ChartController, css, ct, MA_COLORS, rightGapPx, STEP_MS, type Lookup } from './chartController'
 import type { Bar } from './indicators'
 import type { Span } from './primitives'
@@ -231,9 +232,30 @@ function ChartImpl({ asset, interval, data, news, events, prediction, arb, setti
     })
   }, [asset.krxCode, interval])
 
+  // HTML label with a '?' over the 'follow' pane (pane titles on the canvas cannot carry a tooltip)
+  const [followTop, setFollowTop] = useState<number | null>(null)
+  useEffect(() => {
+    const c = ctl.current
+    if (!c || !box.current) return
+    const update = () => setFollowTop(c.paneTop('follow'))
+    const raf = requestAnimationFrame(update)
+    const ro = new ResizeObserver(update)
+    ro.observe(box.current)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
+  }, [ready, settings])
+
   return (
     <div className="chart">
       <div ref={box} className="chart__canvas" />
+      {followTop != null && (
+        <div className="pane-label" style={{ top: followTop + 4 }}>
+          따라간 정도 %
+          <Help text="국내 장이 시작할 때마다 막대 하나예요. 밤사이 하이퍼리퀴드가 움직인 만큼을 100으로 볼 때, 국내가 얼마나 움직여 시작했는지예요. 100이면 같은 만큼, 146이면 1.46배 더, 50이면 절반만, 0 아래면 반대로 시작했어요. 1% 넘게 움직인 밤만 그려요." />
+        </div>
+      )}
       <div ref={legend} className="chart__legend num" />
       <div ref={tip} className="chart__tip" hidden />
       {card && ctl.current && <BarCard card={card} interval={interval} lookup={ctl.current.lookup} news={news} onClose={() => setCard(null)} boxW={box.current?.clientWidth ?? 800} isIdx={asset.kind === 'index'} />}
