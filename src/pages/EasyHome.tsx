@@ -75,11 +75,30 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
               '-'
             )}
           </p>
+          {s && p.lastUsClose && (
+            <p className="stock-card__sub num">
+              {usCloseLabel(p.lastUsClose.at, now)} 미국장 마감 때 {PERP_PLAIN} {fmtPrice(p.lastUsClose.krw)}원{' '}
+              <span className={tone(p.lastUsClose.krw / s.krx.prevClose - 1)}>{fmtPct((p.lastUsClose.krw / s.krx.prevClose - 1) * 100)}</span>
+            </p>
+          )}
+          {s && (
+            <p className="stock-card__sub num">
+              {PERP_PLAIN} 지금 {fmtPrice(p.perpKrw)}원 <span className={tone(p.perpKrw / s.krx.prevClose - 1)}>{fmtPct((p.perpKrw / s.krx.prevClose - 1) * 100)}</span>
+            </p>
+          )}
           <p className="stock-card__foot">저녁 8시 국내 시장이 닫히면 밤사이 {PERP_PLAIN} 가격을 보여드려요</p>
         </>
       )}
     </Link>
   )
+}
+
+/** "오늘 새벽 6시" / "11월 7일 새벽 6시" (KST) */
+function usCloseLabel(at: number, now: number) {
+  const kst = (t: number) => new Date(t + 9 * 3600_000)
+  const d = kst(at)
+  const day = d.getUTCDate() === kst(now).getUTCDate() ? '오늘' : `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`
+  return `${day} 새벽 ${d.getUTCHours()}시`
 }
 
 function ArbRow({ s }: { s: ArbSnapshot }) {
