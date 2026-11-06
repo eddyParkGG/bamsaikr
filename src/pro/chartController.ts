@@ -145,6 +145,8 @@ export class ChartController {
     // Next frame: changing the chart inside the observer callback would trigger another resize in the same frame
     this.resize = new ResizeObserver(() => requestAnimationFrame(() => this.resize && this.chart.applyOptions({ timeScale: { rightOffsetPixels: rightGapPx(el.clientWidth) } })))
     this.resize.observe(el)
+    // E2E only (`vite --mode test`): lets Playwright read the visible range and bars. Compiled out of real builds
+    if (import.meta.env.MODE === 'test') (window as unknown as { __chart?: ChartController }).__chart = this
   }
 
   private axis: ISeriesApi<'Line'>
