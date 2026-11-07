@@ -130,3 +130,19 @@ test('order button opens the launch sign-up and sends no order', async ({ page, 
   expect(api.requests.filter((r) => r.url.includes('/orders') || r.body?.includes('"dryRun":false'))).toEqual([])
   expect(api.requests.filter((r) => r.method !== 'GET')).toEqual([])
 })
+
+test('spread order tab: no profit figure while the domestic market is closed', async ({ page, api }) => {
+  // In session (fixture): the pair tab shows the net after costs
+  await page.goto('/s/SKHX')
+  await page.getByRole('button', { name: '시세차익 기회' }).click()
+  await expect(page.locator('.pair-box')).toContainText('비용 뺀 수익')
+
+  // After the close the server answers with mode 'gap' (no stock leg can trade)
+  api.data.arb = { ...api.data.arb, items: api.data.arb.items.map((s: object) => ({ ...s, session: 'closed', mode: 'gap' })) }
+  await page.goto('/s/SKHX')
+  await page.getByRole('button', { name: '시세차익 기회' }).click()
+  const box = page.locator('.pair-box')
+  await expect(box).toContainText('시세차익 계산은 국장 중에만 가능해요')
+  await expect(box).not.toContainText('비용 뺀 수익')
+  await expect(page.getByText(/예상 순이익/)).toHaveCount(0)
+})
