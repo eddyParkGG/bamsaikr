@@ -27,6 +27,8 @@ export interface Api {
   hlSend: (msg: object) => Promise<void>
   /** Subscriptions the page sent to Hyperliquid */
   hlSubs: object[]
+  /** Fixture key → how many more requests answer 503 with an HTML page (like the proxy during a deploy) */
+  down: Record<string, number>
 }
 
 export const test = base.extend<{ api: Api }>({
@@ -34,10 +36,12 @@ export const test = base.extend<{ api: Api }>({
     const data: Api['data'] = {}
     for (const f of readdirSync(DIR)) if (f.endsWith('.json')) data[f.slice(0, -5)] = JSON.parse(readFileSync(new URL(f, DIR), 'utf8'))
     const requests: Api['requests'] = []
+    const down: Api['down'] = {}
     const unmocked: string[] = []
     const errors: string[] = []
 
-    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
+    // The browser logs every 503 we serve on purpose (api.down); those are expected, anything else is a failure
+    page.on('console', (m) => m.type() === 'error' && !/status of 503/.test(m.text()) && errors.push(m.text()))
     page.on('pageerror', (e) => errors.push(String(e)))
 
     // Off-site assets (web font CSS); analytics is off without VITE_GA_ID
@@ -48,7 +52,12 @@ export const test = base.extend<{ api: Api }>({
       requests.push({ method: req.method(), url: u.pathname + u.search, body: req.postData() })
       // Live KRX trades (SSE): an empty stream that asks the browser not to reconnect for an hour
       if (u.pathname === '/api/v1/stream/krx') return r.fulfill({ status: 200, contentType: 'text/event-stream', body: 'retry: 3600000\n\n' })
-      const body = data[keyOf(u)]
+      const k = keyOf(u)
+      if (down[k] > 0) {
+        down[k]--
+        return r.fulfill({ status: 503, contentType: 'text/html', body: '<html>Service Unavailable</html>' })
+      }
+      const body = data[k]
       if (body === undefined) {
         unmocked.push(u.pathname + u.search)
         return r.fulfill({ status: 404, json: { error: 'no fixture' } })
@@ -73,7 +82,7 @@ export const test = base.extend<{ api: Api }>({
       hl!.send(JSON.stringify(msg))
     }
 
-    await use({ data, requests, hlSend, hlSubs })
+    await use({ data, requests, hlSend, hlSubs, down })
 
     expect(unmocked, 'API calls without a fixture').toEqual([])
     expect(errors, 'console errors').toEqual([])
