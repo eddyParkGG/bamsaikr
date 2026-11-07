@@ -32,3 +32,16 @@ test('home: cards switch to the closed labels at 20:00 KST', async ({ page, api 
   await expect(page.getByText(/^지금 글로벌 가격/)).toHaveCount(3)
   await expect(page.getByText(IN_SESSION[0], { exact: true })).toHaveCount(0)
 })
+
+test('server restarting: the page keeps loading and fills in once the API is back, no error text', async ({ page, api }) => {
+  await page.clock.install({ time: api.data.status.now })
+  // Like a deploy: the first answers are 503 HTML pages from the proxy
+  api.down.predict = 3
+  api.down.arb = 3
+  await page.goto('/')
+  await expect(page.getByText(/요청 실패|Unexpected token|불러오지 못/)).toHaveCount(0)
+  // Retries back off 1s, 2s, 4s (runFor fires every timer due in the window, including ones scheduled meanwhile)
+  await page.clock.runFor(10_000)
+  await expect(page.getByRole('link', { name: /차트·자세히/ })).toHaveCount(3)
+  await expect(page.getByText(/요청 실패|Unexpected token|불러오지 못/)).toHaveCount(0)
+})

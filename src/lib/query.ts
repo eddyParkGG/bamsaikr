@@ -9,14 +9,20 @@ type Entry = {
   inflight?: Promise<void>
   interval: number
   subscribers: number
+  /** Consecutive transient failures, for the retry back-off */
+  failures: number
+  retryTimer?: ReturnType<typeof setTimeout>
 }
+
+/** Server restarting or unreachable (deploys, proxy 502/503, HTML error pages): retry quietly instead of showing an error */
+class Transient extends Error {}
 
 const entries = new Map<string, Entry>()
 
 function entry(key: string): Entry {
   let e = entries.get(key)
   if (!e) {
-    e = { state: { updatedAt: 0 }, listeners: new Set(), interval: 0, subscribers: 0 }
+    e = { state: { updatedAt: 0 }, listeners: new Set(), interval: 0, subscribers: 0, failures: 0 }
     entries.set(key, e)
   }
   return e
@@ -27,12 +33,23 @@ async function load(key: string) {
   if (e.inflight) return e.inflight
   e.inflight = (async () => {
     try {
-      const res = await fetch(key)
-      const body = await res.json()
+      const res = await fetch(key).catch(() => {
+        throw new Transient('network')
+      })
+      if (res.status >= 500 || res.status === 429) throw new Transient(String(res.status))
+      const body = await res.json().catch(() => {
+        throw new Transient('not json')
+      })
       if (!res.ok) throw new Error(body?.error ?? `요청 실패 (${res.status})`)
       e.state = { data: body, updatedAt: Date.now() }
+      e.failures = 0
     } catch (err) {
-      e.state = { ...e.state, error: err as Error }
+      if (err instanceof Transient) {
+        // Keep showing the last data (or the skeleton) and try again: 1s, 2s, 4s … up to 10s while someone is looking
+        clearTimeout(e.retryTimer)
+        const wait = Math.min(10_000, 1000 * 2 ** e.failures++)
+        e.retryTimer = setTimeout(() => e.subscribers && load(key), wait)
+      } else e.state = { ...e.state, error: err as Error }
     } finally {
       e.inflight = undefined
       e.listeners.forEach((l) => l())
