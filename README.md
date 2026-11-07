@@ -7,6 +7,9 @@
 - API 문서: [bamsai.kr/api/openapi.json](https://bamsai.kr/api/openapi.json) · MCP: `https://bamsai.kr/api/mcp` · 화면 안내: [bamsai.kr/developers](https://bamsai.kr/developers)
 - 1\~2장 요약 PRD: [docs/prd-summary.md](docs/prd-summary.md)
 
+> **English** — Bamsai prices Korean blue chips (Samsung Electronics, SK hynix, Hyundai Motor) 24/7 from their Hyperliquid perps (trade.xyz), converted to KRW at the Upbit KRW/USDC rate. While the Korean market is closed it shows the overseas price, how often past Korean opens followed it at the same stage of the US session, and the gap between the two markets net of fees, tax, FX, funding, slippage and order lag.
+> MCP endpoint `https://bamsai.kr/api/mcp` (Streamable HTTP, no key) or `npm run mcp:stdio` locally. Tools: `predict_open`, `get_arbitrage`, `get_convergence_history`, `get_news`, `preview_pair_order` (preview only, never sends orders). REST: [OpenAPI](https://bamsai.kr/api/openapi.json), 300 requests/min per IP. MIT licensed. The rest of this README is in Korean.
+
 ## 핵심 정리
 
 | 항목 | 내용 | 자세히 |

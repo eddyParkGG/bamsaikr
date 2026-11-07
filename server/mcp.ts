@@ -49,7 +49,7 @@ const TOOLS = [
   {
     name: 'get_convergence_history',
     description: 'Past re-open record per day since 2026-04-13: Hyperliquid move while closed (20:00→08:00), actual re-open move, follow (yes/no/flat), and where the prices met. Newest first, 20 days unless limit is given',
-    inputSchema: { type: 'object', properties: { asset: stockProp, limit: { type: 'number' } }, required: ['asset'] },
+    inputSchema: { type: 'object', properties: { asset: stockProp, limit: { type: 'number', description: 'How many most recent re-opens to return (default 20)' } }, required: ['asset'] },
     run: async (a: Record<string, string>) => {
       const h = await loadHistory(stockOf(a.asset))
       return { backtest: h.backtest, events: h.events.slice(-(Number(a.limit) || 20)).reverse() }
@@ -57,7 +57,7 @@ const TOOLS = [
   },
   {
     name: 'get_news',
-    description: 'Top issue per day for an asset (1 per day)',
+    description: 'One sourced news item per day for an asset (the day\'s main issue, with title, summary and source link), to explain big overnight or opening moves',
     inputSchema: { type: 'object', properties: { asset: assetProp }, required: ['asset'] },
     run: async (a: Record<string, string>) => newsMarkers(ASSET_BY_ID[a.asset as keyof typeof ASSET_BY_ID]),
   },
@@ -66,7 +66,7 @@ const TOOLS = [
     description: 'Preview (dry-run) of an arbitrage pair order: stock quantity and the Hyperliquid order it would send. Nothing is ever sent from this server. Hyperliquid side is priced on testnet (the default network), so its price can differ from mainnet',
     inputSchema: {
       type: 'object',
-      properties: { asset: assetProp, notionalKrw: { type: 'number', description: 'Trade size in KRW. get_arbitrage with the same notionalKrw shows the expected fill prices, slippage and net for this size' }, direction: { type: 'string', enum: ['perp_short_stock_long', 'perp_long_stock_short'] } },
+      properties: { asset: assetProp, notionalKrw: { type: 'number', description: 'Trade size in KRW. get_arbitrage with the same notionalKrw shows the expected fill prices, slippage and net for this size' }, direction: { type: 'string', enum: ['perp_short_stock_long', 'perp_long_stock_short'], description: 'perp_short_stock_long = sell the Hyperliquid perp and buy the stock (the only direction retail can do without short-selling stock). Use net.direction from get_arbitrage' } },
       required: ['asset', 'notionalKrw', 'direction'],
     },
     run: async (a: Record<string, string>) =>
