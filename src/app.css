@@ -2654,6 +2654,13 @@ body {
   margin-bottom: 8px;
   font-size: 15px;
 }
+.stock-card__head b {
+  white-space: nowrap;
+}
+/* No room for the link hint next to the thin-night tag; the whole card is the link */
+.stock-card__head:has(.thin-tag) .stock-card__go {
+  display: none;
+}
 .stock-card__go {
   font-size: 12px;
   color: var(--text-3);
