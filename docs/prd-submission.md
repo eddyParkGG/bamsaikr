@@ -1,7 +1,7 @@
-# 밤사이 — PRD
+# [밤사이](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=submission&utm_content=title) — PRD
 
 > 국내 시장이 닫힌 밤과 주말에도 해외 24시간 선물 거래소 **하이퍼리퀴드**에서 한국 주식이 거래됨. 이 가격을 원화로 바꿔, 장 시작 전 판단에 쓸 **밤사이 해외 가격과 과거에 국내 시장이 그 방향대로 열린 비율**, **비용을 뺀 두 시장 가격 차이 거래 기회**를 API·MCP와 웹 화면으로 제공함.
-> 웹앱 [**bamsai.kr**](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=submission) · [GitHub](https://github.com/eddyParkGG/bamsaikr) · [자세한 README](https://github.com/eddyParkGG/bamsaikr#readme)
+> 웹앱 [**bamsai.kr**](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=submission&utm_content=header) · [GitHub](https://github.com/eddyParkGG/bamsaikr) · [자세한 README](https://github.com/eddyParkGG/bamsaikr#readme)
 
 ## 1. 해결하려는 문제
 
