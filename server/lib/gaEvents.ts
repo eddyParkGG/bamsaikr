@@ -21,12 +21,13 @@ export function callerId(ip: string, ua: string, salt = process.env.GA_API_SECRE
   return `api.${createHash('sha256').update(`${salt}|${ip}|${ua}`).digest('hex').slice(0, 16)}`
 }
 
-const HANDSHAKE = new Set(['initialize', 'ping'])
-/** True when the call actually reads data: a REST /v1 read, or an MCP tools/call (the x-mcp-call header holds tool names) */
+/** Our MCP tools. Probes call made-up tool names to test auth, so only these count as data reads */
+const TOOLS = new Set(['get_arbitrage', 'predict_open', 'get_convergence_history', 'get_news', 'preview_pair_order'])
+/** True when the call actually reads data: a REST /v1 read, or an MCP tools/call of one of our tools (x-mcp-call holds tool names) */
 export function isDataCall(path: string, status: number, mcp?: string | null) {
   if (status >= 400) return false
   if (path.startsWith('/api/v1/')) return true
-  return !!mcp && mcp.split(',').some((m) => m && !m.includes('/') && !HANDSHAKE.has(m))
+  return !!mcp && mcp.split(',').some((m) => TOOLS.has(m))
 }
 
 export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?: string | null; ip?: string }) {
