@@ -148,5 +148,6 @@ describe('api caller counting', () => {
     expect(isDataCall('/api/mcp', 200, 'tools/list')).toBe(false)
     expect(isDataCall('/api/mcp', 202, 'notifications/initialized')).toBe(false)
     expect(isDataCall('/api/mcp/.well-known/agent.json', 404)).toBe(false)
+    expect(isDataCall('/api/mcp', 200, '__verifymcp_auth_probe_85aa27fa2fa827a7__')).toBe(false)
   })
 })
