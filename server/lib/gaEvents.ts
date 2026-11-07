@@ -16,6 +16,10 @@ export function callerKind(ua = '') {
   return 'other'
 }
 
+/** Directory crawlers, uptime monitors and research probes that only handshake with MCP servers (from their User-Agents) */
+const BOT_UA = /bot|crawl|spider|probe|indexer|monitor|status|liveness|survey|research|scanner|mcpbeat|mcpwatch|mcptry|mcpgw|talaria|measure-mcp|alalanet|ai-pulse|everymcp|agentrank|verifymcp|proofbench|moonglade|mcp-ficha|aiworkforce|enerlio|coda-agent/i
+export const isBotUa = (ua = '') => BOT_UA.test(ua)
+
 /** Stable, non-reversible id per caller (IP + User-Agent, salted with the GA secret). GA counts users by it */
 export function callerId(ip: string, ua: string, salt = process.env.GA_API_SECRET ?? '') {
   return `api.${createHash('sha256').update(`${salt}|${ip}|${ua}`).digest('hex').slice(0, 16)}`
@@ -23,6 +27,9 @@ export function callerId(ip: string, ua: string, salt = process.env.GA_API_SECRE
 
 /** Our MCP tools. Probes call made-up tool names to test auth, so only these count as data reads */
 const TOOLS = new Set(['get_arbitrage', 'predict_open', 'get_convergence_history', 'get_news', 'preview_pair_order'])
+/** Probes that test auth with made-up tool names (e.g. verifymcp sends __verifymcp_auth_probe_…) */
+export const isProbeCall = (mcp?: string | null) => !!mcp && /__\w*probe|server\/discover/.test(mcp)
+
 /** True when the call actually reads data: a REST /v1 read, or an MCP tools/call of one of our tools (x-mcp-call holds tool names) */
 export function isDataCall(path: string, status: number, mcp?: string | null) {
   if (status >= 400) return false
@@ -36,7 +43,8 @@ export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?
   const ua = p.ua ?? ''
   const id = callerId(p.ip ?? '', ua)
   // caller_id (GA custom dimension) lets the report split new vs returning callers by day
-  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), caller_id: id.slice(4), mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
+  // is_bot / ua_head (GA custom dimensions) let reports drop crawlers by name; ua_head is the first 40 chars of the User-Agent
+  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), caller_id: id.slice(4), is_bot: isBotUa(ua) || isProbeCall(p.mcp) ? 'true' : 'false', ua_head: ua.slice(0, 40) || undefined, mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
   // api_data_call: only calls that read data (not handshakes, discovery probes or errors) — users of this event = data callers
   const events = [{ name: 'api_call', params }, ...(isDataCall(p.path, p.status, p.mcp) ? [{ name: 'api_data_call', params }] : [])]
   const body = { client_id: id, non_personalized_ads: true, events }

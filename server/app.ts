@@ -28,7 +28,7 @@ import { openapi } from './openapi.js'
 import { mcp } from './mcp.js'
 import { compress } from 'hono/compress'
 import { clientIp, createLimiter } from './lib/rateLimit.js'
-import { callerId, isDataCall, sendApiCall } from './lib/gaEvents.js'
+import { callerId, isBotUa, isDataCall, isProbeCall, sendApiCall } from './lib/gaEvents.js'
 import { lastOkAt, type Source } from './lib/health.js'
 import { getUsdcKrw } from './sources/upbit.js'
 
@@ -62,7 +62,7 @@ app.use('*', async (c, next) => {
   const peer = c.req.header('fly-client-ip')
   const ip = peer ? clientIp(c.req.header('x-forwarded-for'), peer) : ''
   const data = isDataCall(c.req.path, c.res.status, mcpCall)
-  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined, caller: callerId(ip, ua ?? '').slice(4, 12), data }))
+  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined, caller: callerId(ip, ua ?? '').slice(4, 12), data, bot: isBotUa(ua) || isProbeCall(mcpCall) }))
   sendApiCall({ path: c.req.path, status: c.res.status, ua, mcp: mcpCall, ip })
 })
 
