@@ -276,7 +276,7 @@
 | H3 | 근거 확인한 사람의 재방문율 차이 | +10%p | `model_explain_open` |
 | H4 | 시세차익 기회 조회 → 주문 버튼 클릭 | ≥ 5% | `arb_view` → (`arb_cta_click`: 차트의 '시세차익 내기') → `order_submit` |
 | H4 | 주문 버튼 → 출시 알림 신청 (주문 열리기 전 수요 측정) | ≥ 20% | `order_submit` → `launch_notify_signup` |
-| H5 | 주간 데이터 호출자 수와 호출 수 | 주 1,000회 | 서버가 GA로 보내는 `api_data_call`(데이터 조회만, `caller_id`별), 연결 확인까지 포함한 `api_call`, GA `mcp_copy` |
+| H5 | 주간 데이터 호출자 수와 호출 수 | 주 1,000회 | 서버가 GA로 보내는 이벤트: `api_data_call`(실제 도구·REST 조회만), `api_check`(연결 확인·점검·오류), 둘을 합친 `api_call`. 매개변수 `caller_id`(사람 구분), `is_bot`(점검 봇), `ua_head`(UA 앞 40자). GA `mcp_copy` |
 
 **가드레일 (나빠지면 바로 멈춤)**
 

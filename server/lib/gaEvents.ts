@@ -45,8 +45,8 @@ export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?
   // caller_id (GA custom dimension) lets the report split new vs returning callers by day
   // is_bot / ua_head (GA custom dimensions) let reports drop crawlers by name; ua_head is the first 40 chars of the User-Agent
   const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), caller_id: id.slice(4), is_bot: isBotUa(ua) || isProbeCall(p.mcp) ? 'true' : 'false', ua_head: ua.slice(0, 40) || undefined, mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
-  // api_data_call: only calls that read data (not handshakes, discovery probes or errors) — users of this event = data callers
-  const events = [{ name: 'api_call', params }, ...(isDataCall(p.path, p.status, p.mcp) ? [{ name: 'api_data_call', params }] : [])]
+  // api_call = every outside call. Split by meaning: api_data_call = a real tool / REST read, api_check = handshakes, probes and errors
+  const events = [{ name: 'api_call', params }, { name: isDataCall(p.path, p.status, p.mcp) ? 'api_data_call' : 'api_check', params }]
   const body = { client_id: id, non_personalized_ads: true, events }
   fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${secret}`, { method: 'POST', body: JSON.stringify(body) }).catch(() => {})
 }
