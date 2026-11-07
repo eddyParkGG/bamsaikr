@@ -151,3 +151,14 @@ describe('api caller counting', () => {
     expect(isDataCall('/api/mcp', 200, '__verifymcp_auth_probe_85aa27fa2fa827a7__')).toBe(false)
   })
 })
+
+describe('bot flag for API callers', () => {
+  it('flags directory crawlers and probes, not real clients', async () => {
+    const { isBotUa, isProbeCall } = await import('../server/lib/gaEvents')
+    for (const ua of ['mcpbeat/0.1 (+https://mcpbeat.com/bot/; liveness check)', 'MCPWatch/0.1.0 (+mcpwatch@iyre.com) longitudinal MCP security research', 'EveryMCP-Probe/1.0', 'Talaria', 'measure-mcp-schema/0.1.0', 'warden-survey/0.1'])
+      expect(isBotUa(ua)).toBe(true)
+    for (const ua of ['python-requests/2.34', 'node', 'Claude-User (claude-code/2.1)', 'curl/8.7.1']) expect(isBotUa(ua)).toBe(false)
+    expect(isProbeCall('__verifymcp_auth_probe_85aa27fa2fa827a7__')).toBe(true)
+    expect(isProbeCall('get_arbitrage')).toBe(false)
+  })
+})
