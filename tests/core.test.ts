@@ -130,3 +130,23 @@ describe('toss request queue', () => {
     expect(done[5]).toBeGreaterThanOrEqual(950)
   })
 })
+
+describe('api caller counting', () => {
+  it('a caller id is stable for the same IP + UA, differs across IPs, and hides the IP', async () => {
+    const { callerId } = await import('../server/lib/gaEvents')
+    const a = callerId('1.2.3.4', 'python-requests/2.34', 's')
+    expect(callerId('1.2.3.4', 'python-requests/2.34', 's')).toBe(a)
+    expect(callerId('5.6.7.8', 'python-requests/2.34', 's')).not.toBe(a)
+    expect(a).not.toContain('1.2.3.4')
+  })
+  it('counts only data reads: REST /v1 and MCP tool calls, not handshakes or errors', async () => {
+    const { isDataCall } = await import('../server/lib/gaEvents')
+    expect(isDataCall('/api/v1/predict', 200)).toBe(true)
+    expect(isDataCall('/api/v1/predict', 429)).toBe(false)
+    expect(isDataCall('/api/mcp', 200, 'get_arbitrage')).toBe(true)
+    expect(isDataCall('/api/mcp', 200, 'initialize')).toBe(false)
+    expect(isDataCall('/api/mcp', 200, 'tools/list')).toBe(false)
+    expect(isDataCall('/api/mcp', 202, 'notifications/initialized')).toBe(false)
+    expect(isDataCall('/api/mcp/.well-known/agent.json', 404)).toBe(false)
+  })
+})
