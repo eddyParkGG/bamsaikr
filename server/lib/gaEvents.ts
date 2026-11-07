@@ -33,9 +33,11 @@ export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?
   const secret = process.env.GA_API_SECRET
   if (!secret) return
   const ua = p.ua ?? ''
-  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
+  const id = callerId(p.ip ?? '', ua)
+  // caller_id (GA custom dimension) lets the report split new vs returning callers by day
+  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), caller_id: id.slice(4), mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
   // api_data_call: only calls that read data (not handshakes, discovery probes or errors) — users of this event = data callers
   const events = [{ name: 'api_call', params }, ...(isDataCall(p.path, p.status, p.mcp) ? [{ name: 'api_data_call', params }] : [])]
-  const body = { client_id: callerId(p.ip ?? '', ua), non_personalized_ads: true, events }
+  const body = { client_id: id, non_personalized_ads: true, events }
   fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${secret}`, { method: 'POST', body: JSON.stringify(body) }).catch(() => {})
 }
