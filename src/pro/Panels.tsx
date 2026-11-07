@@ -3,7 +3,7 @@ import { Chevron } from '../components/Icon'
 import { memo, useEffect, useRef, useState } from 'react'
 import type { OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
-import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
+import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, openDayText, tone } from '../lib/format'
 import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
@@ -16,7 +16,7 @@ const HELP = {
   usClose: '미국장이 닫힐 때(겨울 새벽 6시, 여름 새벽 5시) 하이퍼리퀴드 가격이에요. 다음 날 국내 시장 시작 가격과 가장 가까운 시점이에요.',
   followStage: '지금과 같은 시간대(미국장 열리기 전·열려 있는 동안·닫힌 뒤)에 하이퍼리퀴드 가격을 봤을 때, 다음 날 국내 시장이 그 방향(오름/내림)으로 시작한 비율이에요. 지난 개장일마다 한 번씩 세었어요.',
   band: '지난 기록으로 보면 10번 중 8번은 이 범위 안에서 시작했어요. 장 열리기까지 시간이 많이 남을수록 넓어져요.',
-  dist: '내일 아침 국내 시장이 기준 가격보다 몇 % 오르거나 내려서 시작할지, 구간별 확률이에요. 막대가 길수록 그 구간일 가능성이 커요.',
+  dist: '다음 개장 때 국내 시장이 기준 가격보다 몇 % 오르거나 내려서 시작할지, 구간별 확률이에요. 막대가 길수록 그 구간일 가능성이 커요.',
   follow: '국내 시장이 닫힌 동안 하이퍼리퀴드가 오르면 다음 날 국내도 올라서, 내리면 내려서 시작한 비율이에요. 거의 안 움직인 날은 뺐어요.',
   liquid: '밤사이 하이퍼리퀴드에서 100만 달러(약 13억 원) 이상 거래된 날만 센 비율이에요. 거래가 많을수록 하이퍼리퀴드 가격을 믿을 만해요.',
   big: '하이퍼리퀴드가 밤사이 1% 이상 움직인 날만 센 비율이에요. 크게 움직인 밤일수록 더 잘 맞았어요.',
@@ -54,7 +54,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
     <div className="cols3">
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">내일 아침 가격</span>
+          <span className="panel__title">{openDayText(p.targetOpenAt)} 아침 가격</span>
           {predictionReady(p) && <ThinTag p={p} />}
           <span className="spacer" />
           <span className="faint" style={{ fontSize: 12 }}>
