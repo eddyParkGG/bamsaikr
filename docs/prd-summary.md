@@ -1,7 +1,7 @@
-# [밤사이](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=submission&utm_content=title) — PRD
+# [밤사이](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=prd_summary&utm_content=title) — PRD
 
 > 국내 시장이 닫힌 밤과 주말에도 해외 24시간 선물 거래소 **하이퍼리퀴드**에서 삼성전자·SK하이닉스·현대차 가격을 따라가는 무기한 선물(perp)이 거래됨. 이 가격을 원화로 바꿔, 장 시작 전 판단에 쓸 **밤사이 해외 가격과 과거에 국내 시장이 그 방향대로 열린 비율**, **비용을 뺀 두 시장 가격 차이 거래 기회**를 API·MCP(AI 에이전트가 외부 데이터를 불러 쓰는 표준 연결 방식)와 웹 화면으로 제공함.
-> 웹앱 [**bamsai.kr**](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=submission&utm_content=header) · [GitHub](https://github.com/eddyParkGG/bamsaikr) · [자세한 README](https://github.com/eddyParkGG/bamsaikr#readme)
+> 웹앱 [**bamsai.kr**](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=prd_summary&utm_content=header) · [GitHub](https://github.com/eddyParkGG/bamsaikr) · [자세한 README](https://github.com/eddyParkGG/bamsaikr#readme)
 
 ## 1. 해결하려는 문제
 
@@ -40,7 +40,7 @@
 | 전환 | 가격 차이 조회 → 주문 클릭 → 출시 알림 신청 | 클릭 5%, 신청 20% |
 | 가드레일 | 방향 적중률 | 4주 연속 75% 미만이면 숫자 숨김 |
 
-H2는 제출일(11/8)까지 게시하며 GA로 보고(11/6 이후 전체 방문), 방문 200명에 못 미치면 인터뷰 등 다른 방법으로 보완
+H2는 11/8까지 게시하며 GA로 보고(11/6 이후 전체 방문), 방문 200명에 못 미치면 인터뷰 등 다른 방법으로 보완
 
 ## 5. 프로토타입: 해결 방식과 AI 활용
 
