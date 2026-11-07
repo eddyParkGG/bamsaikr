@@ -28,7 +28,7 @@ import { openapi } from './openapi.js'
 import { mcp } from './mcp.js'
 import { compress } from 'hono/compress'
 import { clientIp, createLimiter } from './lib/rateLimit.js'
-import { sendApiCall } from './lib/gaEvents.js'
+import { callerId, isDataCall, sendApiCall } from './lib/gaEvents.js'
 import { lastOkAt, type Source } from './lib/health.js'
 import { getUsdcKrw } from './sources/upbit.js'
 
@@ -52,14 +52,18 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in the server logs)
+// For measuring the agent hypothesis (H5): log calls coming from outside the UI (aggregated in the server logs).
+// `x-bamsai-internal: 1` marks our own checks so they stay out of the counts
 app.use('*', async (c, next) => {
   await next()
-  if (c.req.header('sec-fetch-site') === 'same-origin' || c.req.path === '/api/health') return
+  if (c.req.header('sec-fetch-site') === 'same-origin' || c.req.path === '/api/health' || c.req.header('x-bamsai-internal') === '1') return
   const ua = c.req.header('user-agent')?.slice(0, 80)
   const mcpCall = c.res.headers.get('x-mcp-call')
-  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined }))
-  sendApiCall({ path: c.req.path, status: c.res.status, ua, mcp: mcpCall })
+  const peer = c.req.header('fly-client-ip')
+  const ip = peer ? clientIp(c.req.header('x-forwarded-for'), peer) : ''
+  const data = isDataCall(c.req.path, c.res.status, mcpCall)
+  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined, caller: callerId(ip, ua ?? '').slice(4, 12), data }))
+  sendApiCall({ path: c.req.path, status: c.res.status, ua, mcp: mcpCall, ip })
 })
 
 app.onError((err, c) => {

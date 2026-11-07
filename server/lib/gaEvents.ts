@@ -1,5 +1,7 @@
 // Server-side usage events to GA4 (Measurement Protocol), so API and MCP use shows up next to web visits.
-// Sends nothing unless GA_API_SECRET is set. No IP or request body leaves the server.
+// Sends nothing unless GA_API_SECRET is set. No IP or request body leaves the server: a caller is a salted hash
+// of IP + User-Agent, enough to count distinct callers without being able to recover either
+import { createHash } from 'node:crypto'
 const MEASUREMENT_ID = process.env.GA_MEASUREMENT_ID ?? 'G-GNFSQHZ91Z'
 
 /** Rough caller type from the User-Agent: enough to tell scripts and agents from browsers */
@@ -14,21 +16,26 @@ export function callerKind(ua = '') {
   return 'other'
 }
 
-/** Stable, non-identifying client id per caller type + User-Agent (GA needs one to count callers) */
-function clientId(ua: string) {
-  let h = 2166136261
-  for (let i = 0; i < ua.length; i++) h = Math.imul(h ^ ua.charCodeAt(i), 16777619)
-  return `api.${(h >>> 0).toString(36)}`
+/** Stable, non-reversible id per caller (IP + User-Agent, salted with the GA secret). GA counts users by it */
+export function callerId(ip: string, ua: string, salt = process.env.GA_API_SECRET ?? '') {
+  return `api.${createHash('sha256').update(`${salt}|${ip}|${ua}`).digest('hex').slice(0, 16)}`
 }
 
-export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?: string | null }) {
+const HANDSHAKE = new Set(['initialize', 'ping'])
+/** True when the call actually reads data: a REST /v1 read, or an MCP tools/call (the x-mcp-call header holds tool names) */
+export function isDataCall(path: string, status: number, mcp?: string | null) {
+  if (status >= 400) return false
+  if (path.startsWith('/api/v1/')) return true
+  return !!mcp && mcp.split(',').some((m) => m && !m.includes('/') && !HANDSHAKE.has(m))
+}
+
+export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?: string | null; ip?: string }) {
   const secret = process.env.GA_API_SECRET
   if (!secret) return
   const ua = p.ua ?? ''
-  const body = {
-    client_id: clientId(ua),
-    non_personalized_ads: true,
-    events: [{ name: 'api_call', params: { api_path: p.path, api_status: p.status, caller: callerKind(ua), mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 } }],
-  }
+  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
+  // api_data_call: only calls that read data (not handshakes, discovery probes or errors) — users of this event = data callers
+  const events = [{ name: 'api_call', params }, ...(isDataCall(p.path, p.status, p.mcp) ? [{ name: 'api_data_call', params }] : [])]
+  const body = { client_id: callerId(p.ip ?? '', ua), non_personalized_ads: true, events }
   fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${secret}`, { method: 'POST', body: JSON.stringify(body) }).catch(() => {})
 }
