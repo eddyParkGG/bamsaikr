@@ -218,7 +218,9 @@
 
 **North Star: 밤사이 API·MCP를 호출한 주간 외부 호출자 수 (초기 타겟)**
 → 선정 이유: 초기 타겟의 봇이 밤사이 숫자를 실제 판단에 쓰고 있다는 가장 직접적인 신호. 한 번 붙여 보고 마는지, 매주 다시 부르는지가 핵심
-- 정의: 서버가 GA로 보내는 `api_call` 이벤트(화면 밖 호출만)의 주간 고유 호출자. IP를 보내지 않고 User-Agent로 구분하는 근사값이라, 같은 도구를 쓰는 여러 사람이 하나로 묶일 수 있음. 목록 사이트의 상태 점검 호출은 제외
+- 정의: 실제로 데이터를 가져간 호출(REST `/v1` 조회, MCP 도구 호출)만 남기는 GA 이벤트 `api_data_call`의 주간 고유 호출자. 연결 확인(`initialize`·`tools/list`), 목록 사이트 점검, 오류 응답, 우리 쪽 확인 호출은 제외
+- 호출자 구분: IP와 User-Agent를 비밀 값과 섞은 해시(`caller_id`, 2026-11-07부터). IP 원문은 GA로도 로그로도 남기지 않음. 같은 망에서 같은 도구를 쓰면 한 명, IP가 바뀌면 두 명으로 셀 수 있는 근사값. 그 전 기록은 User-Agent로만 구분돼 사람 수를 알 수 없음
+- 신규·재사용자: 그날 처음 본 `caller_id`면 신규, 이전 날에 본 적 있으면 재사용자
 - 보조: 개장 전(06\~08시) `predict_open` 호출 수, 2주 연속 호출한 호출자 비율
 - 유입: 2026-11-06 공식 MCP Registry(`io.github.eddyParkGG/bamsai`)와 Glama(`kr.bamsai/bamsai`, A등급)에 등록, awesome-mcp-servers·awesome-remote-mcp-servers 목록에 추가 PR 제출
 
@@ -271,7 +273,7 @@
 | H3 | 근거 확인한 사람의 재방문율 차이 | +10%p | `model_explain_open` |
 | H4 | 시세차익 기회 조회 → 주문 버튼 클릭 | ≥ 5% | `arb_view` → (`arb_cta_click`: 차트의 '시세차익 내기') → `order_submit` |
 | H4 | 주문 버튼 → 출시 알림 신청 (주문 열리기 전 수요 측정) | ≥ 20% | `order_submit` → `launch_notify_signup` |
-| H5 | 주간 외부 API·MCP 호출 | 주 1,000회 | 서버가 GA로 보내는 `api_call`(화면 밖 호출만, 경로·호출 종류·MCP 도구), GA `mcp_copy` |
+| H5 | 주간 데이터 호출자 수와 호출 수 | 주 1,000회 | 서버가 GA로 보내는 `api_data_call`(데이터 조회만, `caller_id`별), 연결 확인까지 포함한 `api_call`, GA `mcp_copy` |
 
 **가드레일 (나빠지면 바로 멈춤)**
 
@@ -442,7 +444,7 @@ npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 국내 
 | `API_TOKEN` | 외부(에이전트)에서 실주문 API를 부를 때 인증. 화면에서 누르는 주문엔 필요 없음 | 외부 실주문 불가 |
 | `VITE_GA_ID` | GA4 측정 | 이벤트 전송 안 함 |
 | `VITE_NOTIFY_URL` | 주문 출시 알림 이메일을 쌓는 구글 시트(Apps Script 웹앱, [docs/launch-notify](docs/launch-notify/apps-script.gs)) | 신청 수만 GA에 기록 |
-| `GA_API_SECRET` | 서버가 외부 API·MCP 호출을 GA4 `api_call`로 보냄 (Measurement Protocol) | 서버 로그에만 남음 |
+| `GA_API_SECRET` | 서버가 외부 API·MCP 호출을 GA4 `api_call`·`api_data_call`로 보냄 (Measurement Protocol). 호출자 해시(`caller_id`)를 만들 때 섞는 비밀 값으로도 씀 | 서버 로그에만 남음 |
 
 ## GA4 설정
 
@@ -501,6 +503,7 @@ docs/     experiments=가설별 실험 계획·결과·GA 이벤트 연결
 | 11/6 | MCP에 SK하이닉스 ADR을 넣으면 '+48%' 같은 엉터리 값 | REST는 막았지만 MCP는 종목 검증이 없었음 | REST와 같은 규칙으로 국내 주식만 받음 | 이유와 함께 오류 응답 |
 | 11/6 | 토스 토큰 발급 429 때 API 서버가 종료 | 캔들 두 요청 중 하나를 기다리는 동안 다른 쪽 실패가 처리되지 않은 오류가 됨 | 두 요청을 함께 기다리도록 수정 | 실패해도 오류 응답만 내고 서버는 유지 |
 | 11/6 | 화면이 서버보다 먼저 배포되면 시세차익이 '+NaN원' | 새 응답 필드가 없을 때 대비가 없었음 (E2E가 발견) | 이전 필드로 대신 표시 | E2E 통과 |
+| 11/7 | API·MCP 사용자를 사람 수로 셀 수 없음 (H5) | User-Agent로만 구분해 같은 도구를 쓰는 사람이 한 명으로 묶이고, 연결 확인 수백 건과 실제 조회, 우리 확인 호출이 섞임 | IP+User-Agent 해시(`caller_id`)로 호출자 구분, 데이터 조회만 `api_data_call`로 따로 기록, `x-bamsai-internal` 헤더가 붙은 우리 확인 호출 제외 | 날짜별 신규·재사용자 집계 가능 |
 | 11/6 | API·MCP를 누가 얼마나 쓰는지 모름 (H5) | 서버 로그에만 잠깐 남음 | 외부 호출을 GA4 `api_call` 이벤트로 전송(경로·응답 코드·호출 종류·MCP 도구, IP 없음) | GA 실시간에서 확인 |
 
 ## 한계 메모

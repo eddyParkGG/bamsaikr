@@ -35,6 +35,7 @@ https://bamsai.kr
 - GET /api/v1/series?asset=SKHX&interval=1h — overlaid candles (KRX + Hyperliquid in KRW), premium, funding, Hyperliquid listing time (listedAt)
 - GET /api/v1/perps — Hyperliquid state for every asset
 - MCP server: /api/mcp (Streamable HTTP, read-only tools + pair-order preview). Listed on the official MCP Registry as io.github.eddyParkGG/bamsai and on Glama as kr.bamsai/bamsai
+- Usage counting: the server records the path, MCP tool name and a salted, non-reversible hash of IP + User-Agent to count distinct callers. No raw IP or request body is stored.
 - Orders: bamsai.kr only returns previews (dryRun). Live orders need a self-hosted copy with the owner's own Toss Securities / Hyperliquid keys
 
 ## Pages
