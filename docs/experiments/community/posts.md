@@ -15,6 +15,8 @@ H2 counts all visits from 2026-11-06 00:00 KST (internal traffic excluded); UTM 
 | 2026-11-07 (Sat) 10:23 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18290189&page=1) | Fact, weekend after the US close | `smsn_sat_am` | 삼전 19.3만 (−0.15%) / 하닉 117.7만 (+0.08%) vs Friday close; "Friday −6% already priced in" | [sat-am.png](sat-am.png) |
 | 2026-11-07 (Sat) 10:24 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3853821&page=1) | Fact, **no link** | — | same numbers; past weekend follow rate 삼전 70%, 하닉 76%, "basically flat" | [sat-am.png](sat-am.png) |
 | 2026-11-07 (Sat) 10:25 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7336093&page=1) | Fact, weekend after the US close | `skhx_sat_am` | 하닉 117.7만 (+0.08%) / 삼전 19.31만 (−0.15%); past weekend follow 76% / 70%, "too small to mean much" | [sat-am.png](sat-am.png) |
+| 2026-11-07 (Sat) 12:50 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18291586&page=1) | **Check format**: last 6 Mondays, overseas move vs actual open (4 of 6 right, misses shown) + this weekend live number | `skhx_sat_noon_check` | 하닉 HL 118.6만 (+0.9% vs Fri close 117.6만); night volume $268.6M (2× usual) | [sat-noon.png](sat-noon.png) |
+| 2026-11-07 (Sat) 12:50 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3854301&page=1) | **Question format**, no link: "월요일 하닉 어디서 시작할 거 같음?" | — | 하닉 118.6만 (+0.9%), 삼전 19.44만 (+0.5%); last Monday was a miss (+1.1% → −2.1%) | [sat-noon.png](sat-noon.png) |
 | 2026-11-05 (Thu) ~21:30 | Naver 종목토론방 삼성전자 (`naver_jongto`) | [431708763](https://stock.naver.com/domestic/stock/005930/discussion/431708763) — **deleted within minutes** | A (forecast) | `smsn_thu_A` | (posted by the owner directly) | — |
 
 ## Notes
@@ -23,6 +25,7 @@ H2 counts all visits from 2026-11-06 00:00 KST (internal traffic excluded); UTM 
 - 11/06 15:06 post: title ends with "ㅋㅋ", image placed above the text (later posts put it below). Views at 15:07 = 1 (our own check).
 - 11/06 19:33–19:34 posts: same time, two galleries. stockus says we built the site (one-off test), krstock has no link because its notice bans promoting your own site/program. Market was down that day, so neither post teases readers. Views at 19:40: stockus 31, krstock 44.
 - 11/07 10:23–10:25 posts: the 07:30 slot, posted late. Overseas prices sat within 0.2% of Friday's close, so the posts say the direction means little this time. Views at ~10:30: stockus 36, krstock 30, neostock 8.
+- 11/07 12:50 posts: reposted in the two fast galleries once the morning posts were well past page 5 (stockus ~20 min per 5 pages, krstock ~75 min), with new formats to lift clicks. Views a few minutes later: stockus 12, krstock 7.
 
 - Naver 종목토론방: the post was gone ("이미 삭제되었거나 존재하지 않는 토론글입니다") minutes after posting.
   Its rules ban ads/promotion ("광고, 홍보, 도배"), and the body URL was not turned into a link, so even a surviving post
