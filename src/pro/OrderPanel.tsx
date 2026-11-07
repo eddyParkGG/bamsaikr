@@ -5,6 +5,7 @@ import type { Asset } from '../../shared/assets'
 import { track } from '../lib/ga'
 import { fmtPct, fmtWon, tone } from '../lib/format'
 import { openLaunchNotify } from '../components/LaunchNotify'
+import { arbKind, arbText } from '../lib/arb'
 
 type Tab = 'perp' | 'krx' | 'pair'
 type Side = 'buy' | 'sell'
@@ -202,6 +203,8 @@ function KrxForm({ asset }: { asset: Asset }) {
 function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const [amount, setAmount] = useState('10000000')
   const dir = arb?.net.direction ?? 'perp_short_stock_long'
+  // Domestic market closed: no stock leg can trade, so show why instead of a profit that can't be taken
+  const closed = !!arb && arbKind(arb) === 'gap'
   return (
     <div className="stack" style={{ gap: 10 }}>
       {arb && (
@@ -214,18 +217,20 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
             <span className="muted">평소 차이</span>
             <b data-fit>{fmtPct(arb.normalPremiumPct)}</b>
           </div>
-          <div>
-            <span className="muted">비용 뺀 수익</span>
-            <b className={tone(arb.net.netPct)} data-fit>{fmtPct(arb.net.netPct)}</b>
-          </div>
-          <p>{dir === 'perp_short_stock_long' ? '하이퍼리퀴드 매도 + 주식 매수' : '하이퍼리퀴드 매수 + 주식 매도'}</p>
+          {!closed && (
+            <div>
+              <span className="muted">비용 뺀 수익</span>
+              <b className={tone(arb.net.netPct)} data-fit>{fmtPct(arb.net.netPct)}</b>
+            </div>
+          )}
+          <p>{closed ? arbText(arb).text : dir === 'perp_short_stock_long' ? '하이퍼리퀴드 매도 + 주식 매수' : '하이퍼리퀴드 매수 + 주식 매도'}</p>
         </div>
       )}
       <Row label="금액">
         <Field value={amount} onChange={setAmount} unit="원" />
       </Row>
       <p className="faint num" style={{ fontSize: 12 }}>
-        {arb ? `약 ${Math.floor(Number(amount) / arb.krx.price)}주 · 예상 순이익 ${fmtWon((Number(amount) * arb.net.netPct) / 100)}원` : ''}
+        {arb && !closed ? `약 ${Math.floor(Number(amount) / arb.krx.price)}주 · 예상 순이익 ${fmtWon((Number(amount) * arb.net.netPct) / 100)}원` : ''}
       </p>
       <OrderButton
         label="실행하기"
