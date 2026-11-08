@@ -56,3 +56,17 @@ export function ThinTag({ p, help = true }: { p: Prediction; help?: boolean }) {
     </span>
   )
 }
+
+export const ORACLE_HELP =
+  '해외 가격이 잠깐 비정상적으로 튀었어요. 기준 가격(오라클)에 얇은 체결이 들어간 경우일 수 있어서, 지금은 최근 평균 가격으로 보여드려요.'
+
+/** Tag next to the overnight price while an oracle anomaly is on (the price shown is then the recent median) */
+export function OracleTag({ p, help = true }: { p: Prediction; help?: boolean }) {
+  if (!p.oracle?.active) return null
+  // Inside a card link a tap on the tag opens the tooltip instead of following the link
+  return (
+    <span className="thin-tag" onClickCapture={help ? (e) => e.preventDefault() : undefined}>
+      가격 불안정{help && <Help text={ORACLE_HELP} />}
+    </span>
+  )
+}
