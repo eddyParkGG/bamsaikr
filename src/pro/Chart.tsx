@@ -379,8 +379,12 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
       const sub = el.querySelector<HTMLElement>('.cnote__sub')
       const h = el.offsetHeight + (sub ? sub.offsetHeight + 4 : 0)
       const w = Math.max(el.offsetWidth, sub?.offsetWidth ?? 0)
-      const above: [number, number] = [y - 6 - h, y - 6]
-      const below: [number, number] = [y + 6, y + 6 + h]
+      // Clear the price and the axis chips right next to it (each chip about 22px tall)
+      const near = c.lastChipYs().filter((cy) => Math.abs(cy - y) < 40)
+      const top = Math.min(y, ...near.map((cy) => cy - 11))
+      const bottom = Math.max(y, ...near.map((cy) => cy + 11))
+      const above: [number, number] = [top - 6 - h, top - 6]
+      const below: [number, number] = [bottom + 6, bottom + 6 + h]
       const span = c.perpYSpan(c.plotWidth - 6 - w)
       const cover = ([a, b]: [number, number]) => (span ? Math.max(0, Math.min(b, span.bottom) - Math.max(a, span.top)) : 0)
       const fits = ([a, b]: [number, number]) => a >= 0 && b <= c.mainPaneHeight
