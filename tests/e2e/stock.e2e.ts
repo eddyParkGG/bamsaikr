@@ -146,3 +146,35 @@ test('spread order tab: no profit figure while the domestic market is closed', a
   await expect(box).not.toContainText('비용 뺀 수익')
   await expect(page.getByText(/예상 순이익/)).toHaveCount(0)
 })
+
+test.describe('iPhone width', () => {
+  test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
+
+  test('stock: stats strip holds still, indicator menu opens whole, full-window chart fills the screen', async ({ page }) => {
+    await page.goto('/s/SKHX')
+    await chartReady(page, '1d')
+    // Stats strip: no attribute churn on its groups while nothing changes
+    const churn = await page.locator('dl.stats').evaluate(async (dl) => {
+      let n = 0
+      const mo = new MutationObserver((ms) => (n += ms.length))
+      mo.observe(dl, { subtree: true, attributes: true })
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+      mo.disconnect()
+      return n
+    })
+    expect(churn).toBe(0)
+    // Indicator menu: not clipped by the sideways-scrolling toolbar
+    await page.locator('.pro-chart .menu .chip').click()
+    const pop = (await page.locator('.menu__pop').boundingBox())!
+    expect(pop.height).toBeGreaterThan(200)
+    expect(pop.y + pop.height).toBeLessThanOrEqual(852)
+    // A tap outside closes it
+    await page.locator('body').dispatchEvent('mousedown')
+    await expect(page.locator('.menu__pop')).toBeHidden()
+    // Full-window chart covers the whole screen
+    await page.getByRole('button', { name: '차트 크게 보기' }).click()
+    const full = (await page.locator('.pro-chart').boundingBox())!
+    expect(full.y).toBe(0)
+    expect(full.height).toBe(852)
+  })
+})
