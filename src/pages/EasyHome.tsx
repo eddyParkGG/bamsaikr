@@ -12,6 +12,7 @@ import { useArb, usePredictions, useStatus } from '../lib/data'
 import { Link } from '../lib/router'
 import { subscribeHl, subscribeUsdc, useLive } from '../lib/live'
 import { StockLogo } from '../components/Brand'
+import { Chevron } from '../components/Icon'
 
 function StatusLine({ s }: { s?: Status }) {
   if (!s) return <div className="skeleton" style={{ width: 280, height: 18 }} />
@@ -53,8 +54,6 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
         <b>{a.name}</b>
         {ready && <ThinTag p={p} help={false} />}
         {ready && <OracleTag p={p} />}
-        <span className="spacer" />
-        <span className="stock-card__go">차트·자세히 ›</span>
       </div>
       {ready ? (
         <>
@@ -91,6 +90,11 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
           )}
         </>
       )}
+      {/* The whole card is the link; this line says where it goes (always shown, also next to the thin-night tag) */}
+      <span className="spacer" />
+      <span className="stock-card__cta">
+        차트·호가 보기 <Chevron dir="right" size={16} />
+      </span>
     </Link>
   )
 }
