@@ -561,6 +561,31 @@ export class ChartController {
   yOf(price: number) {
     return this.host?.priceToCoordinate(price) ?? null
   }
+  /** Highest and lowest Y (px) the Hyperliquid series reaches right of plot x `xFrom`, or null when nothing is drawn there */
+  perpYSpan(xFrom: number): { top: number; bottom: number } | null {
+    const ts = this.chart.timeScale()
+    const from = ts.coordinateToLogical(xFrom)
+    const range = ts.getVisibleLogicalRange()
+    const { line, candle } = this.perpSeries
+    const s = candle ?? line
+    if (from == null || !range || !s) return null
+    let top = Infinity
+    let bottom = -Infinity
+    for (let i = Math.max(0, Math.floor(from)); i <= Math.ceil(range.to); i++) {
+      const d = s.dataByIndex(i) as { value?: number; high?: number; low?: number } | null
+      if (!d) continue
+      for (const v of [d.high ?? d.value, d.low ?? d.value]) {
+        const y = v == null ? null : s.priceToCoordinate(v)
+        if (y == null) continue
+        top = Math.min(top, y)
+        bottom = Math.max(bottom, y)
+      }
+    }
+    return top <= bottom ? { top, bottom } : null
+  }
+  get plotWidth() {
+    return this.chart.timeScale().width()
+  }
   get mainPaneHeight() {
     return this.chart.panes()[0]?.getHeight() ?? 0
   }
