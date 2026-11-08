@@ -102,6 +102,9 @@ async function handle(req: RpcReq) {
   }
 }
 
+/** 'name/version' from clientInfo, printable ASCII only, at most 40 chars */
+export const mcpClientLabel = (name: string, version = '') => `${name}${version ? `/${version}` : ''}`.replace(/[^\x20-\x7e]/g, '').trim().slice(0, 40)
+
 export const mcp = new Hono()
 
 mcp.get('/', (c) => c.text('MCP endpoint. POST JSON-RPC here.', 405))
@@ -111,6 +114,9 @@ mcp.post('/', async (c) => {
   const list = Array.isArray(body) ? body : [body]
   // Which method/tool was called, for the usage log (tools/call → the tool name)
   c.header('x-mcp-call', list.map((r) => (r.method === 'tools/call' ? String(r.params?.name ?? '') : r.method)).join(',').slice(0, 100))
+  // The name the client gives itself on initialize (clientInfo), for telling AI apps from check scripts in the usage log
+  const info = list.find((r) => r.method === 'initialize')?.params?.clientInfo as { name?: unknown; version?: unknown } | undefined
+  if (info?.name) c.header('x-mcp-client', mcpClientLabel(String(info.name), info.version == null ? '' : String(info.version)))
   const replies = []
   for (const r of list) {
     if (r.id === undefined) continue // notification
