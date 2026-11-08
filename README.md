@@ -278,7 +278,15 @@
 | 디시 링크 클릭률 | 약 1.3% (링크 있는 글 조회 약 930회 → 12명) |
 | 밤사이 가격 확인 | 48명(방문자의 65%) → 종목 상세로 이어짐 4명 |
 | 개장 전(06\~08시) 확인 | 첫 평일 개장 전인 11/9(월)부터 집계 (시간대 측정 기준은 11/6 등록) |
-| API·MCP (초기 타겟) | 초기 타겟 유입 경로인 awesome MCP 목록 PR 2건([#18872](https://github.com/punkpeye/awesome-mcp-servers/pull/18872), [#4148](https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4148))이 머지된 뒤부터 판단. 그 전까지 기록된 호출은 목록 사이트의 연결 확인·점검 |
+
+**API·MCP** (초기 타겟, 같은 기간)
+
+| 항목 | 값 |
+|---|---|
+| 실제 데이터 조회 (`api_data_call`) | 사람·AI 에이전트 호출자 0명. 기록된 5건은 모두 목록 사이트 점검이었음(BrickBlueBot 3건, agent-index-prober 1건, verifymcp 인증 확인 1건) |
+| 연결 확인만 한 호출 (`api_check`, 11/7부터) | 57곳, 294건. 모두 도구는 부르지 않음. 그중 30분마다 반복하는 주기 점검 1곳이 76건 |
+| 호출자 구분 보강 | 11/8부터 MCP 연결 때 클라이언트가 밝히는 이름(`mcp_client`, 예: Claude·Cursor)을 기록해 AI 앱 연결과 점검 스크립트를 이름으로 나눔 |
+| 판단 시점 | 초기 타겟 유입 경로인 awesome MCP 목록 PR 2건([#18872](https://github.com/punkpeye/awesome-mcp-servers/pull/18872), [#4148](https://github.com/punkpeye/awesome-remote-mcp-servers/pull/4148))이 머지된 뒤부터 판단 |
 
 ### 출시 후 지표 (실험 통과 시)
 
@@ -472,7 +480,7 @@ npx tsx --env-file=.env.local server/scripts/build-sessions.ts  # 지난 국내 
 1. Google Analytics → 관리 → 속성 만들기 → 웹 스트림 추가 → 측정 ID(`G-…`) 복사
 2. Vercel 환경변수 `VITE_GA_ID`에 넣고 재배포
 3. 관리 → 맞춤 정의에 등록
-   - 이벤트 범위: `kst_window`, `asset`, `from`, `market`, `tab`, `mode`, `side`, `lev_bucket`, `api_path`, `api_status`, `caller`, `caller_id`, `is_bot`, `ua_head`, `mcp_call`
+   - 이벤트 범위: `kst_window`, `asset`, `from`, `market`, `tab`, `mode`, `side`, `lev_bucket`, `api_path`, `api_status`, `caller`, `caller_id`, `is_bot`, `ua_head`, `mcp_call`, `mcp_client`
    - 측정항목: `leverage`
    - 사용자 범위: `first_source`, `first_content`
    - 주요 이벤트(전환): `launch_notify_signup`, `order_submit`, `model_explain_open`
