@@ -14,6 +14,7 @@ import {
   type SeriesType,
   type Time,
   type UTCTimestamp,
+  MismatchDirection,
 } from 'lightweight-charts'
 
 /** Empty space right of the last bar so the price tags ('하이퍼리퀴드', '국내 시장') don't cover it: 12% of the width, 80–160px */
@@ -582,6 +583,18 @@ export class ChartController {
       }
     }
     return top <= bottom ? { top, bottom } : null
+  }
+  /** Y (px) of each visible series' last-price chip on the price axis (its title runs into the plot), for notes to keep clear of */
+  lastChipYs(): number[] {
+    const out: number[] = []
+    for (const s of [this.krxSeries, this.perpSeries.candle ?? this.perpSeries.line]) {
+      if (!s || !s.options().visible) continue
+      const d = s.dataByIndex(Number.MAX_SAFE_INTEGER, MismatchDirection.NearestLeft) as { value?: number; close?: number } | null
+      const v = d?.close ?? d?.value
+      const y = v == null ? null : s.priceToCoordinate(v)
+      if (y != null) out.push(y)
+    }
+    return out
   }
   get plotWidth() {
     return this.chart.timeScale().width()
