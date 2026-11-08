@@ -8,7 +8,7 @@ import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
 import { useArb } from '../lib/data'
-import { InSessionNotice, predictionReady, ThinTag } from '../components/NextOpenState'
+import { InSessionNotice, OracleTag, predictionReady, ThinTag } from '../components/NextOpenState'
 
 const HELP = {
   ref: '국내 시장(넥스트레이드 포함)에서 마지막으로 거래된 가격이에요. 저녁 8시 종가예요.',
@@ -56,6 +56,7 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
         <div className="panel__head">
           <span className="panel__title">{openDayText(p.targetOpenAt)} 아침 가격</span>
           {predictionReady(p) && <ThinTag p={p} />}
+          {predictionReady(p) && <OracleTag p={p} />}
           <span className="spacer" />
           <span className="faint" style={{ fontSize: 12 }}>
             <NextOpenWhen at={p.targetOpenAt} />

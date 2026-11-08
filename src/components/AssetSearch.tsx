@@ -178,12 +178,14 @@ export function SearchTrigger() {
   }, [open])
   return (
     <>
-      <button className="search-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <button className="search-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label="종목 검색">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="7" />
           <path d="M20 20l-3.5-3.5" />
         </svg>
-        <kbd>/</kbd>를 눌러 검색하세요
+        <span className="search-trigger__hint" aria-hidden>
+          <kbd>/</kbd>를 눌러 검색하세요
+        </span>
       </button>
       {open && <SearchDialog onClose={() => setOpen(false)} />}
     </>
