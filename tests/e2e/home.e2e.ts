@@ -6,7 +6,7 @@ test('home: three stock cards and the spread list', async ({ page, api }) => {
   await page.clock.install({ time: api.data.status.now })
   await page.goto('/')
 
-  const cards = page.getByRole('link', { name: /차트·자세히/ })
+  const cards = page.getByRole('link', { name: /차트·호가 보기/ })
   await expect(cards).toHaveCount(3)
   for (const label of IN_SESSION) await expect(page.getByText(label, { exact: true })).toHaveCount(3)
 
@@ -42,7 +42,7 @@ test('server restarting: the page keeps loading and fills in once the API is bac
   await expect(page.getByText(/요청 실패|Unexpected token|불러오지 못/)).toHaveCount(0)
   // Retries back off 1s, 2s, 4s. Each retry timer is set only after the previous (real) response arrives, which can be
   // after a single long runFor has returned, so step the clock until the page has filled in
-  const cards = page.getByRole('link', { name: /차트·자세히/ })
+  const cards = page.getByRole('link', { name: /차트·호가 보기/ })
   await expect
     .poll(async () => {
       await page.clock.runFor(1000)
@@ -58,7 +58,7 @@ test.describe('iPhone width', () => {
   test('home: header search and bottom strip stay inside the screen', async ({ page, api }) => {
     await page.clock.install({ time: api.data.status.now })
     await page.goto('/')
-    await expect(page.getByRole('link', { name: /차트·자세히/ })).toHaveCount(3)
+    await expect(page.getByRole('link', { name: /차트·호가 보기/ })).toHaveCount(3)
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393)
     // Search collapses to an icon button that fits the header
