@@ -1100,7 +1100,24 @@ body.is-resizing * {
     height: var(--chart-h);
     min-height: 0;
   }
-  .ticker > span:nth-child(n + 5) {
+  /* Bottom strip on phones: clear the home indicator, drop the venue hours and scroll sideways instead of clipping */
+  .shell {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  .ticker {
+    height: calc(36px + env(safe-area-inset-bottom));
+    padding: 0 max(12px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(12px, env(safe-area-inset-left));
+    gap: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ticker::-webkit-scrollbar {
+    display: none;
+  }
+  .ticker > * {
+    flex-shrink: 0;
+  }
+  .ticker__venue .faint {
     display: none;
   }
 }
@@ -1478,14 +1495,20 @@ body.is-resizing * {
   font-size: 12px;
   font-weight: 700;
 }
+/* Keeps the hint's kbd and text as the button's own flex items */
+.search-trigger__hint {
+  display: contents;
+}
+/* Narrow screens (no '/' key on phones): icon-only button. Hide the hint itself rather than font-size: 0,
+   so no text can render or be measured inside the 36px button */
 @media (max-width: 900px) {
   .search-trigger {
     width: 36px;
     padding: 0;
     justify-content: center;
-    font-size: 0;
+    flex-shrink: 0;
   }
-  .search-trigger kbd {
+  .search-trigger__hint {
     display: none;
   }
 }
@@ -2319,6 +2342,10 @@ button.ob2__px:active::after {
   .header .logo {
     font-size: 0;
     gap: 0;
+  }
+  /* viewport-fit=cover: keep the header clear of the notch in landscape */
+  .header__inner {
+    padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
   }
 }
 

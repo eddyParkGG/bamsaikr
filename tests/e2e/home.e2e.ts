@@ -45,3 +45,29 @@ test('server restarting: the page keeps loading and fills in once the API is bac
   await expect(page.getByRole('link', { name: /차트·자세히/ })).toHaveCount(3)
   await expect(page.getByText(/요청 실패|Unexpected token|불러오지 못/)).toHaveCount(0)
 })
+
+test.describe('iPhone width', () => {
+  test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
+
+  test('home: header search and bottom strip stay inside the screen', async ({ page, api }) => {
+    await page.clock.install({ time: api.data.status.now })
+    await page.goto('/')
+    await expect(page.getByRole('link', { name: /차트·자세히/ })).toHaveCount(3)
+
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(393)
+    // Search collapses to an icon button that fits the header
+    const search = page.getByRole('button', { name: '종목 검색' })
+    await expect(search).toBeVisible()
+    await expect(page.getByText('를 눌러 검색하세요')).toBeHidden()
+    const s = (await search.boundingBox())!
+    expect(s.x + s.width).toBeLessThanOrEqual(393)
+    expect(s.width).toBeLessThanOrEqual(40)
+    // Bottom strip: the whole box is on screen; what does not fit scrolls sideways inside it
+    const ticker = page.locator('.ticker')
+    const t = (await ticker.boundingBox())!
+    expect(t.x).toBeGreaterThanOrEqual(0)
+    expect(t.x + t.width).toBeLessThanOrEqual(393)
+    expect(t.y + t.height).toBeLessThanOrEqual(852)
+    expect(await ticker.evaluate((e) => getComputedStyle(e).overflowX)).toBe('auto')
+  })
+})
