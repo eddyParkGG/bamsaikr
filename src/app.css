@@ -1081,6 +1081,17 @@ body.is-resizing * {
   .pro-chart .band-legend {
     display: none;
   }
+  /* The toolbar scrolls sideways, which clips anything hanging below it: the indicator menu opens as a sheet over the page */
+  .pro-chart .menu__pop {
+    position: fixed;
+    top: auto;
+    left: 12px;
+    right: 12px;
+    bottom: calc(48px + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 70dvh;
+    z-index: 70;
+  }
 }
 @media (max-width: 1100px) {
   .cols3 {
@@ -1098,6 +1109,13 @@ body.is-resizing * {
     --chart-h: 520px;
     height: var(--chart-h);
     min-height: 0;
+  }
+  /* Full-window chart: the phone height above must not win over the whole screen */
+  .pro-chart.pro-chart--full {
+    --chart-h: 100dvh;
+    height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
   /* Bottom strip on phones: clear the home indicator, drop the venue hours and scroll sideways instead of clipping */
   .shell {
