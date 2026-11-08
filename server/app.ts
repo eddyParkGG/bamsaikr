@@ -62,8 +62,8 @@ app.use('*', async (c, next) => {
   const peer = c.req.header('fly-client-ip')
   const ip = peer ? clientIp(c.req.header('x-forwarded-for'), peer) : ''
   const data = isDataCall(c.req.path, c.res.status, mcpCall)
-  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined, caller: callerId(ip, ua ?? '').slice(4, 12), data, bot: isBotUa(ua) || isProbeCall(mcpCall) }))
-  sendApiCall({ path: c.req.path, status: c.res.status, ua, mcp: mcpCall, ip })
+  console.log(JSON.stringify({ evt: 'api_call', path: c.req.path, status: c.res.status, ua, mcp: mcpCall ?? undefined, client: c.res.headers.get('x-mcp-client') ?? undefined, caller: callerId(ip, ua ?? '').slice(4, 12), data, bot: isBotUa(ua) || isProbeCall(mcpCall) }))
+  sendApiCall({ path: c.req.path, status: c.res.status, ua, mcp: mcpCall, mcpClient: c.res.headers.get('x-mcp-client'), ip })
 })
 
 app.onError((err, c) => {

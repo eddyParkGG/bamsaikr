@@ -17,12 +17,27 @@ export function callerKind(ua = '') {
 }
 
 /** Directory crawlers, uptime monitors and research probes that only handshake with MCP servers (from their User-Agents) */
-const BOT_UA = /bot|crawl|spider|probe|indexer|monitor|status|liveness|survey|research|scanner|mcpbeat|mcpwatch|mcptry|mcpgw|talaria|measure-mcp|alalanet|ai-pulse|everymcp|agentrank|verifymcp|proofbench|moonglade|mcp-ficha|aiworkforce|enerlio|coda-agent/i
+const BOT_UA = /bot|crawl|spider|probe|indexer|monitor|status|liveness|survey|research|scanner|mcpbeat|mcpwatch|mcptry|mcpgw|talaria|measure-mcp|alalanet|ai-pulse|everymcp|agentrank|verifymcp|proofbench|moonglade|mcp-ficha|aiworkforce|enerlio|coda-agent|agenttoolindex|annalist|koskamo|agent-collector|health check/i
 export const isBotUa = (ua = '') => BOT_UA.test(ua)
 
 /** Stable, non-reversible id per caller (IP + User-Agent, salted with the GA secret). GA counts users by it */
 export function callerId(ip: string, ua: string, salt = process.env.GA_API_SECRET ?? '') {
   return `api.${createHash('sha256').update(`${salt}|${ip}|${ua}`).digest('hex').slice(0, 16)}`
+}
+
+/** MCP client name per caller: clientInfo comes only with initialize, later calls carry the same caller id.
+ *  Kept in memory for a day, at most 5,000 callers (oldest dropped) */
+const CLIENT_TTL = 24 * 3_600_000
+const clients = new Map<string, { name: string; at: number }>()
+export function mcpClientFor(id: string, fromInit?: string | null, now = Date.now()) {
+  if (fromInit) {
+    clients.delete(id)
+    clients.set(id, { name: fromInit, at: now })
+    if (clients.size > 5_000) clients.delete(clients.keys().next().value!)
+    return fromInit
+  }
+  const hit = clients.get(id)
+  return hit && now - hit.at < CLIENT_TTL ? hit.name : undefined
 }
 
 /** Our MCP tools. Probes call made-up tool names to test auth, so only these count as data reads */
@@ -37,14 +52,16 @@ export function isDataCall(path: string, status: number, mcp?: string | null) {
   return !!mcp && mcp.split(',').some((m) => TOOLS.has(m))
 }
 
-export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?: string | null; ip?: string }) {
+export function sendApiCall(p: { path: string; status: number; ua?: string; mcp?: string | null; mcpClient?: string | null; ip?: string }) {
   const secret = process.env.GA_API_SECRET
   if (!secret) return
   const ua = p.ua ?? ''
   const id = callerId(p.ip ?? '', ua)
+  // mcp_client (GA custom dimension, from 2026-11-08): the client's own name on initialize, e.g. claude-ai/0.1.0
+  const mcpClient = mcpClientFor(id, p.mcpClient)
   // caller_id (GA custom dimension) lets the report split new vs returning callers by day
   // is_bot / ua_head (GA custom dimensions) let reports drop crawlers by name; ua_head is the first 40 chars of the User-Agent
-  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), caller_id: id.slice(4), is_bot: isBotUa(ua) || isProbeCall(p.mcp) ? 'true' : 'false', ua_head: ua.slice(0, 40) || undefined, mcp_call: p.mcp ?? undefined, engagement_time_msec: 1 }
+  const params = { api_path: p.path, api_status: p.status, caller: callerKind(ua), caller_id: id.slice(4), is_bot: isBotUa(ua) || isProbeCall(p.mcp) ? 'true' : 'false', ua_head: ua.slice(0, 40) || undefined, mcp_call: p.mcp ?? undefined, mcp_client: mcpClient, engagement_time_msec: 1 }
   // api_call = every outside call. Split by meaning: api_data_call = a real tool / REST read, api_check = handshakes, probes and errors
   const events = [{ name: 'api_call', params }, { name: isDataCall(p.path, p.status, p.mcp) ? 'api_data_call' : 'api_check', params }]
   const body = { client_id: id, non_personalized_ads: true, events }

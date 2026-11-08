@@ -160,5 +160,21 @@ describe('bot flag for API callers', () => {
     for (const ua of ['python-requests/2.34', 'node', 'Claude-User (claude-code/2.1)', 'curl/8.7.1']) expect(isBotUa(ua)).toBe(false)
     expect(isProbeCall('__verifymcp_auth_probe_85aa27fa2fa827a7__')).toBe(true)
     expect(isProbeCall('get_arbitrage')).toBe(false)
+    for (const ua of ['AgentToolIndex/1.0 (+https://agenttoolindex.com)', 'AnnalistChecks/0.1 (+https://annalist.dev)', 'KoskamoDirectoryCheck/1.0', 'agent-collector/0.1 (+health check; no p']) expect(isBotUa(ua)).toBe(true)
+  })
+})
+
+describe('MCP client name for API callers', () => {
+  it('labels clientInfo and carries it to the same caller for a day', async () => {
+    const { mcpClientLabel } = await import('../server/mcp')
+    const { mcpClientFor } = await import('../server/lib/gaEvents')
+    expect(mcpClientLabel('claude-ai', '0.1.0')).toBe('claude-ai/0.1.0')
+    expect(mcpClientLabel('커서 Cursor')).toBe('Cursor')
+    expect(mcpClientLabel('x'.repeat(60)).length).toBe(40)
+    const t = 1_000_000
+    expect(mcpClientFor('a', 'cursor/1.0', t)).toBe('cursor/1.0')
+    expect(mcpClientFor('a', null, t + 60_000)).toBe('cursor/1.0') // a later tools/call has no clientInfo
+    expect(mcpClientFor('b', null, t)).toBeUndefined()
+    expect(mcpClientFor('a', null, t + 25 * 3_600_000)).toBeUndefined()
   })
 })
