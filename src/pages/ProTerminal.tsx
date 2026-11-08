@@ -303,35 +303,13 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   )
 }
 
-/** When the stats strip wraps, the first group on each line drops its divider (CSS cannot tell a line start) */
-function useLineStarts() {
-  const ref = useRef<HTMLDListElement>(null)
-  useEffect(() => {
-    const dl = ref.current
-    if (!dl) return
-    const mark = () => {
-      let top = -1
-      for (const g of Array.from(dl.children) as HTMLElement[]) {
-        g.classList.toggle('is-line-start', g.offsetTop !== top)
-        top = g.offsetTop
-      }
-    }
-    mark()
-    const ro = new ResizeObserver(mark)
-    ro.observe(dl)
-    return () => ro.disconnect()
-  }, [])
-  return ref
-}
-
 /** The stock stats strip */
 function StockStats({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot; live: NonNullable<ReturnType<typeof useStockLive>> }) {
-  const lines = useLineStarts()
   const isIdx = asset.kind === 'index'
   const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium } = live
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
   return (
-    <dl className="stats" ref={lines}>
+    <dl className="stats">
       <div className="stats__group">
         <dt>1일 범위</dt>
         <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
