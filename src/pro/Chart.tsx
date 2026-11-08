@@ -375,10 +375,13 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
       el.style.right = `${c.axisWidth + 6}px`
       // Sit just above or just below the price, on the side where the latest bars under the note are not:
       // centred on the price it covered the newest part of the line (a quiet weekend vanished behind it)
-      const h = el.offsetHeight + (el.querySelector('.cnote__sub') ? 18 : 0)
+      // The grey line under the note is wider than the note: both count, so neither covers the newest bars
+      const sub = el.querySelector<HTMLElement>('.cnote__sub')
+      const h = el.offsetHeight + (sub ? sub.offsetHeight + 4 : 0)
+      const w = Math.max(el.offsetWidth, sub?.offsetWidth ?? 0)
       const above: [number, number] = [y - 6 - h, y - 6]
       const below: [number, number] = [y + 6, y + 6 + h]
-      const span = c.perpYSpan(c.plotWidth - 6 - el.offsetWidth)
+      const span = c.perpYSpan(c.plotWidth - 6 - w)
       const cover = ([a, b]: [number, number]) => (span ? Math.max(0, Math.min(b, span.bottom) - Math.max(a, span.top)) : 0)
       const fits = ([a, b]: [number, number]) => a >= 0 && b <= c.mainPaneHeight
       const useBelow = fits(below) && (!fits(above) || cover(below) < cover(above))
