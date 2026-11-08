@@ -148,7 +148,7 @@ function PerpForm({ asset }: { asset: Asset }) {
         side={side}
         label={side === 'buy' ? '매수하기' : '매도하기'}
         onClick={() => {
-          track('order_submit', { market: 'perp', side, asset: asset.id, kind, leverage: lev })
+          track('order_submit', { market: 'perp', side, asset: asset.id, kind, leverage: lev, lev_bucket: lev < 5 ? 'lt5' : 'gte5' })
           openLaunchNotify(`${asset.name} 하이퍼리퀴드 ${side === 'buy' ? '매수' : '매도'}`)
         }}
       />

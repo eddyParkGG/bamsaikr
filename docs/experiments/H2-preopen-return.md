@@ -3,13 +3,13 @@
 **Claim.** People who see the next-open probability come back before the domestic market re-opens (06:00–08:00 KST; Nextrade opens at 08:00)
 to check it again. That return is the habit the product needs.
 
-## Test: 4-day community run
+## Test: 2-week community run
 
 | Item | Plan |
 |---|---|
 | Channels | DC Inside 주식 갤러리. Stock-specific minor galleries were checked and skipped as nearly inactive (SK하이닉스: a few posts a day; 하이퍼리퀴드, 삼성전자 주주: none for months). Naver stock forum dropped: its rules ban ads/promotion, the first post was removed within minutes, and body URLs are not linked |
 | Timing | Post 21:00–22:00 (after the 20:00 close, when the forecast exists) on Thu, Fri, Sun → measure Fri and Mon pre-open returns (weekend gap included). Thu: one A and one B post, spaced apart (back-to-back posts read as spam) |
-| Duration | 4 days (Thu 20:00 → Mon 08:00) |
+| Duration | 2 weeks (Thu 11/5 → Thu 11/19, 10 domestic opens). Posting continues daily across three galleries with rotating times and formats |
 | Message A/B | A forecast: run 1 (11/05) used "내일 장 시작 가격, 오를 확률 56%"; from 11/07 A posts after the US close: "미국장 마감 때 하이퍼리퀴드 -x% · 과거 이 시간대엔 n%가 이 방향대로 열렸어요" / B fact: "지금 해외에선 삼성전자 -2.6%" |
 | Links | `https://bamsai.kr/?utm_source=dc_stock&utm_medium=community&utm_campaign=bamsai_test1&utm_content={asset}_{day}_{A|B}` e.g. `smsn_thu_A` |
 | Measurement window | All visits from 2026-11-06 00:00 KST (the day after the first post), internal traffic excluded. People who first came through a post link may later come back by typing the address, so visits are not limited to UTM-tagged ones; UTM is only for comparing posts and messages |
