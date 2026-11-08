@@ -45,6 +45,10 @@
   color: var(--text-body);
   background: var(--bg-screen);
   -webkit-font-smoothing: antialiased;
+  /* iOS (Safari and Chrome, both WebKit) otherwise re-inflates small text every time a live number re-lays out its block,
+     so the 12–13px lines of a card blink on each price tick */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   color-scheme: dark;
 }
 

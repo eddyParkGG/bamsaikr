@@ -3,9 +3,10 @@
 const MIN_SCALE = 0.7
 
 function fit(el: HTMLElement) {
-  const base = Number(el.dataset.fitBase) || parseFloat(getComputedStyle(el).fontSize)
-  el.dataset.fitBase = String(base)
-  el.style.fontSize = ''
+  // Runs on every live tick: touch the DOM only when something changes (no attribute rewrite, no reset when unshrunk)
+  if (!el.dataset.fitBase) el.dataset.fitBase = String(parseFloat(getComputedStyle(el).fontSize))
+  const base = Number(el.dataset.fitBase)
+  if (el.style.fontSize) el.style.fontSize = ''
   if (el.scrollWidth <= el.clientWidth + 0.5) return
   const min = Number(el.dataset.fitMin) || MIN_SCALE
   let size = base * Math.max(min, el.clientWidth / el.scrollWidth)
