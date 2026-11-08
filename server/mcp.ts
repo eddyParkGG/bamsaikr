@@ -29,7 +29,7 @@ const TOOLS = [
   {
     name: 'get_arbitrage',
     description:
-      'Premium between Hyperliquid perp (mid) and KRX price, its usual level (5-day regular-session median) and the net left after costs on the gap beyond that level. net.netPct subtracts fees, tax, FX, funding, order-book slippage for notionalKrw (net.costs.slippage, net.fills: volume-weighted fill prices per leg) and the price move during the gap between the two orders (net.costs.latency = 1-minute volatility × √(lagSec/60)). net.depthLimited / net.maxNotionalKrw: the visible book can fill less than notionalKrw. All assets if asset is omitted',
+      'Premium between Hyperliquid perp (mid) and KRX price, its usual level (5-day regular-session median) and the net left after costs on the gap beyond that level. net.netPct subtracts fees, tax, FX, funding, order-book slippage for notionalKrw (net.costs.slippage, net.fills: volume-weighted fill prices per leg) and the price move during the gap between the two orders (net.costs.latency = 1-minute volatility × √(lagSec/60)). net.depthLimited / net.maxNotionalKrw: the visible book can fill less than notionalKrw. oracle.active: oracle-anomaly window (thin print moved the oracle); numbers stay on the real book, oracle.warning flags liquidation risk. All assets if asset is omitted',
     inputSchema: {
       type: 'object',
       properties: { asset: comparableProp, notionalKrw: { type: 'number', description: 'Trade size per leg in KRW (default 10000000)' }, lagSec: { type: 'number', description: 'Seconds between the two orders (default 3)' } },
@@ -42,7 +42,7 @@ const TOOLS = [
   },
   {
     name: 'predict_open',
-    description: 'Where the next domestic re-open (08:00–08:10 average on KRX/NXT, vs the 20:00 close) stands, for SMSN/SKHX/HYUNDAI. While the domestic market trades, status=in-session and preOpen is Hyperliquid at today\'s 08:00 open. Otherwise: the Hyperliquid price in KRW now and at the US close, how often past re-opens followed Hyperliquid at this stage of the night (night.follow.ratePct), the 80% band, and the overall follow rate (backtest.followRatePct). probUp and the expected price are model output, not a promise',
+    description: 'Where the next domestic re-open (08:00–08:10 average on KRX/NXT, vs the 20:00 close) stands, for SMSN/SKHX/HYUNDAI. While the domestic market trades, status=in-session and preOpen is Hyperliquid at today\'s 08:00 open. Otherwise: the Hyperliquid price in KRW now and at the US close, how often past re-opens followed Hyperliquid at this stage of the night (night.follow.ratePct), the 80% band, and the overall follow rate (backtest.followRatePct). probUp and the expected price are model output, not a promise. oracle.active: oracle-anomaly window; the Hyperliquid price then is oracle.robustKrw (30-minute median), not the spiking live mid',
     inputSchema: { type: 'object', properties: { asset: stockProp }, required: ['asset'] },
     run: async (a: Record<string, string>) => predictOpen(stockOf(a.asset)),
   },
