@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { arbText, depthNote } from '../lib/arb'
-import { predictionReady, ThinTag } from '../components/NextOpenState'
+import { OracleTag, predictionReady, ThinTag } from '../components/NextOpenState'
 import type { ArbSnapshot, Prediction, Status } from '../../shared/api'
 import { ASSET_BY_ID } from '../../shared/assets'
 import { PERP_PLAIN } from '../lib/copy'
@@ -41,7 +41,8 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
   useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: a.perp }), [a.perp])
   const ctx = useLive((st) => st.ctx[a.perp])
   const usdc = useLive((st) => st.usdc)
-  const liveKrw = ctx?.mid && (!a.fx || usdc) ? ctx.mid * (a.fx ? usdc!.rate : 1) : p.perpKrw
+  // During an oracle anomaly the server's robust price stands in for the spiking live mid
+  const liveKrw = !p.oracle?.usedRobust && ctx?.mid && (!a.fx || usdc) ? ctx.mid * (a.fx ? usdc!.rate : 1) : p.perpKrw
   const pct = (v: number, base: number) => (
     <span className={tone(v / base - 1)}>{fmtPct((v / base - 1) * 100)}</span>
   )
@@ -51,6 +52,7 @@ function StockCard({ p, s, now }: { p: Prediction; s?: ArbSnapshot; now: number 
         <StockLogo id={p.asset} size={28} />
         <b>{a.name}</b>
         {ready && <ThinTag p={p} help={false} />}
+        {ready && <OracleTag p={p} />}
         <span className="spacer" />
         <span className="stock-card__go">차트·자세히 ›</span>
       </div>
@@ -117,6 +119,11 @@ function ArbRow({ s }: { s: ArbSnapshot }) {
         {t.kind === 'go' && (
           <p className="easy-row__sub" data-fit>
             {depthNote(s) ?? '1천만원 기준'}
+          </p>
+        )}
+        {s.oracle?.warning && (
+          <p className="easy-row__sub" style={{ color: 'var(--up)' }}>
+            {s.oracle.warning}
           </p>
         )}
       </div>

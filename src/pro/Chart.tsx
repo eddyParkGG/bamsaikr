@@ -8,7 +8,7 @@ import { followText, nightStage } from '../lib/night'
 import { dateKeyParts, fmtKoreanUnit, fmtPct, fmtPrice, fmtUsdCompact, fmtWon, fmtWonUnit, tone } from '../lib/format'
 import { useLive } from '../lib/live'
 import { arbKind, depthNote } from '../lib/arb'
-import { predictionReady } from '../components/NextOpenState'
+import { OracleTag, predictionReady } from '../components/NextOpenState'
 import { Help } from '../components/Help'
 import { ChartController, css, ct, MA_COLORS, rightGapPx, STEP_MS, type Lookup, type SubPane } from './chartController'
 import type { Bar } from './indicators'
@@ -401,6 +401,7 @@ function ChartNotes({ ctl, legend, ready, arb, prediction, onPredict, onArb }: {
       {fc && (
         <div ref={fcEl} className="cnote" hidden>
           <span className="cnote__label">하이퍼리퀴드 지금</span>
+          <OracleTag p={fc} />
           <span>
             {fmtPrice(fc.perpKrw)}원 <b className={tone(fc.perpGapPct)}>{fmtPct(fc.perpGapPct)}</b>
           </span>

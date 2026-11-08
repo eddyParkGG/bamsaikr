@@ -224,6 +224,7 @@ function PairForm({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
             </div>
           )}
           <p>{closed ? arbText(arb).text : dir === 'perp_short_stock_long' ? '하이퍼리퀴드 매도 + 주식 매수' : '하이퍼리퀴드 매수 + 주식 매도'}</p>
+          {arb.oracle?.warning && <p style={{ color: 'var(--up)' }}>{arb.oracle.warning}</p>}
         </div>
       )}
       <Row label="금액">

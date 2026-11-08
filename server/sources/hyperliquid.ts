@@ -68,6 +68,7 @@ export interface Candle {
   l: number
   c: number
   v: number // volume (perp: contracts, KRX: shares)
+  n?: number // trade count (Hyperliquid candles only)
 }
 
 export type HlInterval = '1m' | '5m' | '15m' | '1h' | '4h' | '1d'
@@ -76,11 +77,11 @@ const TTL: Record<HlInterval, number> = { '1m': 10_000, '5m': 20_000, '15m': 30_
 
 export function getPerpCandles(coin: string, interval: HlInterval, startTime = 0): Promise<Candle[]> {
   return cached(`hl:candles:${coin}:${interval}:${startTime}`, TTL[interval], async () => {
-    const raw = await info<{ t: number; o: string; h: string; l: string; c: string; v: string }[]>({
+    const raw = await info<{ t: number; o: string; h: string; l: string; c: string; v: string; n: number }[]>({
       type: 'candleSnapshot',
       req: { coin, interval, startTime },
     })
-    return raw.map((k) => ({ t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v }))
+    return raw.map((k) => ({ t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v, n: k.n }))
   })
 }
 

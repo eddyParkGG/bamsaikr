@@ -20,6 +20,7 @@ import { domesticDays, type DomesticDay } from '../sources/domesticDays.js'
 import { krxHolidays, krxQuote } from '../sources/krx.js'
 import { getUsdcKrw, getUsdcKrwHourly, rateAt, type FxPoint } from '../sources/upbit.js'
 import { nightStageAt, type NightStage } from '../../shared/night.js'
+import { oracleAnomaly } from './oracle.js'
 
 const H = 3600_000
 const LONG_GAP_HOURS = 20 // close-to-open over 20h is treated as weekend/holiday
@@ -288,12 +289,13 @@ export function loadHistory(asset: Asset) {
 }
 
 export async function predictOpen(asset: Asset) {
-  const [{ model, events, backtest }, ctxs, fx, holidays, quote] = await Promise.all([
+  const [{ model, events, backtest }, ctxs, fx, holidays, quote, oracle] = await Promise.all([
     loadHistory(asset),
     getPerpCtxs(),
     asset.fx ? getUsdcKrw() : null,
     krxHolidays(),
     krxQuote(asset),
+    oracleAnomaly(asset).catch(() => null),
   ])
   const ctx = ctxs.get(asset.perp)!
   const now = Date.now()
@@ -308,7 +310,11 @@ export async function predictOpen(asset: Asset) {
   const refClose = inSession || !lastClose ? quote.price : lastClose.close!
   const refCloseAt = inSession || !lastClose ? now : kstToMs(lastClose.date, '2000')
 
-  const mid = ctx.midPx ?? ctx.markPx
+  const liveMid = ctx.midPx ?? ctx.markPx
+  // Oracle anomaly (a thin print moved the oracle and the perp with it): the forecast uses the window's
+  // median 1m close instead of the instantaneous mid, so a spike does not drive the numbers
+  const robust = oracle?.active && oracle.robustPx != null
+  const mid = robust ? oracle.robustPx! : liveMid
   const perpKrw = asset.fx ? mid * fx!.rate : mid
   const g = perpKrw / refClose - 1
   const regime: OpenEvent['regime'] = (target - refCloseAt) / H > LONG_GAP_HOURS ? 'weekend' : 'overnight'
@@ -381,6 +387,10 @@ export async function predictOpen(asset: Asset) {
       follow: backtest.followByStage[regime][ns.stage],
     },
     preOpen,
+    /** Oracle-anomaly flag. While active, perpKrw / perpGapPct / expectedOpen use robustKrw, not the live mid (liveKrw) */
+    oracle: oracle
+      ? { active: oracle.active, reasons: oracle.reasons, reasonText: oracle.reasonText, since: oracle.since, robustKrw: oracle.robustKrw, liveKrw: Math.round((asset.fx ? liveMid * fx!.rate : liveMid) * 100) / 100, usedRobust: !!robust, movePct: oracle.movePct, indexMovePct: oracle.indexMovePct, oracleGapPct: oracle.oracleGapPct }
+      : null,
     lastEvent: last ?? null,
     updatedAt: now,
   }

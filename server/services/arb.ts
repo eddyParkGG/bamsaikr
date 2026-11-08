@@ -10,6 +10,7 @@ import { getUsdcKrw, getUsdcKrwCandles, rateAt } from '../sources/upbit.js'
 import { cached } from '../lib/cache.js'
 import { kstDateKey } from '../../shared/session.js'
 import { chartSeries } from './series.js'
+import { ARB_WARNING, oracleAnomaly } from './oracle.js'
 
 // Cost assumptions (bp = 0.01%). Can be overridden via API query
 export interface CostInput {
@@ -62,6 +63,8 @@ export interface ArbSnapshot {
     executable: boolean
     note: string
   }
+  /** Oracle-anomaly flag. The numbers above stay on the real order book; `warning` is set while active */
+  oracle: { active: boolean; reasons: string[]; reasonText: string[]; since: number | null; robustKrw: number | null; warning: string | null } | null
   updatedAt: number
 }
 
@@ -141,7 +144,7 @@ function normalPremium(asset: Asset, holidays: ReadonlySet<string>): Promise<num
 }
 
 export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST): Promise<ArbSnapshot> {
-  const [ctxs, quote, fx, holidays, perpBook, stockBook, minutes] = await Promise.all([
+  const [ctxs, quote, fx, holidays, perpBook, stockBook, minutes, oracle] = await Promise.all([
     getPerpCtxs(),
     krxQuote(asset),
     asset.fx ? getUsdcKrw() : null,
@@ -149,6 +152,7 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
     getPerpBook(asset.perp).catch(() => null),
     krxBook(asset).catch(() => null),
     perpKrwMinutes(asset).catch(() => []),
+    oracleAnomaly(asset).catch(() => null),
   ])
   const normal = await normalPremium(asset, holidays).catch(() => 0)
   const ctx = ctxs.get(asset.perp)
@@ -241,6 +245,9 @@ export async function arbSnapshot(asset: Asset, cost: CostInput = DEFAULT_COST):
       executable,
       note,
     },
+    oracle: oracle
+      ? { active: oracle.active, reasons: oracle.reasons, reasonText: oracle.reasonText, since: oracle.since, robustKrw: oracle.robustKrw, warning: oracle.active ? ARB_WARNING : null }
+      : null,
     updatedAt: now,
   }
 }
