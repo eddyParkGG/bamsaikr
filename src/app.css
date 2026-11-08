@@ -503,7 +503,8 @@ body.is-resizing * {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 4;
+  /* Above the price notes (z 4): the bubble you are pointing at reads first */
+  z-index: 6;
   max-width: 240px;
   padding: 8px 10px;
   border-radius: 10px;
