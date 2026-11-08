@@ -2701,14 +2701,23 @@ body {
 .stock-card__head b {
   white-space: nowrap;
 }
-/* No room for the link hint next to the thin-night tag; the whole card is the link */
-.stock-card__head:has(.thin-tag) .stock-card__go {
-  display: none;
+/* Bottom line of the card: says the card opens the stock page. Pressing tints the card (no hover on phones) */
+.stock-card:active {
+  background: var(--bg-layer);
 }
-.stock-card__go {
-  font-size: 12px;
-  color: var(--text-3);
-  white-space: nowrap;
+.stock-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.stock-card:hover .stock-card__cta {
+  color: var(--text);
 }
 .stock-card__label {
   font-size: 12px;
