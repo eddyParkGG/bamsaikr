@@ -40,7 +40,7 @@
 
 ## 5. 해결 방식과 AI 활용
 
-- **해결 방식**: 하이퍼리퀴드 가격 × 업비트 원/USDC 환율 + 토스증권 Open API(국내 실시간 시세·호가·투자자 동향, [bamsai.kr](https://bamsai.kr/?utm_source=prd&utm_medium=document&utm_campaign=prd_summary&utm_content=solution)에서 실제 동작)
+- **해결 방식**: 하이퍼리퀴드 가격 × 업비트 원/USDC 환율 + 토스증권 Open API(국내 실시간 시세·호가·투자자 동향, [SK하이닉스 종목 화면](https://bamsai.kr/s/SKHX?utm_source=prd&utm_medium=document&utm_campaign=prd_summary&utm_content=solution)에서 실제 동작)
   - ① 개장 전 가격과 시간대별 과거 적중률
   - ② 가격 차이 거래 순이익 (수수료·세금·환전·펀딩비·슬리피지·주문 시차 비용을 뺌)
   - 봇은 MCP 도구(`predict_open`, `get_arbitrage` 등)로, 사람은 웹으로 같은 숫자를 봄. 주문은 미리보기만
