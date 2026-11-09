@@ -238,7 +238,7 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </span>
         </div>
       </div>
-      <dl className="stats">
+      <dl className="stats" ref={fadeX}>
         <div className="stats__group">
           <dt>24시간 범위</dt>
           <dd>
@@ -333,7 +333,7 @@ function StockStats({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot; live
   const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium } = live
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
   return (
-    <dl className="stats">
+    <dl className="stats" ref={fadeX}>
       <div className="stats__group">
         <dt>1일 범위</dt>
         <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
@@ -464,7 +464,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       <div ref={headRef}>
         {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
         <div className="ptabs-row">
-          <div className="ptabs" role="tablist">
+          <div className="ptabs" role="tablist" ref={fadeX}>
             {tabs.map(([k, label]) => (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
                 {label}

@@ -1092,6 +1092,70 @@ body.is-resizing * {
     flex-wrap: wrap;
     gap: 4px;
   }
+  /* Tabs and the stats strip stay on one line and swipe sideways, fading only the edge that hides more (fadeX) */
+  .ptabs,
+  .stats {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ptabs::-webkit-scrollbar,
+  .stats::-webkit-scrollbar {
+    display: none;
+  }
+  .ptabs {
+    max-width: 100%;
+  }
+  .ptabs > *,
+  .stats__group {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .stats dt {
+    white-space: nowrap;
+  }
+  .ptabs[data-fade-left],
+  .ptabs[data-fade-right],
+  .stats[data-fade-left],
+  .stats[data-fade-right] {
+    --fade-l: 0px;
+    --fade-r: 0px;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+  }
+  .ptabs[data-fade-left] {
+    --fade-l: 32px;
+  }
+  .ptabs[data-fade-right],
+  .stats[data-fade-right] {
+    --fade-r: 32px;
+  }
+  /* The strip starts 19px early (clipped divider), so its fade starts after that */
+  .stats[data-fade-left] {
+    --fade-l: 51px;
+  }
+  /* Name and code on one line; the session badge gives way (ellipsis) instead of breaking the name */
+  .asset-switch {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .stock-head__name > .badge {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+  /* Price notes on the chart: only the number and the button fit beside the axis; the full text is behind 자세히 */
+  .cnote__label,
+  .cnote__sub,
+  .cnote__long {
+    display: none;
+  }
+  .cnote {
+    max-width: calc(100% - 72px);
+    overflow: hidden;
+  }
   /* Own full-width line under the tabs, whatever room is left beside them */
   .ptabs-row .issue-inline {
     flex: 1 1 100%;
