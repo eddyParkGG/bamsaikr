@@ -7,6 +7,7 @@ import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, openDayText, tone }
 import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
+import { fadeY } from '../lib/scrollFade'
 import { useArb } from '../lib/data'
 import { InSessionNotice, OracleTag, predictionReady, ThinTag } from '../components/NextOpenState'
 
@@ -299,7 +300,7 @@ export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asse
   }
   return (
     <>
-      <div className="table-wrap" style={{ padding: '0 4px 8px' }}>
+      <div className="table-wrap" ref={fadeY} style={{ padding: '0 4px 8px' }}>
         <table className="table num">
           <thead>
             <tr>
@@ -395,7 +396,7 @@ export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) 
       </p>
     )
   return (
-    <div className="table-wrap" style={{ padding: '0 4px 8px' }}>
+    <div className="table-wrap" ref={fadeY} style={{ padding: '0 4px 8px' }}>
       <table className="table num">
         <thead>
           <tr>
