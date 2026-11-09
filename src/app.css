@@ -2635,19 +2635,23 @@ body {
   max-height: none;
   /* 1px in from the panel's edge: the panel border is an inset shadow that the sticky header's background would paint over */
   margin: 0 1px 1px;
-  /* Room for the fade below the last row, so at the end of the scroll nothing stays covered */
-  padding-bottom: 36px !important;
 }
-/* Fade pinned to the bottom of the table area: shows there are more rows below while scrolling */
+/* Fade pinned to the bottom of the table area: only while more rows are below (data-fade-bottom, set by fadeY).
+   An overlay, not a mask: a mask would also hide the fixed filter popups opened from the header */
 .panel--fill .table-wrap::after {
   content: '';
   position: sticky;
-  bottom: -36px;
+  bottom: 0;
   display: block;
   height: 48px;
   margin-top: -48px;
   pointer-events: none;
   background: linear-gradient(to bottom, transparent, var(--bg));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.panel--fill .table-wrap[data-fade-bottom]::after {
+  opacity: 1;
 }
 @media (max-width: 1100px) {
   .panel--fill {

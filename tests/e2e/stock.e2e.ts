@@ -172,6 +172,16 @@ test('chart toolbar: scrolls inside its panel when narrow, fades only the hidden
   await expect.poll(state).toEqual({ overflows: false, inside: true, left: false, right: false })
 })
 
+test('table tabs: the bottom fade shows only while more rows are below', async ({ page }) => {
+  await page.goto('/s/SKHX')
+  await page.getByRole('tab', { name: '지난 개장 기록' }).click()
+  const wrap = page.locator('.panel--fill .table-wrap')
+  await expect(wrap.locator('tbody tr').first()).toBeVisible()
+  await expect(wrap).toHaveAttribute('data-fade-bottom')
+  await wrap.evaluate((el) => (el.scrollTop = el.scrollHeight))
+  await expect(wrap).not.toHaveAttribute('data-fade-bottom')
+})
+
 test.describe('iPhone width', () => {
   test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 
