@@ -54,14 +54,24 @@ function Book({
   useEffect(() => {
     offset.current = null
   }, [centerKey])
-  useLayoutEffect(() => {
+  const anchor = () => {
     const sc = scrollRef.current
     const mid = midRef.current
-    if (!sc || !mid) return
+    // Hidden (phone pane switch): no height yet, or the spread would land at the top
+    if (!sc || !mid || !sc.clientHeight) return
     if (offset.current == null) offset.current = -sc.clientHeight / 2
     const want = mid.offsetTop + offset.current
     if (Math.abs(sc.scrollTop - want) > 1) sc.scrollTop = want
-  })
+  }
+  useLayoutEffect(anchor)
+  // Shown again after being hidden: the browser dropped the scroll position, so put it back without waiting for a tick
+  useEffect(() => {
+    const sc = scrollRef.current
+    if (!sc) return
+    const ro = new ResizeObserver(anchor)
+    ro.observe(sc)
+    return () => ro.disconnect()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const onScroll = () => {
     const sc = scrollRef.current
     const mid = midRef.current

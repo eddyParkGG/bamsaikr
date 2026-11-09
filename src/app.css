@@ -339,6 +339,11 @@
   height: auto;
 }
 
+/* Phone-only chart / order book / order form switch (shown in the max-width 720px block) */
+.pane-switch {
+  display: none;
+}
+
 /* Chart ↔ right column resize handle: hidden until hover, 4px key-color bar */
 .split {
   height: var(--chart-h);
@@ -1202,6 +1207,40 @@ body.is-resizing * {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* 차트 · 호가 tab: one pane at a time fills the screen between the head (--pane-top, measured) and the switch
+     above the bottom strip, so the page itself never scrolls and only the pane's own content moves.
+     8px gaps around the 40px switch; the page's bottom padding reserves the same space */
+  :root.stock-panes {
+    --panes-bottom: calc(36px + env(safe-area-inset-bottom) + 56px);
+  }
+  .stock-panes .shell {
+    padding-bottom: var(--panes-bottom);
+  }
+  /* Floor for short landscape screens: the page scrolls again instead of squashing the pane */
+  .stock-panes .pro-grid {
+    --pane-h: max(200px, calc(100dvh - var(--pane-top, 0px) - 8px - var(--panes-bottom)));
+  }
+  .stock-panes .pro-grid[data-pane='chart'] > .pro-trade,
+  .stock-panes .pro-grid[data-pane='book'] > .pro-chart,
+  .stock-panes .pro-grid[data-pane='book'] > .pro-trade--order,
+  .stock-panes .pro-grid[data-pane='order'] > .pro-chart,
+  .stock-panes .pro-grid[data-pane='order'] > .pro-trade--book {
+    display: none;
+  }
+  .stock-panes .pro-chart:not(.pro-chart--full) {
+    --chart-h: var(--pane-h);
+  }
+  .stock-panes .pro-trade {
+    height: var(--pane-h);
+  }
+  .stock-panes .pro-trade .ob2-scroll {
+    flex: 1;
+    height: auto;
+  }
+  .stock-panes .pro-trade--order .order-form {
+    height: auto;
+    overflow-y: auto;
+  }
   /* Sub-pane label tooltips start up to ~80px in: at 300px wide even a hidden one made a 320px screen wider than
      itself, which pushed fixed bars (bottom strip) off-screen. Clipped sideways at the chart, and
      narrowed so a shown one still fits */
@@ -1210,6 +1249,31 @@ body.is-resizing * {
   }
   .pane-label .help__tip {
     max-width: min(300px, calc(100vw - 120px));
+  }
+  .stock-panes .pane-switch {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(36px + env(safe-area-inset-bottom) + 8px);
+    z-index: 15;
+    display: flex;
+    gap: 2px;
+    height: 40px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--bg);
+    box-shadow: var(--shadow-panel);
+  }
+  .pane-switch button {
+    flex: 1;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-3);
+  }
+  .pane-switch [aria-selected='true'] {
+    background: var(--fill);
+    color: var(--text);
   }
   /* Bottom strip on phones: clear the home indicator, drop the venue hours and scroll sideways instead of clipping */
   .shell {
