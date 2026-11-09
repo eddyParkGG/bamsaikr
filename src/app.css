@@ -383,6 +383,26 @@ body.is-resizing * {
   gap: 2px;
   min-width: 0;
   flex: 1;
+  /* When the window is too narrow for one line, the row scrolls sideways inside the panel instead of spilling out */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chart-tools::-webkit-scrollbar {
+  display: none;
+}
+/* Fade only the edge that hides more chips (set by fadeX). A mask, not an overlay, so no size or colour depends on it */
+.chart-tools[data-fade-left],
+.chart-tools[data-fade-right] {
+  --fade-l: 0px;
+  --fade-r: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+}
+.chart-tools[data-fade-left] {
+  --fade-l: 32px;
+}
+.chart-tools[data-fade-right] {
+  --fade-r: 32px;
 }
 .chart-tools__sep {
   width: 1px;
@@ -400,18 +420,24 @@ body.is-resizing * {
 .menu {
   position: relative;
 }
+/* Holds the popover and settings sheet on <body>; above the full-window chart */
+.menu__layer {
+  position: relative;
+  z-index: 70;
+}
 .menu__pop {
-  position: absolute;
-  top: 34px;
-  right: 0;
-  z-index: 10;
+  /* Placed under the 지표 button from its on-screen position (set in IndicatorMenu) */
+  position: fixed;
+  top: var(--pop-top);
+  right: var(--pop-right);
   width: 260px;
   padding: 8px;
   background: var(--bg-float);
   border-radius: 14px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), var(--shadow-panel);
-  /* The chart box clips its contents: stay inside it (toolbar above + a small margin) and scroll the rest */
-  max-height: calc(var(--chart-h, 600px) - 72px);
+  /* Stay inside the window and scroll the rest */
+  max-height: calc(100dvh - var(--pop-top) - 12px);
+  max-width: calc(100vw - 24px);
   overflow-y: auto;
 }
 .menu__group {
@@ -1073,18 +1099,12 @@ body.is-resizing * {
     max-width: 100%;
     padding: 0 16px;
   }
-  /* Chart toolbar stays on one line and scrolls sideways; the background legend is left out */
-  .pro-chart .chart-tools {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
+  /* The background legend is left out of the chart toolbar */
   .pro-chart .band-legend {
     display: none;
   }
-  /* The toolbar scrolls sideways, which clips anything hanging below it: the indicator menu opens as a sheet over the page */
-  .pro-chart .menu__pop {
-    position: fixed;
+  /* The indicator menu opens as a sheet over the page */
+  .menu__layer .menu__pop {
     top: auto;
     left: 12px;
     right: 12px;
@@ -2325,10 +2345,6 @@ button.ob2__px:active::after {
   }
   .stats {
     row-gap: 8px;
-  }
-  .chart-tools {
-    flex-wrap: wrap;
-    row-gap: 6px;
   }
   .band-legend {
     display: none;

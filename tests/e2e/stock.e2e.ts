@@ -147,6 +147,31 @@ test('spread order tab: no profit figure while the domestic market is closed', a
   await expect(page.getByText(/예상 순이익/)).toHaveCount(0)
 })
 
+test('chart toolbar: scrolls inside its panel when narrow, fades only the hidden side', async ({ page }) => {
+  // 3 columns: the chart gets what the order book and order form leave, too little for the whole toolbar
+  await page.setViewportSize({ width: 1300, height: 900 })
+  await page.goto('/s/SKHX')
+  const tools = page.locator('.pro-chart .chart-tools')
+  const state = () =>
+    tools.evaluate((el) => ({
+      overflows: el.scrollWidth > el.clientWidth,
+      inside: el.getBoundingClientRect().right <= el.closest('.panel')!.getBoundingClientRect().right,
+      left: el.hasAttribute('data-fade-left'),
+      right: el.hasAttribute('data-fade-right'),
+    }))
+  await expect.poll(state).toEqual({ overflows: true, inside: true, left: false, right: true })
+  await tools.evaluate((el) => (el.scrollLeft = el.scrollWidth))
+  await expect.poll(state).toEqual({ overflows: true, inside: true, left: true, right: false })
+  // The indicator menu is not clipped or faded by the scrolling toolbar
+  await page.locator('.pro-chart .menu .chip').click()
+  const pop = (await page.locator('.menu__pop').boundingBox())!
+  expect(pop.height).toBeGreaterThan(200)
+
+  // Tablet: the chart spans the page and the toolbar fits, so no fade at all
+  await page.setViewportSize({ width: 1000, height: 900 })
+  await expect.poll(state).toEqual({ overflows: false, inside: true, left: false, right: false })
+})
+
 test.describe('iPhone width', () => {
   test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 

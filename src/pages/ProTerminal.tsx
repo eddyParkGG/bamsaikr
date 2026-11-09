@@ -1,6 +1,7 @@
 import { Chevron } from '../components/Icon'
 import { Help } from '../components/Help'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { predictionReady } from '../components/NextOpenState'
 import type { ArbSnapshot, ChartInterval, ChartSeries, NewsMarker, OpenEvent } from '../../shared/api'
 import { canPredict, hasKrx, type Asset } from '../../shared/assets'
@@ -15,6 +16,7 @@ import { track } from '../lib/ga'
 import { fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
+import { fadeX } from '../lib/scrollFade'
 import { useQuery } from '../lib/query'
 import { Orderbook } from '../pro/Orderbook'
 import { OrderPanel } from '../pro/OrderPanel'
@@ -72,12 +74,27 @@ function IndicatorMenu({ krxAvailable }: { krxAvailable: boolean }) {
   const { chart: settings, toggle, params } = usePrefs()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ParamKey | null>(null)
+  // Where the popover hangs: under the button, right edges lined up
+  const [pos, setPos] = useState({ top: 0, right: 0 })
   const ref = useRef<HTMLDivElement>(null)
+  const layerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
-    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && !layerRef.current?.contains(e.target as Node) && setOpen(false)
+    // The popover is fixed, so follow the button when the page or the toolbar scrolls
+    const place = () => {
+      const r = ref.current?.getBoundingClientRect()
+      if (r) setPos({ top: r.bottom + 6, right: Math.max(12, window.innerWidth - r.right) })
+    }
+    place()
     document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
   }, [open])
   const on = MENU.flatMap((g) => g.items).filter((i) => settings[i.k]).length
   return (
@@ -88,70 +105,77 @@ function IndicatorMenu({ krxAvailable }: { krxAvailable: boolean }) {
         </svg>
         지표 <span className="faint">{on}</span>
       </button>
-      {open && (
-        <div className="menu__pop" role="menu">
-          <p className="menu__note">
-            {krxAvailable
-              ? '가격 지표는 국내 시장이 켜져 있으면 국내 시장 기준, 꺼져 있으면 하이퍼리퀴드 기준으로 그려요.'
-              : '이 종목은 국내 가격이 없어서 하이퍼리퀴드 기준으로 그려요.'}
-          </p>
-          {MENU.map((g) => (
-            <div key={g.group}>
-              <div className="menu__group">{g.group}</div>
-              {g.items.map((i) => (
-                <button
-                  key={i.k}
-                  role="menuitemcheckbox"
-                  aria-checked={settings[i.k]}
-                  className="menu__item"
-                  onClick={() => {
-                    toggle(i.k)
-                    track('chart_indicator_toggle', { indicator: i.k, on: !settings[i.k] })
-                  }}
-                >
-                  <span className={`check ${settings[i.k] ? 'check--on' : ''}`}>
-                    {settings[i.k] && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M5 12l5 5 9-10" />
-                      </svg>
-                    )}
-                  </span>
-                  <span>
-                    {i.label}
-                    {i.param && <span className="faint"> ({paramText(i.param, params)})</span>}
-                  </span>
-                  <Help text={i.help} />
-                  {i.swatch && (
-                    <span className="menu__swatch">
-                      {i.swatch.map((c) => (
-                        <i key={c} style={{ background: c }} />
-                      ))}
-                    </span>
-                  )}
-                  {i.param && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className="menu__gear"
-                      aria-label={`${i.label} 설정`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditing(i.param!)
-                      }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-                      </svg>
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-      {editing && <ParamsSheet which={editing} onClose={() => setEditing(null)} />}
+      {/* Rendered on <body>: the toolbar scrolls sideways and fades its edges, which would clip or fade anything inside it */}
+      {(open || editing) &&
+        createPortal(
+          <div className="menu__layer" ref={layerRef}>
+            {open && (
+              <div className="menu__pop" role="menu" style={{ '--pop-top': `${pos.top}px`, '--pop-right': `${pos.right}px` } as React.CSSProperties}>
+                <p className="menu__note">
+                  {krxAvailable
+                    ? '가격 지표는 국내 시장이 켜져 있으면 국내 시장 기준, 꺼져 있으면 하이퍼리퀴드 기준으로 그려요.'
+                    : '이 종목은 국내 가격이 없어서 하이퍼리퀴드 기준으로 그려요.'}
+                </p>
+                {MENU.map((g) => (
+                  <div key={g.group}>
+                    <div className="menu__group">{g.group}</div>
+                    {g.items.map((i) => (
+                      <button
+                        key={i.k}
+                        role="menuitemcheckbox"
+                        aria-checked={settings[i.k]}
+                        className="menu__item"
+                        onClick={() => {
+                          toggle(i.k)
+                          track('chart_indicator_toggle', { indicator: i.k, on: !settings[i.k] })
+                        }}
+                      >
+                        <span className={`check ${settings[i.k] ? 'check--on' : ''}`}>
+                          {settings[i.k] && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                              <path d="M5 12l5 5 9-10" />
+                            </svg>
+                          )}
+                        </span>
+                        <span>
+                          {i.label}
+                          {i.param && <span className="faint"> ({paramText(i.param, params)})</span>}
+                        </span>
+                        <Help text={i.help} />
+                        {i.swatch && (
+                          <span className="menu__swatch">
+                            {i.swatch.map((c) => (
+                              <i key={c} style={{ background: c }} />
+                            ))}
+                          </span>
+                        )}
+                        {i.param && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className="menu__gear"
+                            aria-label={`${i.label} 설정`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditing(i.param!)
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                              <circle cx="12" cy="12" r="3" />
+                              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                            </svg>
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            {editing && <ParamsSheet which={editing} onClose={() => setEditing(null)} />}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
@@ -456,7 +480,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
           <section className={full ? 'panel pro-chart pro-chart--full' : 'panel pro-chart'}>
             <div className="panel__head">
               <span className="panel__title">차트</span>
-              <div className="chart-tools">
+              <div className="chart-tools" ref={fadeX}>
                 <span className="chart-tools__sep" style={{ marginLeft: 4 }} />
                 {INTERVALS.map((i) => (
                   <button
