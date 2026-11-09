@@ -20,6 +20,7 @@ import { fadeX } from '../lib/scrollFade'
 import { useQuery } from '../lib/query'
 import { Orderbook } from '../pro/Orderbook'
 import { OrderPanel } from '../pro/OrderPanel'
+import { useTicket } from '../pro/ticket'
 import { ConvergenceTable, FlowsPanel, PredictPanels } from '../pro/Panels'
 import type { ChartSettings } from '../pro/settings'
 import { ParamsSheet, type ParamKey } from '../pro/ParamsSheet'
@@ -378,6 +379,23 @@ function StockStats({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot; live
 
 type Tab = 'chart' | 'predict' | 'conv' | 'flows'
 
+// Phone: chart, order book and order form each scroll or pan on their own, so they take turns in one screen-high pane
+type Pane = 'chart' | 'book' | 'order'
+const PANES: [Pane, string][] = [
+  ['chart', '차트'],
+  ['book', '호가'],
+  ['order', '주문'],
+]
+const PANE_KEY = 'bamsai-phone-pane'
+function readPane(): Pane {
+  try {
+    const v = sessionStorage.getItem(PANE_KEY)
+    return v === 'book' || v === 'order' ? v : 'chart'
+  } catch {
+    return 'chart'
+  }
+}
+
 export default function ProTerminal({ asset }: { asset: Asset }) {
   const { interval, setInterval, chart: settings, toggle, theme, params } = usePrefs()
   const [tab, setTab] = useState<Tab>('chart')
@@ -392,6 +410,15 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [full])
   const [openNews, setOpenNews] = useState<NewsMarker | null>(null)
+  const [pane, setPane] = useState<Pane>(readPane)
+  const choosePane = (p: Pane) => {
+    setPane(p)
+    try {
+      sessionStorage.setItem(PANE_KEY, p)
+    } catch {
+      // storage blocked: the choice just isn't remembered
+    }
+  }
 
   const arbAll = useArb()
   const arb = arbAll.data?.items.find((x) => x.asset === asset.id) ?? null
@@ -459,6 +486,47 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     }
   }, [tab])
 
+  // Phone (CSS under max-width 720px reads these): while 차트 · 호가 is open the page stops scrolling and the
+  // selected pane fills the screen from the bottom of the head (--pane-top) down to the pane switch
+  useEffect(() => {
+    if (tab !== 'chart') return
+    const root = document.documentElement
+    root.classList.add('stock-panes')
+    // The head is only fully visible at the top, and the page can't be scrolled back up in this mode
+    if (window.matchMedia('(max-width: 720px)').matches) window.scrollTo(0, 0)
+    const measure = () => {
+      const head = headRef.current
+      if (!head) return
+      // Rounded up so a fractional head never pushes the page 1px taller than the screen
+      const top = `${Math.ceil(head.getBoundingClientRect().bottom + window.scrollY)}px`
+      // Only on a real change: writing the same value again would just re-trigger layout
+      if (root.style.getPropertyValue('--pane-top') !== top) root.style.setProperty('--pane-top', top)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (headRef.current) ro.observe(headRef.current)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+      root.classList.remove('stock-panes')
+      root.style.removeProperty('--pane-top')
+    }
+  }, [tab])
+  // A price picked in the order book, or a spread-order shortcut, lands in the order form: show it on phones
+  const pick = useTicket((s) => s.pick)
+  const seenPick = useRef(pick)
+  useEffect(() => {
+    // Skip a pick left over from before this page opened
+    if (pick && pick !== seenPick.current) choosePane('order')
+    seenPick.current = pick
+  }, [pick]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const on = () => choosePane('order')
+    window.addEventListener('bamsai:order-tab', on)
+    return () => window.removeEventListener('bamsai:order-tab', on)
+  }, [])
+
   return (
     <>
       <div ref={headRef}>
@@ -476,7 +544,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       </div>
 
       {tab === 'chart' && (
-        <div className="pro-grid" style={{ '--ob-w': `${obW}px`, '--order-w': `${orderW}px`, '--chart-h': `${chartH}px` } as React.CSSProperties}>
+        <div className="pro-grid" data-pane={pane} style={{ '--ob-w': `${obW}px`, '--order-w': `${orderW}px`, '--chart-h': `${chartH}px` } as React.CSSProperties}>
           <section className={full ? 'panel pro-chart pro-chart--full' : 'panel pro-chart'}>
             <div className="panel__head">
               <span className="panel__title">차트</span>
@@ -595,12 +663,20 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
           </section>
 
           <SplitHandle width={obW} onChange={setObW} storageKey="bamsai-ob-w" label="호가 너비 조절" />
-          <div className="pro-trade">
+          <div className="pro-trade pro-trade--book">
             <Orderbook asset={asset} arb={arb} />
           </div>
           <SplitHandle width={orderW} onChange={setOrderW} storageKey="bamsai-order-w" label="주문 너비 조절" />
-          <div className="pro-trade">
+          <div className="pro-trade pro-trade--order">
             <OrderPanel asset={asset} arb={arb} liveKrx={!!status.data?.liveKrxOrders} />
+          </div>
+          {/* Phone only (hidden by CSS above 720px), fixed right above the bottom strip */}
+          <div className="pane-switch" role="tablist" aria-label="차트 · 호가 · 주문">
+            {PANES.map(([k, label]) => (
+              <button key={k} role="tab" aria-selected={pane === k} onClick={() => choosePane(k)}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       )}
