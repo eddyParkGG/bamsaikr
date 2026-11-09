@@ -1202,6 +1202,15 @@ body.is-resizing * {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* Sub-pane label tooltips start up to ~80px in: at 300px wide even a hidden one made a 320px screen wider than
+     itself, which pushed fixed bars (bottom strip) off-screen. Clipped sideways at the chart, and
+     narrowed so a shown one still fits */
+  .pro-chart .chartbox {
+    overflow-x: clip;
+  }
+  .pane-label .help__tip {
+    max-width: min(300px, calc(100vw - 120px));
+  }
   /* Bottom strip on phones: clear the home indicator, drop the venue hours and scroll sideways instead of clipping */
   .shell {
     padding-bottom: calc(60px + env(safe-area-inset-bottom));
