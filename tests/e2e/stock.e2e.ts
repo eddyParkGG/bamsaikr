@@ -212,4 +212,53 @@ test.describe('iPhone width', () => {
     expect(full.y).toBe(0)
     expect(full.height).toBe(852)
   })
+
+  test('stock: chart, order book and order form take turns above the bottom switch, the page never scrolls', async ({ page }) => {
+    await page.goto('/s/SKHX')
+    await chartReady(page, '1d')
+    const pageScroll = () => page.evaluate(() => document.scrollingElement!.scrollHeight - innerHeight)
+    const sw = (await page.locator('.pane-switch').boundingBox())!
+    const bar = (await page.locator('.ticker').boundingBox())!
+    expect(sw.y + sw.height).toBeLessThanOrEqual(bar.y)
+    // Each pane fills the space from the head down to just above the switch
+    const fills = async (sel: string) => {
+      const b = (await page.locator(sel).boundingBox())!
+      expect(sw.y - (b.y + b.height)).toBeGreaterThanOrEqual(0)
+      expect(sw.y - (b.y + b.height)).toBeLessThanOrEqual(9)
+      expect(await pageScroll()).toBe(0)
+    }
+    await expect(page.locator('.pro-trade--book')).toBeHidden()
+    await fills('.pro-chart')
+
+    const tab = (name: string) => page.locator('.pane-switch').getByRole('tab', { name, exact: true })
+    await tab('호가').click()
+    await expect(tab('호가')).toHaveAttribute('aria-selected', 'true')
+    await expect(page.locator('.pro-chart')).toBeHidden()
+    await fills('.pro-trade--book')
+    // The order book list scrolls inside the pane, centred on the spread
+    const ob = page.locator('.ob2-scroll')
+    const sc = await ob.evaluate((e) => ({ over: e.scrollHeight - e.clientHeight, top: e.scrollTop }))
+    expect(sc.over).toBeGreaterThan(0)
+    expect(sc.top).toBeGreaterThan(0)
+
+    await tab('주문').click()
+    await expect(page.locator('.pro-trade--book')).toBeHidden()
+    await fills('.pro-trade--order')
+    await expect(page.getByRole('button', { name: /매수하기/ })).toBeInViewport()
+
+    // Remembered for the session
+    await page.reload()
+    await expect(tab('주문')).toHaveAttribute('aria-selected', 'true')
+    await tab('차트').click()
+
+    // Other tabs scroll the page normally, without the switch
+    await page.getByRole('tab', { name: '개장 전 가격' }).click()
+    await expect(page.locator('.pane-switch')).toHaveCount(0)
+    await expect.poll(pageScroll).toBeGreaterThan(0)
+    await page.evaluate(() => window.scrollTo(0, 300))
+    // Back on 차트 · 호가: back to the top, no page scroll
+    await page.getByRole('tab', { name: '차트 · 호가' }).click()
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
+    await expect.poll(pageScroll).toBe(0)
+  })
 })
