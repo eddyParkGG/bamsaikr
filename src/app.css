@@ -3032,8 +3032,11 @@ body {
   .asset-switch {
     min-height: 40px;
   }
+  /* Right end of the name line. It is a block here (for the ellipsis), which drops the inline-flex centring:
+     a line height equal to its 20px height puts the text back in the vertical middle */
   .stock-head__name > .badge {
     margin-left: auto;
+    line-height: 20px;
   }
   .badge {
     font-size: 12px;
