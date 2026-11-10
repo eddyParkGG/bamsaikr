@@ -3224,8 +3224,13 @@ body {
   .stock-panes .panel--fill .table-wrap {
     max-height: none;
   }
+  /* No side padding (the cells carry it), so the pinned date column sits flush on the left edge with nothing
+     showing through beside it; no rubber-band past the ends and no scroll chaining into the page */
   .panel--fill .table-wrap {
-    --sticky-w: 92px;
+    --sticky-w: 88px;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    overscroll-behavior: none;
     scrollbar-width: none;
   }
   .panel--fill .table-wrap::-webkit-scrollbar {
