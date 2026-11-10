@@ -3121,6 +3121,30 @@ body {
     width: 40px;
     height: 40px;
   }
+  /* Full-window chart: one clear close button at the head's right end (chart-full-exit), clear of the notch;
+     the toolbar keeps room for it and drops its own small one */
+  .pro-chart--full .chart-tools .chart-full {
+    display: none;
+  }
+  .pro-chart--full > .panel__head {
+    padding-right: calc(max(4px, env(safe-area-inset-right)) + 52px);
+  }
+  .chart-full-exit {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 2px);
+    right: max(4px, env(safe-area-inset-right));
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--fill);
+    color: var(--text);
+  }
+  .chart-full-exit:active {
+    background: var(--fill-strong);
+  }
   .pane-label {
     font-size: 12px;
   }

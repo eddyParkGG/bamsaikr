@@ -755,6 +755,15 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
                   )}
                 </button>
               </div>
+              {/* Phone, full-window chart: the close button sits outside the swiping toolbar (which could scroll it
+                  away or fade it), pinned to the head's right end clear of the notch, with a 44px touch area */}
+              {full && (
+                <button className="chart-full-exit only-phone" aria-label="차트 작게 보기" onClick={() => setFull(false)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                  </svg>
+                </button>
+              )}
             </div>
             <div className="chartbox">
               {series.data && series.data.asset === asset.id && series.data.interval === interval ? (
