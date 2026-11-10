@@ -3029,9 +3029,6 @@ body {
   .stock-head > .stats {
     display: none;
   }
-  .asset-switch {
-    min-height: 40px;
-  }
   /* Right end of the name line. It is a block here (for the ellipsis), which drops the inline-flex centring:
      a line height equal to its 20px height puts the text back in the vertical middle */
   .stock-head__name > .badge {
@@ -3094,7 +3091,7 @@ body {
   }
   .ptabs button {
     flex: 1 0 auto;
-    height: 44px;
+    height: 36px;
     padding: 0 8px;
     border-radius: 0;
   }
@@ -3104,22 +3101,11 @@ body {
   }
 
   /* Chart pane: the pane switch already says 차트, so the title and the conversion note (in 정보) give the
-     chart their height; toolbar buttons get a 40px tap height */
-  .pro-chart > .panel__head {
-    height: 48px;
-  }
+     chart their height. Toolbar row and buttons keep the desktop sizes (44px row, 28px buttons) */
   .pro-chart > .panel__head > .panel__title,
   .pro-chart .chart-tools > .chart-tools__sep:first-child,
   .pro-chart .chart-foot {
     display: none;
-  }
-  .pro-chart .chart-tools .chip {
-    height: 40px;
-    padding: 0 10px;
-  }
-  .pro-chart .chart-full {
-    width: 40px;
-    height: 40px;
   }
   /* Full-window chart: one clear close button at the head's right end (chart-full-exit), clear of the notch;
      the toolbar keeps room for it and drops its own small one */
@@ -3150,11 +3136,6 @@ body {
   }
 
   /* Order book / order form panes: no title (the switch names them), the market choice spans the head */
-  .pro-trade .panel__head {
-    height: 52px;
-    gap: 8px;
-    padding: 0 12px;
-  }
   .pro-trade .panel__head > .panel__title,
   .pro-trade .panel__head > .spacer {
     display: none;
@@ -3162,26 +3143,6 @@ body {
   .pro-trade .seg--grow {
     flex: 1;
     width: auto !important;
-  }
-  .pro-trade .panel__head .seg button {
-    height: 40px;
-    padding: 0 6px;
-  }
-  .side-tabs {
-    height: 44px;
-  }
-  .side-tabs button {
-    height: 40px;
-    font-size: 14px;
-  }
-  .order-form .seg {
-    height: 44px;
-  }
-  .order-form .seg button {
-    height: 40px;
-  }
-  .order-form .pct-chips .chip {
-    height: 40px;
   }
   /* The order button stays in reach while the form scrolls inside a short pane */
   .stock-panes .order-form > .stack > .btn--block {
@@ -3272,9 +3233,6 @@ body {
   .panel--fill .table tr:hover td:first-child {
     background: linear-gradient(var(--fill), var(--fill)), var(--bg);
   }
-  .panel--fill .th-btn .thbtn {
-    height: 40px;
-  }
   /* Investor flows: the won amount goes under the share count, so each column stays narrow */
   .flow-won {
     display: block;
@@ -3282,19 +3240,6 @@ body {
   }
   .fpop {
     width: min(320px, calc(100vw - 16px));
-  }
-
-  /* Header: 40px tap height for the menu, search and theme buttons */
-  .header .nav a,
-  .header .logo {
-    display: inline-flex;
-    align-items: center;
-    min-height: 40px;
-  }
-  .header .icon-btn,
-  .header .search-trigger {
-    min-width: 40px;
-    height: 40px;
   }
 }
 
