@@ -185,19 +185,21 @@ test('table tabs: the bottom fade shows only while more rows are below', async (
 test.describe('iPhone width', () => {
   test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 
-  test('stock: stats strip holds still, indicator menu opens whole, full-window chart fills the screen', async ({ page }) => {
+  test('stock: compact head, 정보 tab, indicator menu opens whole, full-window chart fills the screen', async ({ page }) => {
     await page.goto('/s/SKHX')
     await chartReady(page, '1d')
-    // Stats strip: no attribute churn on its groups while nothing changes
-    const churn = await page.locator('dl.stats').evaluate(async (dl) => {
-      let n = 0
-      const mo = new MutationObserver((ms) => (n += ms.length))
-      mo.observe(dl, { subtree: true, attributes: true })
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-      mo.disconnect()
-      return n
-    })
-    expect(churn).toBe(0)
+    // Head: the domestic and Hyperliquid prices side by side; the stats strip and the issue line are not above the chart
+    const quote = page.locator('.quote2')
+    await expect(quote.getByText('국내 시장')).toBeVisible()
+    await expect(quote.getByText('하이퍼리퀴드 환산')).toBeVisible()
+    await expect(page.locator('.stock-head dl.stats')).toBeHidden()
+    await expect(page.locator('.issue-inline')).toHaveCount(0)
+    // They are in the 정보 tab instead, as a list
+    await page.getByRole('tab', { name: '정보' }).click()
+    await expect(page.locator('dl.stats--list')).toContainText('하이퍼리퀴드 범위')
+    await expect(page.locator('.info-tab .issue')).toBeVisible()
+    await page.getByRole('tab', { name: '차트·호가' }).click()
+    await chartReady(page, '1d')
     // Indicator menu: not clipped by the sideways-scrolling toolbar
     await page.locator('.pro-chart .menu .chip').click()
     const pop = (await page.locator('.menu__pop').boundingBox())!
@@ -252,13 +254,75 @@ test.describe('iPhone width', () => {
     await tab('차트').click()
 
     // Other tabs scroll the page normally, without the switch
-    await page.getByRole('tab', { name: '개장 전 가격' }).click()
+    await page.getByRole('tab', { name: '개장 전' }).click()
     await expect(page.locator('.pane-switch')).toHaveCount(0)
     await expect.poll(pageScroll).toBeGreaterThan(0)
     await page.evaluate(() => window.scrollTo(0, 300))
     // Back on 차트 · 호가: back to the top, no page scroll
-    await page.getByRole('tab', { name: '차트 · 호가' }).click()
+    await page.getByRole('tab', { name: '차트·호가' }).click()
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
     await expect.poll(pageScroll).toBe(0)
+  })
+})
+
+test.describe('smallest phone width', () => {
+  test.use({ viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true })
+
+  test('stock: every tab stays inside 320px, tabs fit one line, panel titles do not wrap, tables fade the hidden side', async ({ page }) => {
+    await page.goto('/s/SKHX')
+    await chartReady(page, '1d')
+    const overflowX = () => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    // Session badge: text in the vertical middle (same space above and below)
+    const skew = await page.locator('.stock-head__name > .badge').evaluate((e) => {
+      const b = e.getBoundingClientRect()
+      const r = document.createRange()
+      r.selectNodeContents(e)
+      const t = r.getBoundingClientRect()
+      return Math.abs(t.top - b.top - (b.bottom - t.bottom))
+    })
+    expect(skew).toBeLessThanOrEqual(1)
+    // All five section tabs fit without swiping
+    const tabs = page.locator('.ptabs')
+    await expect(tabs.getByRole('tab')).toHaveCount(5)
+    expect(await tabs.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1)
+
+    // Chart, order book and order form
+    for (const pane of ['차트', '호가', '주문']) {
+      await page.locator('.pane-switch').getByRole('tab', { name: pane, exact: true }).click()
+      expect(await overflowX()).toBeLessThanOrEqual(0)
+    }
+    // The order button stays reachable inside the short pane
+    await expect(page.getByRole('button', { name: '매수하기' })).toBeInViewport()
+
+    for (const name of ['개장 전', '지난 기록', '수급', '정보']) {
+      await tabs.getByRole('tab', { name, exact: true }).click()
+      await expect(page.locator('.panel').first()).toBeVisible()
+      expect(await overflowX()).toBeLessThanOrEqual(0)
+    }
+
+    // 지난 기록: the title stays one line (the sentence is behind '?'), the count sits beside it
+    await tabs.getByRole('tab', { name: '지난 기록', exact: true }).click()
+    const title = page.locator('.panel--fill .panel__title')
+    await expect(title).toContainText('지난 개장 기록')
+    expect((await title.boundingBox())!.height).toBeLessThanOrEqual(28)
+    await expect(page.locator('.panel__count')).toBeVisible()
+    // The table fits the screen (no page scroll), scrolls sideways inside and fades only the hidden edge
+    const wrap = page.locator('.panel--fill .table-wrap')
+    await expect(wrap.locator('tbody tr').first()).toBeVisible()
+    expect(await page.evaluate(() => document.scrollingElement!.scrollHeight - innerHeight)).toBe(0)
+    const fade = () => wrap.evaluate((el) => ({ over: el.scrollWidth > el.clientWidth, left: el.hasAttribute('data-fade-left'), right: el.hasAttribute('data-fade-right') }))
+    await expect.poll(fade).toEqual({ over: true, left: false, right: true })
+    await wrap.evaluate((el) => (el.scrollLeft = el.scrollWidth))
+    await expect.poll(fade).toEqual({ over: true, left: true, right: false })
+    // The date column stays pinned while scrolled
+    const date = (await wrap.locator('tbody td').first().boundingBox())!
+    const box = (await wrap.boundingBox())!
+    expect(date.x - box.x).toBeLessThanOrEqual(4)
+    // A column filter opens whole on screen, above the faded table
+    await wrap.evaluate((el) => (el.scrollLeft = 0))
+    await page.getByRole('button', { name: /닫혀 있던 시간/ }).click()
+    const pop = (await page.getByRole('dialog', { name: '닫혀 있던 시간' }).boundingBox())!
+    expect(pop.x).toBeGreaterThanOrEqual(0)
+    expect(pop.x + pop.width).toBeLessThanOrEqual(320)
   })
 })
