@@ -3325,3 +3325,10 @@ body {
     min-height: 56px;
   }
 }
+
+/* Narrowest phones: the five section tabs still fit one line whatever the system font's width (Linux fonts run a few px wider) */
+@media (max-width: 360px) {
+  .ptabs button {
+    padding: 0 5px;
+  }
+}
