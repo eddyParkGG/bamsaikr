@@ -17,6 +17,7 @@ import { fmtKrw, fmtPct, fmtPrice, fmtWonUnit, tone } from '../lib/format'
 import { subscribeHl, subscribeKrx, subscribeUsdc, useLive } from '../lib/live'
 import { usePrefs } from '../lib/prefs'
 import { fadeX } from '../lib/scrollFade'
+import { usePhone } from '../lib/phone'
 import { useQuery } from '../lib/query'
 import { Orderbook } from '../pro/Orderbook'
 import { OrderPanel } from '../pro/OrderPanel'
@@ -207,20 +208,46 @@ function AssetName({ asset }: { asset: Asset }) {
   )
 }
 
-/** Header for assets traded only on Hyperliquid (no domestic counterpart) */
-function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
+/** Phone head: two prices side by side (label, price, how far it moved). Hidden above 720px, where the price line and
+ *  the stats strip show instead */
+function QuotePair({ cells }: { cells: { label: string; value: string; sub: React.ReactNode; dot?: 'krx' | 'perp' }[] }) {
+  return (
+    <div className="quote2 num">
+      {cells.map((c) => (
+        <div key={c.label} className="quote2__cell">
+          <span className="quote2__label">
+            {/* Same colours as the two markets on the chart */}
+            {c.dot && <i className="quote2__dot" style={{ background: `var(--${c.dot})` }} />}
+            {c.label}
+          </span>
+          <b className="quote2__value">{c.value}</b>
+          <span className="quote2__sub">{c.sub}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Live numbers for a Hyperliquid-only asset; null until the contract and (when converted) the USDC rate are in */
+function usePerpLive(asset: Asset) {
   useEffect(() => subscribeHl({ type: 'activeAssetCtx', coin: asset.perp }), [asset.perp])
   const ctx = useLive((s) => s.ctx[asset.perp])
   const usdcRate = useUsdcRate()
   const p = usePerps(asset.id).item
-  if (!p || (asset.fx && !usdcRate)) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
-  const isIdx = asset.kind === 'index'
+  if (!p || (asset.fx && !usdcRate)) return null
   const rate = asset.fx ? usdcRate! : 1
-  const usdcKrw = usdcRate ?? 0 // contract notional is USDC for every product, index included
   const mid = ctx?.mid ?? p.mid
   const prev = ctx?.prevDay ?? p.prevDay
-  const diff = (mid - prev) * rate
-  const funding = (ctx?.funding ?? p.fundingHourly) * 100
+  // contract notional is USDC for every product, index included
+  return { p, rate, usdcKrw: usdcRate ?? 0, mid, prev, diff: (mid - prev) * rate, funding: (ctx?.funding ?? p.fundingHourly) * 100 }
+}
+
+/** Header for assets traded only on Hyperliquid (no domestic counterpart) */
+function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
+  const live = usePerpLive(asset)
+  if (!live) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
+  const isIdx = asset.kind === 'index'
+  const { p, rate, usdcKrw, mid, prev, diff, funding } = live
   return (
     <div className="stock-head">
       <div className="stock-head__id">
@@ -239,7 +266,51 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </span>
         </div>
       </div>
-      <dl className="stats" ref={fadeX}>
+      <QuotePair
+        cells={[
+          {
+            label: '하이퍼리퀴드',
+            dot: 'perp',
+            value: fmtKrw(mid * rate, isIdx),
+            sub: (
+              <>
+                24시간 전보다 <span className={tone(diff)}>{fmtPct((mid / prev - 1) * 100)}</span>
+              </>
+            ),
+          },
+          arb
+            ? {
+                label: `국내 보통주 ${asset.ratio}주`,
+                dot: 'krx',
+                value: `${fmtPrice(arb.krx.price)}원`,
+                sub: (
+                  <>
+                    차이 <span className={tone((mid * rate) / arb.krx.price - 1)}>{fmtPct(((mid * rate) / arb.krx.price - 1) * 100)}</span>
+                  </>
+                ),
+              }
+            : {
+                label: '24시간 거래대금',
+                value: usdcKrw ? `${fmtWonUnit(p.volume24hUsd * usdcKrw)}원` : '-',
+                sub: (
+                  <>
+                    펀딩 <span className={tone(funding)}>{funding.toFixed(4)}%</span>
+                  </>
+                ),
+              },
+        ]}
+      />
+      <PerpStats asset={asset} arb={arb} live={live} />
+    </div>
+  )
+}
+
+/** The Hyperliquid-only stats strip (a plain list in the phone 정보 tab) */
+function PerpStats({ asset, arb, live, list }: { asset: Asset; arb: ArbSnapshot | null; live: NonNullable<ReturnType<typeof usePerpLive>>; list?: boolean }) {
+  const isIdx = asset.kind === 'index'
+  const { p, rate, usdcKrw, mid, prev, funding } = live
+  return (
+      <dl className={list ? 'stats stats--list' : 'stats'} ref={list ? undefined : fadeX}>
         <div className="stats__group">
           <dt>24시간 범위</dt>
           <dd>
@@ -280,7 +351,6 @@ function PerpHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           )}
         </div>
       </dl>
-    </div>
   )
 }
 
@@ -304,7 +374,7 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
   const live = useStockLive(asset, arb)
   if (!arb || !live) return <div className="skeleton" style={{ height: 60, margin: '12px 0 14px' }} />
   const isIdx = asset.kind === 'index'
-  const { krxPrice, diff, changePct } = live
+  const { krxPrice, diff, changePct, perpKrw, premium } = live
   return (
     <div className="stock-head">
       <div className="stock-head__id">
@@ -323,18 +393,42 @@ function StockHead({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }) {
           </span>
         </div>
       </div>
+      <QuotePair
+        cells={[
+          {
+            label: '국내 시장',
+            dot: 'krx',
+            value: fmtKrw(krxPrice, isIdx),
+            sub: (
+              <>
+                어제보다 <span className={tone(diff)}>{fmtPct(changePct)}</span>
+              </>
+            ),
+          },
+          {
+            label: '하이퍼리퀴드 환산',
+            dot: 'perp',
+            value: fmtKrw(perpKrw, isIdx),
+            sub: (
+              <>
+                {arb.mode === 'live' ? '국내보다' : '종가보다'} <span className={tone(premium)}>{fmtPct(premium)}</span>
+              </>
+            ),
+          },
+        ]}
+      />
       <StockStats asset={asset} arb={arb} live={live} />
     </div>
   )
 }
 
-/** The stock stats strip */
-function StockStats({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot; live: NonNullable<ReturnType<typeof useStockLive>> }) {
+/** The stock stats strip (a plain list in the phone 정보 tab) */
+function StockStats({ asset, arb, live, list }: { asset: Asset; arb: ArbSnapshot; live: NonNullable<ReturnType<typeof useStockLive>>; list?: boolean }) {
   const isIdx = asset.kind === 'index'
   const { ctx, krxPrice, mid, usdcKrw, rate, perpKrw, premium } = live
   const funding = (ctx?.funding ?? arb.perp.fundingHourly) * 100
   return (
-    <dl className="stats" ref={fadeX}>
+    <dl className={list ? 'stats stats--list' : 'stats'} ref={list ? undefined : fadeX}>
       <div className="stats__group">
         <dt>1일 범위</dt>
         <dd>{arb.krx.high ? <Range low={Math.min(arb.krx.low, krxPrice)} high={Math.max(arb.krx.high, krxPrice)} value={krxPrice} isIdx={isIdx} /> : '-'}</dd>
@@ -376,8 +470,34 @@ function StockStats({ asset, arb, live }: { asset: Asset; arb: ArbSnapshot; live
   )
 }
 
+/** Phone-only 정보 tab: the stats strip as a readable list, the price-conversion note and the latest issues,
+ *  moved here from the head so the chart gets the screen */
+function InfoTab({ asset, arb, onNews }: { asset: Asset; arb: ArbSnapshot | null; onNews: (n: NewsMarker) => void }) {
+  const stock = useStockLive(asset, arb)
+  const perp = usePerpLive(asset)
+  const stats =
+    asset.kind === 'stock' ? (
+      arb && stock ? <StockStats asset={asset} arb={arb} live={stock} list /> : null
+    ) : perp ? (
+      <PerpStats asset={asset} arb={arb} live={perp} list />
+    ) : null
+  return (
+    <div className="info-tab">
+      <TodayIssue asset={asset.id} limit={3} onOpen={onNews} />
+      <section className="panel">
+        <div className="panel__head">
+          <span className="panel__title">시세 정보</span>
+        </div>
+        <div className="panel__body">
+          {stats ?? <div className="skeleton" style={{ height: 240 }} />}
+          <p className="info-tab__note">{asset.fx ? '하이퍼리퀴드 가격은 업비트 원/USDC로 원화 환산했어요' : '하이퍼리퀴드 지수 포인트 그대로예요'}</p>
+        </div>
+      </section>
+    </div>
+  )
+}
 
-type Tab = 'chart' | 'predict' | 'conv' | 'flows'
+type Tab = 'chart' | 'predict' | 'conv' | 'flows' | 'info'
 
 // Phone: chart, order book and order form each scroll or pan on their own, so they take turns in one screen-high pane
 type Pane = 'chart' | 'book' | 'order'
@@ -448,15 +568,25 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     [asset.id],
   )
 
-  const tabs: [Tab, string][] = predictable
-    ? [
-        ['chart', '차트 · 호가'],
-        ['predict', '개장 전 가격'],
-        ['conv', '지난 개장 기록'],
-        ['flows', '투자자 동향'],
-      ]
-    : [['chart', '차트 · 호가']]
+  const phone = usePhone()
+  // [key, label, shorter label for phones: all five tabs fit one line at 320px]
+  const tabs: [Tab, string, string][] = [
+    ['chart', '차트 · 호가', '차트·호가'],
+    ...(predictable
+      ? ([
+          ['predict', '개장 전 가격', '개장 전'],
+          ['conv', '지난 개장 기록', '지난 기록'],
+          ['flows', '투자자 동향', '수급'],
+        ] as [Tab, string, string][])
+      : []),
+    // Phones: the stats strip and the latest issue live here instead of above the chart
+    ...(phone ? ([['info', '정보', '정보']] as [Tab, string, string][]) : []),
+  ]
   useEffect(() => setTab('chart'), [asset.id])
+  // The 정보 tab only exists on phones: leave it when the window grows past the breakpoint
+  useEffect(() => {
+    if (!phone && tab === 'info') setTab('chart')
+  }, [phone, tab])
   const selectTab = (k: Tab) => {
     setTab(k)
     if (k === 'conv') track('convergence_view', { asset: asset.id })
@@ -487,11 +617,14 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
   }, [tab])
 
   // Phone (CSS under max-width 720px reads these): while 차트 · 호가 is open the page stops scrolling and the
-  // selected pane fills the screen from the bottom of the head (--pane-top) down to the pane switch
+  // selected pane fills the screen from the bottom of the head (--pane-top) down to the pane switch.
+  // The two table tabs do the same (without the switch): the table scrolls down and sideways inside one box,
+  // instead of a box scrolling inside a scrolling page. The text tabs (개장 전 가격, 정보) scroll the page
   useEffect(() => {
-    if (tab !== 'chart') return
+    if (tab !== 'chart' && tab !== 'conv' && tab !== 'flows') return
     const root = document.documentElement
     root.classList.add('stock-panes')
+    root.classList.toggle('stock-panes--switch', tab === 'chart')
     // The head is only fully visible at the top, and the page can't be scrolled back up in this mode
     if (window.matchMedia('(max-width: 720px)').matches) window.scrollTo(0, 0)
     const measure = () => {
@@ -509,7 +642,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', measure)
-      root.classList.remove('stock-panes')
+      root.classList.remove('stock-panes', 'stock-panes--switch')
       root.style.removeProperty('--pane-top')
     }
   }, [tab])
@@ -533,13 +666,13 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
         {asset.kind === 'stock' ? <StockHead asset={asset} arb={arb} /> : <PerpHead asset={asset} arb={arb} />}
         <div className="ptabs-row">
           <div className="ptabs" role="tablist" ref={fadeX}>
-            {tabs.map(([k, label]) => (
+            {tabs.map(([k, label, short]) => (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => selectTab(k)}>
-                {label}
+                {phone ? short : label}
               </button>
             ))}
           </div>
-          <TodayIssue asset={asset.id} limit={1} onOpen={onNews} inline />
+          {!phone && <TodayIssue asset={asset.id} limit={1} onOpen={onNews} inline />}
         </div>
       </div>
 
@@ -684,12 +817,6 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
       {tab === 'predict' && <PredictPanels p={pred.data ?? null} asset={asset} />}
       {tab === 'conv' && (
         <section className="panel panel--fill" style={{ marginTop: 8, height: chartH }}>
-          <div className="panel__head">
-            <span className="panel__title">지난 개장 기록</span>
-            <span className="faint" style={{ fontSize: 12, marginLeft: 6 }}>
-              하이퍼리퀴드가 미리 보여준 차이를 다음 날 장 시작 가격이 얼마나 따라갔는지 보여줘요
-            </span>
-          </div>
           <ConvergenceTable asset={asset} />
         </section>
       )}
@@ -701,6 +828,7 @@ export default function ProTerminal({ asset }: { asset: Asset }) {
           <FlowsPanel asset={asset} />
         </section>
       )}
+      {tab === 'info' && <InfoTab asset={asset} arb={arb} onNews={onNews} />}
 
       {openNews && <NewsSheet news={openNews} onClose={() => setOpenNews(null)} />}
     </>
