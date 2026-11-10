@@ -36,3 +36,13 @@ function watch(el: HTMLElement, axis: 'x' | 'y') {
 /** Ref callbacks (stable, with React 19 cleanup): `<div ref={fadeX}>` for a sideways scroller, `fadeY` for a vertical one */
 export const fadeX = (el: HTMLElement | null) => (el ? watch(el, 'x') : undefined)
 export const fadeY = (el: HTMLElement | null) => (el ? watch(el, 'y') : undefined)
+/** Both axes on one element (a table that scrolls down and sideways) */
+export const fadeXY = (el: HTMLElement | null) => {
+  if (!el) return undefined
+  const offX = watch(el, 'x')
+  const offY = watch(el, 'y')
+  return () => {
+    offX()
+    offY()
+  }
+}

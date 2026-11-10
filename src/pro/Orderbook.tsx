@@ -235,7 +235,7 @@ function OrderbookImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null }
           </div>
         )}
         {krxOk && (
-          <div className="seg" role="group" aria-label="호가 시장" style={{ width: 170 }}>
+          <div className="seg seg--grow" role="group" aria-label="호가 시장" style={{ width: 170 }}>
             <button aria-pressed={tab === 'krx'} onClick={() => setTab('krx')}>
               국내 시장
             </button>

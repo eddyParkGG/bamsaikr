@@ -185,19 +185,21 @@ test('table tabs: the bottom fade shows only while more rows are below', async (
 test.describe('iPhone width', () => {
   test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 
-  test('stock: stats strip holds still, indicator menu opens whole, full-window chart fills the screen', async ({ page }) => {
+  test('stock: compact head, 정보 tab, indicator menu opens whole, full-window chart fills the screen', async ({ page }) => {
     await page.goto('/s/SKHX')
     await chartReady(page, '1d')
-    // Stats strip: no attribute churn on its groups while nothing changes
-    const churn = await page.locator('dl.stats').evaluate(async (dl) => {
-      let n = 0
-      const mo = new MutationObserver((ms) => (n += ms.length))
-      mo.observe(dl, { subtree: true, attributes: true })
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-      mo.disconnect()
-      return n
-    })
-    expect(churn).toBe(0)
+    // Head: the domestic and Hyperliquid prices side by side; the stats strip and the issue line are not above the chart
+    const quote = page.locator('.quote2')
+    await expect(quote.getByText('국내 시장')).toBeVisible()
+    await expect(quote.getByText('하이퍼리퀴드 환산')).toBeVisible()
+    await expect(page.locator('.stock-head dl.stats')).toBeHidden()
+    await expect(page.locator('.issue-inline')).toHaveCount(0)
+    // They are in the 정보 tab instead, as a list
+    await page.getByRole('tab', { name: '정보' }).click()
+    await expect(page.locator('dl.stats--list')).toContainText('하이퍼리퀴드 범위')
+    await expect(page.locator('.info-tab .issue')).toBeVisible()
+    await page.getByRole('tab', { name: '차트·호가' }).click()
+    await chartReady(page, '1d')
     // Indicator menu: not clipped by the sideways-scrolling toolbar
     await page.locator('.pro-chart .menu .chip').click()
     const pop = (await page.locator('.menu__pop').boundingBox())!
@@ -211,6 +213,33 @@ test.describe('iPhone width', () => {
     const full = (await page.locator('.pro-chart').boundingBox())!
     expect(full.y).toBe(0)
     expect(full.height).toBe(852)
+    // One close button, at least 44px, inside the screen's top-right corner; it brings the page back
+    const exit = page.getByRole('button', { name: '차트 작게 보기' })
+    await expect(exit).toHaveCount(1)
+    const eb = (await exit.boundingBox())!
+    expect(eb.width).toBeGreaterThanOrEqual(44)
+    expect(eb.height).toBeGreaterThanOrEqual(44)
+    expect(eb.x + eb.width).toBeLessThanOrEqual(393)
+    expect(eb.y).toBeGreaterThanOrEqual(0)
+    expect(eb.y).toBeLessThan(60)
+    await exit.click()
+    await expect(page.locator('.pro-chart--full')).toHaveCount(0)
+  })
+
+  test('search: no keyboard hints on a phone, the list heading stays one line, rows are tall enough to tap', async ({ page }) => {
+    await page.goto('/s/SKHX')
+    await page.getByRole('button', { name: '종목 검색' }).click()
+    const dialog = page.getByRole('dialog', { name: '종목 검색' })
+    await expect(dialog.getByRole('option').first()).toBeVisible()
+    await expect(dialog.locator('.search__foot')).toBeHidden()
+    await expect(dialog.locator('.search__enter').first()).toBeHidden()
+    const head = (await dialog.locator('.search__head').boundingBox())!
+    expect(head.height).toBeLessThanOrEqual(42)
+    for (const row of await dialog.getByRole('option').all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    const box = (await dialog.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(393)
+    expect(box.y + box.height).toBeLessThanOrEqual(852)
   })
 
   test('stock: chart, order book and order form take turns above the bottom switch, the page never scrolls', async ({ page }) => {
@@ -252,13 +281,89 @@ test.describe('iPhone width', () => {
     await tab('차트').click()
 
     // Other tabs scroll the page normally, without the switch
-    await page.getByRole('tab', { name: '개장 전 가격' }).click()
+    await page.getByRole('tab', { name: '개장 전' }).click()
     await expect(page.locator('.pane-switch')).toHaveCount(0)
     await expect.poll(pageScroll).toBeGreaterThan(0)
     await page.evaluate(() => window.scrollTo(0, 300))
     // Back on 차트 · 호가: back to the top, no page scroll
-    await page.getByRole('tab', { name: '차트 · 호가' }).click()
+    await page.getByRole('tab', { name: '차트·호가' }).click()
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
     await expect.poll(pageScroll).toBe(0)
+  })
+})
+
+test.describe('smallest phone width', () => {
+  test.use({ viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true })
+
+  test('stock: every tab stays inside 320px, tabs fit one line, panel titles do not wrap, tables fade the hidden side', async ({ page }) => {
+    await page.goto('/s/SKHX')
+    await chartReady(page, '1d')
+    const overflowX = () => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    // Session badge: text in the vertical middle (same space above and below)
+    const skew = await page.locator('.stock-head__name > .badge').evaluate((e) => {
+      const b = e.getBoundingClientRect()
+      const r = document.createRange()
+      r.selectNodeContents(e)
+      const t = r.getBoundingClientRect()
+      return Math.abs(t.top - b.top - (b.bottom - t.bottom))
+    })
+    expect(skew).toBeLessThanOrEqual(1)
+    // All five section tabs fit without swiping
+    const tabs = page.locator('.ptabs')
+    await expect(tabs.getByRole('tab')).toHaveCount(5)
+    expect(await tabs.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1)
+
+    // Chart, order book and order form
+    for (const pane of ['차트', '호가', '주문']) {
+      await page.locator('.pane-switch').getByRole('tab', { name: pane, exact: true }).click()
+      expect(await overflowX()).toBeLessThanOrEqual(0)
+    }
+    // The order button stays reachable inside the short pane
+    await expect(page.getByRole('button', { name: '매수하기' })).toBeInViewport()
+
+    for (const name of ['개장 전', '지난 기록', '수급', '정보']) {
+      await tabs.getByRole('tab', { name, exact: true }).click()
+      await expect(page.locator('.panel').first()).toBeVisible()
+      expect(await overflowX()).toBeLessThanOrEqual(0)
+    }
+
+    // 지난 기록: the title stays one line (the sentence is behind '?'), the count sits beside it
+    await tabs.getByRole('tab', { name: '지난 기록', exact: true }).click()
+    const title = page.locator('.panel--fill .panel__title')
+    await expect(title).toContainText('지난 개장 기록')
+    expect((await title.boundingBox())!.height).toBeLessThanOrEqual(28)
+    await expect(page.locator('.panel__count')).toBeVisible()
+    // The table fits the screen (no page scroll), scrolls sideways inside and fades only the hidden edge
+    const wrap = page.locator('.panel--fill .table-wrap')
+    await expect(wrap.locator('tbody tr').first()).toBeVisible()
+    expect(await page.evaluate(() => document.scrollingElement!.scrollHeight - innerHeight)).toBe(0)
+    const fade = () => wrap.evaluate((el) => ({ over: el.scrollWidth > el.clientWidth, left: el.hasAttribute('data-fade-left'), right: el.hasAttribute('data-fade-right') }))
+    await expect.poll(fade).toEqual({ over: true, left: false, right: true })
+    // The pinned date column sits flush on the scroller's left edge, before and after scrolling (no gap beside it)
+    const flush = async () => {
+      const d = (await wrap.locator('tbody td').first().boundingBox())!
+      const b = (await wrap.evaluate((el) => el.getBoundingClientRect().left + el.clientLeft))
+      return Math.abs(d.x - b)
+    }
+    expect(await flush()).toBeLessThanOrEqual(0.5)
+    // Push well past the right end with the wheel: it stops at the end, the page stays put, no overscroll
+    const wb = (await wrap.boundingBox())!
+    await page.mouse.move(wb.x + wb.width / 2, wb.y + wb.height / 2)
+    for (let i = 0; i < 8; i++) await page.mouse.wheel(600, 0)
+    const end = () => wrap.evaluate((el) => ({ at: Math.round(el.scrollLeft), max: el.scrollWidth - el.clientWidth }))
+    await expect.poll(async () => { const e = await end(); return e.at === e.max }).toBe(true)
+    await page.mouse.wheel(600, 0)
+    const e = await end()
+    expect(e.at).toBeLessThanOrEqual(e.max)
+    expect(await page.evaluate(() => scrollX)).toBe(0)
+    expect(await wrap.evaluate((el) => getComputedStyle(el).overscrollBehaviorX + ' ' + getComputedStyle(el).overscrollBehaviorY)).toBe('none none')
+    await expect.poll(fade).toEqual({ over: true, left: true, right: false })
+    expect(await flush()).toBeLessThanOrEqual(0.5)
+    // A column filter opens whole on screen, above the faded table
+    await wrap.evaluate((el) => (el.scrollLeft = 0))
+    await page.getByRole('button', { name: /닫혀 있던 시간/ }).click()
+    const pop = (await page.getByRole('dialog', { name: '닫혀 있던 시간' }).boundingBox())!
+    expect(pop.x).toBeGreaterThanOrEqual(0)
+    expect(pop.x + pop.width).toBeLessThanOrEqual(320)
   })
 })

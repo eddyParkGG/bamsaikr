@@ -1209,16 +1209,18 @@ body.is-resizing * {
   }
   /* 차트 · 호가 tab: one pane at a time fills the screen between the head (--pane-top, measured) and the switch
      above the bottom strip, so the page itself never scrolls and only the pane's own content moves.
-     8px gaps around the 40px switch; the page's bottom padding reserves the same space */
+     8px gaps around the 44px switch; the page's bottom padding reserves the same space.
+     The table tabs use the same box without the switch (stock-panes without --switch) */
   :root.stock-panes {
-    --panes-bottom: calc(36px + env(safe-area-inset-bottom) + 56px);
+    --panes-bottom: calc(36px + env(safe-area-inset-bottom) + 8px);
+    /* Floor for short landscape screens: the page scrolls again instead of squashing the pane */
+    --pane-h: max(200px, calc(100dvh - var(--pane-top, 0px) - 8px - var(--panes-bottom)));
+  }
+  :root.stock-panes--switch {
+    --panes-bottom: calc(36px + env(safe-area-inset-bottom) + 60px);
   }
   .stock-panes .shell {
     padding-bottom: var(--panes-bottom);
-  }
-  /* Floor for short landscape screens: the page scrolls again instead of squashing the pane */
-  .stock-panes .pro-grid {
-    --pane-h: max(200px, calc(100dvh - var(--pane-top, 0px) - 8px - var(--panes-bottom)));
   }
   .stock-panes .pro-grid[data-pane='chart'] > .pro-trade,
   .stock-panes .pro-grid[data-pane='book'] > .pro-chart,
@@ -1258,7 +1260,7 @@ body.is-resizing * {
     z-index: 15;
     display: flex;
     gap: 2px;
-    height: 40px;
+    height: 44px;
     padding: 2px;
     border-radius: 999px;
     background: var(--bg);
@@ -2491,7 +2493,7 @@ button.ob2__px:active::after {
   }
   .ob2 .ob2__info,
   .ob2 .ob2__tape {
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 
@@ -2935,4 +2937,398 @@ body {
   left: -8px;
   transform: none;
   max-width: 300px;
+}
+
+/* ───── Phone stock page (≤720px) ─────
+   Compact head (name, then the domestic and Hyperliquid prices side by side), one line of section tabs, and the
+   rest of the screen for the selected tab. The stats strip and the latest issue move to the phone-only 정보 tab */
+
+/* Shown on one side of the breakpoint only */
+@media (min-width: 721px) {
+  .only-phone {
+    display: none !important;
+  }
+}
+@media (max-width: 720px) {
+  .no-phone {
+    display: none !important;
+  }
+}
+/* Help sentence beside a panel title (desktop) and a short count at the right end (phone) */
+.panel__note {
+  min-width: 0;
+  margin-left: 6px;
+  font-size: 12px;
+}
+.panel__count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+/* Phone head prices (QuotePair): hidden on wider screens */
+.quote2 {
+  display: none;
+}
+/* Stats as a plain two-column list (phone 정보 tab) instead of a sideways strip */
+.stats.stats--list {
+  display: block;
+  height: auto;
+  margin: 0;
+  clip-path: none;
+  overflow: visible;
+  font-size: 14px;
+}
+.stats--list > .stats__group,
+.stats--list > .stats__group:nth-child(n) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0;
+  padding: 0;
+  border: 0;
+}
+/* Padding instead of a column gap, so each row's divider runs unbroken */
+.stats--list dt,
+.stats--list dd {
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  white-space: normal;
+}
+.stats--list dd {
+  padding-left: 12px;
+}
+.stats--list > .stats__group:first-child > :nth-child(-n + 2) {
+  padding-top: 0;
+  border-top: 0;
+}
+.stats--list dt {
+  color: var(--text-2);
+}
+.info-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.info-tab__note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+@media (max-width: 720px) {
+  /* Head: name line, then the two prices. The desktop price line and the stats strip give way */
+  .stock-head {
+    gap: 4px;
+    padding: 2px 0 8px;
+  }
+  .stock-head__id {
+    gap: 0;
+  }
+  .stock-head__price,
+  .stock-head > .stats {
+    display: none;
+  }
+  .asset-switch {
+    min-height: 40px;
+  }
+  /* Right end of the name line. It is a block here (for the ellipsis), which drops the inline-flex centring:
+     a line height equal to its 20px height puts the text back in the vertical middle */
+  .stock-head__name > .badge {
+    margin-left: auto;
+    line-height: 20px;
+  }
+  .badge {
+    font-size: 12px;
+  }
+  .quote2 {
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .quote2__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .quote2__label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .quote2__dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .quote2__value {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .quote2__sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+
+  /* Section tabs: one underlined line across the page (the pill style stays for the chips and the pane switch) */
+  .ptabs-row {
+    border-bottom: 1px solid var(--line);
+  }
+  .ptabs {
+    flex: 1;
+    gap: 0;
+  }
+  .ptabs button {
+    flex: 1 0 auto;
+    height: 44px;
+    padding: 0 8px;
+    border-radius: 0;
+  }
+  .ptabs [aria-selected='true'] {
+    background: none;
+    box-shadow: inset 0 -2px 0 var(--text);
+  }
+
+  /* Chart pane: the pane switch already says 차트, so the title and the conversion note (in 정보) give the
+     chart their height; toolbar buttons get a 40px tap height */
+  .pro-chart > .panel__head {
+    height: 48px;
+  }
+  .pro-chart > .panel__head > .panel__title,
+  .pro-chart .chart-tools > .chart-tools__sep:first-child,
+  .pro-chart .chart-foot {
+    display: none;
+  }
+  .pro-chart .chart-tools .chip {
+    height: 40px;
+    padding: 0 10px;
+  }
+  .pro-chart .chart-full {
+    width: 40px;
+    height: 40px;
+  }
+  /* Full-window chart: one clear close button at the head's right end (chart-full-exit), clear of the notch;
+     the toolbar keeps room for it and drops its own small one */
+  .pro-chart--full .chart-tools .chart-full {
+    display: none;
+  }
+  .pro-chart--full > .panel__head {
+    padding-right: calc(max(4px, env(safe-area-inset-right)) + 52px);
+  }
+  .chart-full-exit {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 2px);
+    right: max(4px, env(safe-area-inset-right));
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--fill);
+    color: var(--text);
+  }
+  .chart-full-exit:active {
+    background: var(--fill-strong);
+  }
+  .pane-label {
+    font-size: 12px;
+  }
+
+  /* Order book / order form panes: no title (the switch names them), the market choice spans the head */
+  .pro-trade .panel__head {
+    height: 52px;
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .pro-trade .panel__head > .panel__title,
+  .pro-trade .panel__head > .spacer {
+    display: none;
+  }
+  .pro-trade .seg--grow {
+    flex: 1;
+    width: auto !important;
+  }
+  .pro-trade .panel__head .seg button {
+    height: 40px;
+    padding: 0 6px;
+  }
+  .side-tabs {
+    height: 44px;
+  }
+  .side-tabs button {
+    height: 40px;
+    font-size: 14px;
+  }
+  .order-form .seg {
+    height: 44px;
+  }
+  .order-form .seg button {
+    height: 40px;
+  }
+  .order-form .pct-chips .chip {
+    height: 40px;
+  }
+  /* The order button stays in reach while the form scrolls inside a short pane */
+  .stock-panes .order-form > .stack > .btn--block {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    box-shadow: 0 12px 0 12px var(--bg);
+  }
+
+  /* Text tabs: a panel head that has more than a title wraps its extra line under it */
+  .panel__head--wrap {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 44px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .panel__head--wrap > .spacer {
+    display: none;
+  }
+  .panel__head--wrap > .panel__when {
+    flex-basis: 100%;
+    padding: 0 4px;
+  }
+  /* Forecast rows: label on top, value underneath, so neither wraps into the other or shrinks */
+  .cols3 .kv {
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 0;
+  }
+  .cols3 .kv dd {
+    font-size: 15px;
+  }
+
+  /* Table tabs: the box fills the screen (stock-panes) and the table scrolls down and sideways inside it,
+     date column pinned. Sideways it fades only the hidden edge (fadeXY), the left fade starting after the pinned column */
+  .stock-panes .panel--fill {
+    height: var(--pane-h) !important;
+  }
+  .stock-panes .panel--fill .table-wrap {
+    max-height: none;
+  }
+  /* No side padding (the cells carry it), so the pinned date column sits flush on the left edge with nothing
+     showing through beside it; no rubber-band past the ends and no scroll chaining into the page */
+  .panel--fill .table-wrap {
+    --sticky-w: 88px;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    overscroll-behavior: none;
+    scrollbar-width: none;
+  }
+  .panel--fill .table-wrap::-webkit-scrollbar {
+    display: none;
+  }
+  .panel--fill .table-wrap[data-fade-left],
+  .panel--fill .table-wrap[data-fade-right] {
+    --fade-l: 0px;
+    --fade-r: 0px;
+    -webkit-mask-image: linear-gradient(to right, #000 var(--sticky-w), transparent var(--sticky-w), #000 calc(var(--sticky-w) + var(--fade-l)), #000 calc(100% - var(--fade-r)), transparent);
+    mask-image: linear-gradient(to right, #000 var(--sticky-w), transparent var(--sticky-w), #000 calc(var(--sticky-w) + var(--fade-l)), #000 calc(100% - var(--fade-r)), transparent);
+  }
+  .panel--fill .table-wrap[data-fade-left] {
+    --fade-l: 32px;
+  }
+  .panel--fill .table-wrap[data-fade-right] {
+    --fade-r: 32px;
+  }
+  /* The bottom fade stays in view while the table is scrolled sideways */
+  .panel--fill .table-wrap::after {
+    left: 0;
+  }
+  .panel--fill .table th:first-child,
+  .panel--fill .table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 88px;
+    min-width: 88px;
+    max-width: 88px;
+    padding-right: 8px;
+    padding-left: 8px;
+    background: var(--bg);
+  }
+  .panel--fill .table thead th:first-child {
+    z-index: 2;
+  }
+  /* A tap leaves :hover on the row: keep the pinned cell opaque */
+  .panel--fill .table tr:hover td:first-child {
+    background: linear-gradient(var(--fill), var(--fill)), var(--bg);
+  }
+  .panel--fill .th-btn .thbtn {
+    height: 40px;
+  }
+  /* Investor flows: the won amount goes under the share count, so each column stays narrow */
+  .flow-won {
+    display: block;
+    margin-left: 0;
+  }
+  .fpop {
+    width: min(320px, calc(100vw - 16px));
+  }
+
+  /* Header: 40px tap height for the menu, search and theme buttons */
+  .header .nav a,
+  .header .logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .header .icon-btn,
+  .header .search-trigger {
+    min-width: 40px;
+    height: 40px;
+  }
+}
+
+/* Phone search: no keyboard hints (enter / esc / arrows mean nothing on touch), a one-line list heading,
+   and a box that stays inside the visible screen below the notch */
+@media (max-width: 720px) {
+  .search__foot,
+  .search__enter {
+    display: none;
+  }
+  .search__head .faint {
+    display: none;
+  }
+  .search__head > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-scrim {
+    padding: calc(env(safe-area-inset-top) + 8px) 8px 8px;
+  }
+  .search {
+    height: min(600px, calc(100dvh - env(safe-area-inset-top) - 16px));
+    max-height: none;
+  }
+  .search__row {
+    min-height: 56px;
+  }
+}
+
+/* Narrowest phones: the five section tabs still fit one line whatever the system font's width (Linux fonts run a few px wider) */
+@media (max-width: 360px) {
+  .ptabs button {
+    padding: 0 5px;
+  }
 }

@@ -280,7 +280,7 @@ function OrderPanelImpl({ asset, arb }: { asset: Asset; arb: ArbSnapshot | null;
         <span className="panel__title">주문</span>
         <span className="spacer" />
         {tabs.length > 1 && (
-          <div className="seg seg--sm" role="group" aria-label="주문 종류">
+          <div className="seg seg--sm seg--grow" role="group" aria-label="주문 종류">
             {tabs.map(([k, label]) => (
               <button key={k} aria-pressed={k === tab} onClick={() => setTab(k)}>
                 {label}

@@ -1,13 +1,14 @@
 import { followAtStage, nightStage } from '../lib/night'
 import { Chevron } from '../components/Icon'
 import { memo, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { OpenEvent, Prediction } from '../../shared/api'
 import type { Asset } from '../../shared/assets'
 import { dateKeyParts, fmtKrw, fmtPct, fmtPrice, fmtWonUnit, openDayText, tone } from '../lib/format'
 import { Help } from '../components/Help'
 import { NextOpenWhen } from '../components/NextOpenState'
 import { useQuery } from '../lib/query'
-import { fadeY } from '../lib/scrollFade'
+import { fadeXY } from '../lib/scrollFade'
 import { useArb } from '../lib/data'
 import { InSessionNotice, OracleTag, predictionReady, ThinTag } from '../components/NextOpenState'
 
@@ -54,12 +55,13 @@ export const PredictPanels = memo(function PredictPanels({ p, asset }: { p: Pred
   return (
     <div className="cols3">
       <section className="panel">
-        <div className="panel__head">
+        {/* Phones: the open time drops under the title instead of squeezing it */}
+        <div className="panel__head panel__head--wrap">
           <span className="panel__title">{openDayText(p.targetOpenAt)} 아침 가격</span>
           {predictionReady(p) && <ThinTag p={p} />}
           {predictionReady(p) && <OracleTag p={p} />}
           <span className="spacer" />
-          <span className="faint" style={{ fontSize: 12 }}>
+          <span className="faint panel__when" style={{ fontSize: 12 }}>
             <NextOpenWhen at={p.targetOpenAt} />
           </span>
         </div>
@@ -181,10 +183,11 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
   const [open, setOpen] = useState<{ top: number; left: number } | null>(null)
   const [draft, setDraft] = useState(value)
   const ref = useRef<HTMLDivElement>(null)
+  const popRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
     setDraft(value)
-    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(null)
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && !popRef.current?.contains(e.target as Node) && setOpen(null)
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null)
     document.addEventListener('mousedown', close)
     window.addEventListener('keydown', esc)
@@ -208,8 +211,10 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
         {current ? `${label} · ${current}` : label}
         <Chevron />
       </button>
-      {open && (
-        <div className="fpop" role="dialog" aria-label={label} style={{ position: 'fixed', top: open.top, left: open.left }}>
+      {/* On <body>: the table fades its scrolled-away edges with a mask, which would also fade a popup inside it */}
+      {open &&
+        createPortal(
+        <div className="fpop" ref={popRef} role="dialog" aria-label={label} style={{ position: 'fixed', top: open.top, left: open.left }}>
           <p className="fpop__title">{label}</p>
           <div className="fpop__list" role="radiogroup">
             {options.map(([v, l]) => (
@@ -233,8 +238,9 @@ function FilterChip({ label, options, value, onApply }: { label: string; options
               보기
             </button>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </div>
   )
 }
@@ -246,7 +252,9 @@ function hoursText(h: number) {
   return `${Math.floor(r / 24)}일${r % 24 ? ` ${r % 24}시간` : ''}`
 }
 
-const meetText = (m: number) => (m > 0.66 ? '주식이 따라감' : m < 0.34 ? '하이퍼리퀴드가 맞춤' : '가운데서 만남')
+const CONV_NOTE = '하이퍼리퀴드가 미리 보여준 차이를 다음 날 장 시작 가격이 얼마나 따라갔는지 보여줘요'
+
+const meetText =(m: number) => (m > 0.66 ? '주식이 따라감' : m < 0.34 ? '하이퍼리퀴드가 맞춤' : '가운데서 만남')
 
 type Filters = { follow: string; regime: string; gap: string; open: string; absorb: string; meet: string }
 const ALL: Filters = { follow: '', regime: '', gap: '', open: '', absorb: '', meet: '' }
@@ -289,23 +297,50 @@ function pass(e: OpenEvent, f: Filters) {
 export const ConvergenceTable = memo(function ConvergenceTable({ asset }: { asset: Asset }) {
   const q = useQuery<{ events: OpenEvent[]; backtest: Prediction['backtest'] }>(`/api/v1/convergence?asset=${asset.id}&limit=500`, 300_000)
   const [f, setF] = useState<Filters>(ALL)
-  if (!q.data) return <div className="skeleton" style={{ height: 240, margin: 16 }} />
-  const rows = q.data.events.filter((e) => pass(e, f))
-  const thin = q.data.backtest.thinUsd
+  const rows = q.data?.events.filter((e) => pass(e, f)) ?? []
   const scored = rows.filter((e) => e.follow !== 'flat')
   const followPct = scored.length ? Math.round((scored.filter((e) => e.follow === 'yes').length / scored.length) * 100) : null
+  const summary = `${rows.length}개${followPct != null ? ` · 방향대로 ${followPct}%` : ''}`
+  // Phones: the sentence sits behind '?' and the count moves up here, so the title line never wraps
+  // and the first (pinned) column stays narrow
+  const panelHead = (
+    <div className="panel__head">
+      <span className="panel__title">
+        지난 개장 기록
+        <span className="only-phone">
+          <Help text={CONV_NOTE} />
+        </span>
+      </span>
+      <span className="faint panel__note no-phone">{CONV_NOTE}</span>
+      {q.data && (
+        <>
+          <span className="spacer only-phone" />
+          <span className="panel__count only-phone num">{summary}</span>
+        </>
+      )}
+    </div>
+  )
+  if (!q.data)
+    return (
+      <>
+        {panelHead}
+        <div className="skeleton" style={{ height: 240, margin: 16 }} />
+      </>
+    )
+  const thin = q.data.backtest.thinUsd
   const head = (key: keyof Filters) => {
     const x = FILTERS.find((y) => y.key === key)!
     return <FilterChip label={x.label} options={x.options} value={f[key]} onApply={(v) => setF({ ...f, [key]: v })} />
   }
   return (
     <>
-      <div className="table-wrap" ref={fadeY} style={{ padding: '0 4px 8px' }}>
+      {panelHead}
+      <div className="table-wrap" ref={fadeXY} style={{ padding: '0 4px 8px' }}>
         <table className="table num">
           <thead>
             <tr>
               <th>
-                개장일 · {rows.length}개{followPct != null && ` · 방향대로 ${followPct}%`}
+                개장일<span className="no-phone"> · {summary}</span>
               </th>
               <th className="th-btn">{head('regime')}</th>
               <th className="th-btn">{head('gap')}</th>
@@ -396,7 +431,7 @@ export const FlowsPanel = memo(function FlowsPanel({ asset }: { asset: Asset }) 
       </p>
     )
   return (
-    <div className="table-wrap" ref={fadeY} style={{ padding: '0 4px 8px' }}>
+    <div className="table-wrap" ref={fadeXY} style={{ padding: '0 4px 8px' }}>
       <table className="table num">
         <thead>
           <tr>
