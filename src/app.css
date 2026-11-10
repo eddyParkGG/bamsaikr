@@ -3297,3 +3297,31 @@ body {
     height: 40px;
   }
 }
+
+/* Phone search: no keyboard hints (enter / esc / arrows mean nothing on touch), a one-line list heading,
+   and a box that stays inside the visible screen below the notch */
+@media (max-width: 720px) {
+  .search__foot,
+  .search__enter {
+    display: none;
+  }
+  .search__head .faint {
+    display: none;
+  }
+  .search__head > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-scrim {
+    padding: calc(env(safe-area-inset-top) + 8px) 8px 8px;
+  }
+  .search {
+    height: min(600px, calc(100dvh - env(safe-area-inset-top) - 16px));
+    max-height: none;
+  }
+  .search__row {
+    min-height: 56px;
+  }
+}
