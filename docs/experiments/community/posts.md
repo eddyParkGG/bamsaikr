@@ -38,6 +38,9 @@ H2 counts all visits from 2026-11-06 00:00 KST (internal traffic excluded); UTM 
 | 2026-11-11 (Wed) 20:09 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7340648&page=1) | **Tonight's number after a big up day**, link under the number, last Tuesday as a real case, "check again after 6am"; `/s/SKHX` | `skhx_wed_eve_now_detail` | 하닉 마감 129.0만 (+6% on the day) → 해외 131.0만 (+1.6%) | [wed-eve-skhx-chart.png](wed-eve-skhx-chart.png), [wed-eve-home.png](wed-eve-home.png) |
 | 2026-11-11 (Wed) 20:10 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18343525&page=1) | **Milestone title** ("삼전 20만 넘었는데"), tonight's overseas price, link under the number; `/s/SMSN` | `smsn_wed_eve_now_detail` | 삼전 마감 20.80만 (+4.6%) → 해외 21.13만 (+1.6%); 86–87% after the US close | [wed-eve-smsn-chart.png](wed-eve-smsn-chart.png), [wed-eve-home.png](wed-eve-home.png) |
 | 2026-11-11 (Wed) 20:11 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3881817&page=1) | **Question**, no link: "하닉 해외 131만, 내일 시초 몇으로 봄?" | — | 하닉 129.0만 → 131.0만, 삼전 20.80만 → 21.13만 | [wed-eve-skhx-chart.png](wed-eve-skhx-chart.png), [wed-eve-home.png](wed-eve-home.png) |
+| 2026-11-13 (Fri) 00:15 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7342173&page=1) | **Week scorecard**: this week's pre-open overseas price vs the actual open (miss included), link under the list; `/s/SKHX` | `skhx_fri_week_check_detail` | 하닉 화 +11.0%→+9.0%, 수 +0.3%→-1.0% (miss), 목 +0.9%→+0.6%; now +0.6% | [fri-skhx-chart.png](fri-skhx-chart.png), [fri-home.png](fri-home.png) |
+| 2026-11-13 (Fri) 00:15 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18367910&page=1) | **Week scorecard** for 삼전; `/s/SMSN` | `smsn_fri_week_check_detail` | 삼전 화 +9.9%→+7.4%, 수 +0.8%→-0.8% (miss), 목 +1.1%→+0.8%; now +0.6% | [fri-smsn-chart.png](fri-smsn-chart.png), [fri-home.png](fri-home.png) |
+| 2026-11-13 (Fri) 00:16 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3891263&page=1) | **Week scorecard as a question**, no link: "3번 중 2번 맞음, 금요일은?" | — | both stocks, same three days | [fri-skhx-chart.png](fri-skhx-chart.png), [fri-home.png](fri-home.png) |
 | 2026-11-05 (Thu) ~21:30 | Naver 종목토론방 삼성전자 (`naver_jongto`) | [431708763](https://stock.naver.com/domestic/stock/005930/discussion/431708763) — **deleted within minutes** | A (forecast) | `smsn_thu_A` | (posted by the owner directly) | — |
 
 ## Notes
@@ -136,6 +139,9 @@ Views as of 11/8 13:55 for the 11/8 posts (earlier rows as of 11/8 10:40). Views
 | 11/11 20:09 [7340648](https://gall.dcinside.com/board/view/?id=neostock&no=7340648) | 주식 | Tonight's number after a big up day | 4 | 0 | 0 | (just posted) |
 | 11/11 20:10 [18343525](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18343525) | 미국 주식 | Milestone title + tonight's number | 21 | 0 | 0 | (just posted) |
 | 11/11 20:11 [3881817](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3881817) | 한국 주식 | Question | 5 | 0 | 0 | (just posted) |
+| 11/13 00:15 [7342173](https://gall.dcinside.com/board/view/?id=neostock&no=7342173) | 주식 | Week scorecard | 2 | 0 | 0 | (just posted) |
+| 11/13 00:15 [18367910](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18367910) | 미국 주식 | Week scorecard | 23 | 0 | 0 | (just posted) |
+| 11/13 00:16 [3891263](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3891263) | 한국 주식 | Week scorecard (question) | 4 | 0 | 0 | (just posted) |
 
 - Question / poll posts in 한국 주식 drew the most views and the only real discussion (205 views, 5 comments), even without a link.
 - 주식(메인) weekend posts sink fast in views (13–41) despite the slow page turnover.
