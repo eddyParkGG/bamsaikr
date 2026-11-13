@@ -160,7 +160,7 @@ describe('bot flag for API callers', () => {
     for (const ua of ['python-requests/2.34', 'node', 'Claude-User (claude-code/2.1)', 'curl/8.7.1']) expect(isBotUa(ua)).toBe(false)
     expect(isProbeCall('__verifymcp_auth_probe_85aa27fa2fa827a7__')).toBe(true)
     expect(isProbeCall('get_arbitrage')).toBe(false)
-    for (const ua of ['AgentToolIndex/1.0 (+https://agenttoolindex.com)', 'AnnalistChecks/0.1 (+https://annalist.dev)', 'KoskamoDirectoryCheck/1.0', 'agent-collector/0.1 (+health check; no p']) expect(isBotUa(ua)).toBe(true)
+    for (const ua of ['AgentToolIndex/1.0 (+https://agenttoolindex.com)', 'AnnalistChecks/0.1 (+https://annalist.dev)', 'KoskamoDirectoryCheck/1.0', 'agent-collector/0.1 (+health check; no p', 'MCPYP-Incremental/1.0 (+https://mcpyp.com)']) expect(isBotUa(ua)).toBe(true)
   })
 })
 
