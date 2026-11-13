@@ -17,7 +17,7 @@ export function callerKind(ua = '') {
 }
 
 /** Directory crawlers, uptime monitors and research probes that only handshake with MCP servers (from their User-Agents) */
-const BOT_UA = /bot|crawl|spider|probe|indexer|monitor|status|liveness|survey|research|scanner|mcpbeat|mcpwatch|mcptry|mcpgw|talaria|measure-mcp|alalanet|ai-pulse|everymcp|agentrank|verifymcp|proofbench|moonglade|mcp-ficha|aiworkforce|enerlio|coda-agent|agenttoolindex|annalist|koskamo|agent-collector|health check/i
+const BOT_UA = /bot|crawl|spider|probe|indexer|monitor|status|liveness|survey|research|scanner|mcpbeat|mcpwatch|mcptry|mcpgw|talaria|measure-mcp|alalanet|ai-pulse|everymcp|agentrank|verifymcp|proofbench|moonglade|mcp-ficha|aiworkforce|enerlio|coda-agent|agenttoolindex|annalist|koskamo|agent-collector|health check|mcpyp/i
 export const isBotUa = (ua = '') => BOT_UA.test(ua)
 
 /** Stable, non-reversible id per caller (IP + User-Agent, salted with the GA secret). GA counts users by it */
