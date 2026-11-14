@@ -41,6 +41,9 @@ H2 counts all visits from 2026-11-06 00:00 KST (internal traffic excluded); UTM 
 | 2026-11-13 (Fri) 00:15 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7342173&page=1) | **Week scorecard**: this week's pre-open overseas price vs the actual open (miss included), link under the list; `/s/SKHX` | `skhx_fri_week_check_detail` | 하닉 화 +11.0%→+9.0%, 수 +0.3%→-1.0% (miss), 목 +0.9%→+0.6%; now +0.6% | [fri-skhx-chart.png](fri-skhx-chart.png), [fri-home.png](fri-home.png) |
 | 2026-11-13 (Fri) 00:15 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18367910&page=1) | **Week scorecard** for 삼전; `/s/SMSN` | `smsn_fri_week_check_detail` | 삼전 화 +9.9%→+7.4%, 수 +0.8%→-0.8% (miss), 목 +1.1%→+0.8%; now +0.6% | [fri-smsn-chart.png](fri-smsn-chart.png), [fri-home.png](fri-home.png) |
 | 2026-11-13 (Fri) 00:16 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3891263&page=1) | **Week scorecard as a question**, no link: "3번 중 2번 맞음, 금요일은?" | — | both stocks, same three days | [fri-skhx-chart.png](fri-skhx-chart.png), [fri-home.png](fri-home.png) |
+| 2026-11-13 (Fri) 23:46 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7343205&page=1) | **Real case (Friday morning hit)** + week tally 3 of 5 + weekend note; link under the number; `/s/SKHX` | `skhx_fri_eve_case_detail` | 하닉 124.1만 → 07:59 127.7만 (+2.9%) → open 126.7만 (+2.1%) → close 123.3만; now -0.1% | [fri-eve-skhx-chart.png](fri-eve-skhx-chart.png), [fri-eve-home.png](fri-eve-home.png) |
+| 2026-11-13 (Fri) 23:47 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18381835&page=1) | **Real case (Friday morning hit)** + "tonight's US session is the last before the weekend"; `/s/SMSN` | `smsn_fri_eve_case_detail` | 삼전 20.65만 → 21.24만 (+2.9%) → open 21.14만 (+2.4%) → close 20.85만; past weekend follow 69–75% | [fri-eve-smsn-chart.png](fri-eve-smsn-chart.png), [fri-eve-home.png](fri-eve-home.png) |
+| 2026-11-13 (Fri) 23:47 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3897021&page=1) | **Week tally as a question**, no link: "5번 중 3번 맞음, 월요일은?" | — | 하닉 Mon–Fri pre-open vs open, misses shown | [fri-eve-skhx-chart.png](fri-eve-skhx-chart.png), [fri-eve-home.png](fri-eve-home.png) |
 | 2026-11-05 (Thu) ~21:30 | Naver 종목토론방 삼성전자 (`naver_jongto`) | [431708763](https://stock.naver.com/domestic/stock/005930/discussion/431708763) — **deleted within minutes** | A (forecast) | `smsn_thu_A` | (posted by the owner directly) | — |
 
 ## Notes
@@ -142,6 +145,9 @@ Views as of 11/8 13:55 for the 11/8 posts (earlier rows as of 11/8 10:40). Views
 | 11/13 00:15 [7342173](https://gall.dcinside.com/board/view/?id=neostock&no=7342173) | 주식 | Week scorecard | 2 | 0 | 0 | (just posted) |
 | 11/13 00:15 [18367910](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18367910) | 미국 주식 | Week scorecard | 23 | 0 | 0 | (just posted) |
 | 11/13 00:16 [3891263](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3891263) | 한국 주식 | Week scorecard (question) | 4 | 0 | 0 | (just posted) |
+| 11/13 23:46 [7343205](https://gall.dcinside.com/board/view/?id=neostock&no=7343205) | 주식 | Real case + week tally | 2 | 0 | 0 | (just posted) |
+| 11/13 23:47 [18381835](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18381835) | 미국 주식 | Real case | 13 | 0 | 0 | (just posted) |
+| 11/13 23:47 [3897021](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3897021) | 한국 주식 | Week tally (question) | 3 | 0 | 0 | (just posted) |
 
 - Question / poll posts in 한국 주식 drew the most views and the only real discussion (205 views, 5 comments), even without a link.
 - 주식(메인) weekend posts sink fast in views (13–41) despite the slow page turnover.
