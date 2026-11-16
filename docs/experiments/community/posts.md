@@ -47,6 +47,9 @@ H2 counts all visits from 2026-11-06 00:00 KST (internal traffic excluded); UTM 
 | 2026-11-14 (Sat) 22:46 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7344191&page=1) | **Monday's number as the title** (weekend after the US close, down), past weekend follow rate, "check again Sunday night"; `/s/SKHX` | `skhx_sat_night_mon_detail` | 하닉 123.3만 → 120.4만 (-2.3%), 삼전 20.85만 → 20.57만 (-1.4%); 75% / 69% | [sat-1114-skhx-chart.png](sat-1114-skhx-chart.png), [sat-1114-home.png](sat-1114-home.png) |
 | 2026-11-14 (Sat) 22:46 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18392677&page=1) | **Weekend after the US close** + usual opening range + last Monday's miss; `/s/SMSN` | `smsn_sat_night_mon_detail` | 삼전 20.57만 (-1.4%), 하닉 120.4만 (-2.3%); range 19.62–21.50만, 33h to the open | [sat-1114-smsn-chart.png](sat-1114-smsn-chart.png), [sat-1114-home.png](sat-1114-home.png) |
 | 2026-11-14 (Sat) 22:47 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3899520&page=1) | **Question**, no link: "주말 해외 하닉 -2.3%, 월요일 시초 어떻게 봄?" | — | same numbers, last Monday's miss | [sat-1114-skhx-chart.png](sat-1114-skhx-chart.png), [sat-1114-home.png](sat-1114-home.png) |
+| 2026-11-17 (Tue) 00:46 | DC 주식 갤러리 (`dc_stock`) | [view](https://gall.dcinside.com/board/view/?id=neostock&no=7346222&page=1) | **Tomorrow's number after a big down day** (US session open), Monday morning hit as a case; `/s/SKHX` | `skhx_tue_dawn_now_detail` | 하닉 마감 111.8만 (-9.3% on Monday) → 해외 113.1만 (+1.1%); 삼전 19.50만 → 19.88만 (+2.0%) | [tue-1117-skhx-chart.png](tue-1117-skhx-chart.png), [tue-1117-home.png](tue-1117-home.png) |
+| 2026-11-17 (Tue) 00:46 | DC 미국 주식 (`dc_stockus`) | [view](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18416697&page=1) | **During the US session**: tonight's overseas price, hit rate at this stage (76%) vs after the US close (86–87%); `/s/SMSN` | `smsn_tue_dawn_now_detail` | 삼전 19.50만 → 19.88만 (+2.0%), 하닉 +1.1% | [tue-1117-smsn-chart.png](tue-1117-smsn-chart.png), [tue-1117-home.png](tue-1117-home.png) |
+| 2026-11-17 (Tue) 00:47 | DC 한국 주식 (krstock) | [view](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3909942&page=1) | **Question**, no link: "어제 크게 빠졌는데 해외는 반등 중, 화요일 시초 어떻게 봄?" | — | same numbers | [tue-1117-skhx-chart.png](tue-1117-skhx-chart.png), [tue-1117-home.png](tue-1117-home.png) |
 | 2026-11-05 (Thu) ~21:30 | Naver 종목토론방 삼성전자 (`naver_jongto`) | [431708763](https://stock.naver.com/domestic/stock/005930/discussion/431708763) — **deleted within minutes** | A (forecast) | `smsn_thu_A` | (posted by the owner directly) | — |
 
 ## Notes
@@ -108,7 +111,7 @@ session_start 2, arb_view 1. Standard (non-realtime) GA reports were still empty
 
 ## Reactions (DC views, upvotes, comments) — 2026-11-08 10:40 KST
 
-Views as of 11/8 13:55 for the 11/8 posts (earlier rows as of 11/8 10:40). Views include one check visit from us per post. Comment gist is paraphrased.
+Views as of 11/8 13:55 for the 11/8 posts (earlier rows as of 11/8 10:40); 11/14 rows as of 11/17 01:00. Views include one check visit from us per post. Comment gist is paraphrased.
 
 | Post | Gallery | Format | Views | Up | Comments | What commenters said |
 |---|---|---|---|---|---|---|
@@ -151,9 +154,12 @@ Views as of 11/8 13:55 for the 11/8 posts (earlier rows as of 11/8 10:40). Views
 | 11/13 23:46 [7343205](https://gall.dcinside.com/board/view/?id=neostock&no=7343205) | 주식 | Real case + week tally | 2 | 0 | 0 | (just posted) |
 | 11/13 23:47 [18381835](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18381835) | 미국 주식 | Real case | 13 | 0 | 0 | (just posted) |
 | 11/13 23:47 [3897021](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3897021) | 한국 주식 | Week tally (question) | 3 | 0 | 0 | (just posted) |
-| 11/14 22:46 [7344191](https://gall.dcinside.com/board/view/?id=neostock&no=7344191) | 주식 | Monday's number (down) | 2 | 0 | 0 | (just posted) |
-| 11/14 22:46 [18392677](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18392677) | 미국 주식 | Weekend + range | 19 | 0 | 0 | (just posted) |
-| 11/14 22:47 [3899520](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3899520) | 한국 주식 | Question | 3 | 0 | 0 | (just posted) |
+| 11/14 22:46 [7344191](https://gall.dcinside.com/board/view/?id=neostock&no=7344191) | 주식 | Monday's number (down) | 64 | 0 | 0 | |
+| 11/14 22:46 [18392677](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18392677) | 미국 주식 | Weekend + range | 108 | 0 | 1 | "meaningless indicator" |
+| 11/14 22:47 [3899520](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3899520) | 한국 주식 | Question | **291** | 0 | 5 | "unrelated, why look at it", "who knows", "look at KOSPI lab instead", "what does it mean" — dismissive, but the most-viewed post of the run |
+| 11/17 00:46 [7346222](https://gall.dcinside.com/board/view/?id=neostock&no=7346222) | 주식 | Tomorrow's number after a down day | 2 | 0 | 0 | (just posted) |
+| 11/17 00:46 [18416697](https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=18416697) | 미국 주식 | During the US session | 30 | 0 | 0 | (just posted) |
+| 11/17 00:47 [3909942](https://gall.dcinside.com/mgallery/board/view/?id=krstock&no=3909942) | 한국 주식 | Question | 13 | 0 | 0 | (just posted) |
 
 - Question / poll posts in 한국 주식 drew the most views and the only real discussion (205 views, 5 comments), even without a link.
 - 주식(메인) weekend posts sink fast in views (13–41) despite the slow page turnover.
